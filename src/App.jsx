@@ -6,6 +6,8 @@ import ShiftForm from './components/ShiftForm.jsx'
 import Timesheet from './components/Timesheet.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import PayPeriodPanel from './components/PayPeriodPanel.jsx'
+import DeductionsCard from './components/DeductionsCard.jsx'
+import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import { supabase } from './lib/supabase.js'
@@ -95,11 +97,13 @@ export default function App() {
   const { session, loading, signOut, recovery, endRecovery } = useAuth()
   const [shifts, setShifts] = useState([])
   const [payrolls, setPayrolls] = useState([])
+  const [deductions, setDeductions] = useState([])
   const [profile, setProfile] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
   const [showPaydayPrompt, setShowPaydayPrompt] = useState(false)
   const [showSalary, setShowSalary] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
@@ -121,11 +125,19 @@ export default function App() {
     setPayrolls(data ?? [])
   }, [])
 
+  const loadDeductions = useCallback(async () => {
+    const { data } = await supabase
+      .from('deductions')
+      .select('*')
+      .order('created_at', { ascending: true })
+    setDeductions(data ?? [])
+  }, [])
+
   const loadProfile = useCallback(async () => {
     if (!session) return
     const { data } = await supabase
       .from('profiles')
-      .select('payday, full_name')
+      .select('payday, full_name, employee_code')
       .eq('id', session.user.id)
       .maybeSingle()
     setProfile(data ?? null)
@@ -138,13 +150,15 @@ export default function App() {
     if (session) {
       loadShifts()
       loadPayrolls()
+      loadDeductions()
       loadProfile()
     } else {
       setShifts([])
       setPayrolls([])
+      setDeductions([])
       setProfile(null)
     }
-  }, [session, loadShifts, loadPayrolls, loadProfile])
+  }, [session, loadShifts, loadPayrolls, loadDeductions, loadProfile])
 
   async function handleAdd(shift) {
     const limitErr = dayLimitError(shifts, shift.work_date, shiftHours(shift))
@@ -215,6 +229,50 @@ export default function App() {
     await loadPayrolls()
   }
 
+  async function addDeduction(periodKey, amount, reason, deductDate) {
+    const { error } = await supabase.from('deductions').insert({
+      user_id: session.user.id,
+      period_key: periodKey,
+      amount,
+      reason,
+      deduct_date: deductDate,
+    })
+    if (error) return error.message
+    await loadDeductions()
+    return null
+  }
+
+  async function deleteDeduction(id) {
+    const { error } = await supabase.from('deductions').delete().eq('id', id)
+    if (error) setLoadError(error.message)
+    else setDeductions((prev) => prev.filter((d) => d.id !== id))
+  }
+
+  // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI. Trả về mảng lỗi (rỗng nếu OK).
+  async function importWeekShifts(rows) {
+    const errors = []
+    for (const r of rows) {
+      const shift = {
+        work_date: r.date,
+        start_time: r.start,
+        end_time: r.end,
+        scheduled_start: r.start,
+        scheduled_end: r.end,
+      }
+      const limitErr = dayLimitError(shifts, r.date, shiftHours(shift))
+      if (limitErr) {
+        errors.push(`${r.date}: ${limitErr}`)
+        continue
+      }
+      const { error } = await supabase
+        .from('shifts')
+        .insert({ ...shift, user_id: session.user.id })
+      if (error) errors.push(`${r.date}: ${error.message}`)
+    }
+    await loadShifts()
+    return errors
+  }
+
   // Đánh dấu kỳ đang chờ nhận = đã nhận (ngày nhận = hôm nay).
   async function receiveSalary() {
     if (!pendingKey) return
@@ -250,6 +308,10 @@ export default function App() {
   const monthStats = boardStats(
     shifts.filter((s) => payPeriodKeyOf(s.work_date) === currentKey)
   )
+  // Khoản trừ của kỳ hiện tại (cho card trên board).
+  const currentDeductions = deductions.filter(
+    (d) => d.period_key === currentKey
+  )
 
   // Nhắc nhận lương: chỉ khi đã đặt ngày nhận (payday), có kỳ đang chờ nhận,
   // và hôm nay đã tới/qua ngày nhận trong tháng trả lương.
@@ -263,12 +325,21 @@ export default function App() {
 
   const fullName =
     profile?.full_name || session.user.user_metadata?.full_name || ''
+  const employeeCode =
+    profile?.employee_code || session.user.user_metadata?.employee_code || ''
 
   return (
     <div className="app">
       <header className="app-header">
         <h1>Salary Working</h1>
         <div className="user">
+          <button
+            type="button"
+            className="account-btn"
+            onClick={() => setShowImport(true)}
+          >
+            Nhập lịch tuần
+          </button>
           <button
             type="button"
             className="account-btn"
@@ -286,20 +357,33 @@ export default function App() {
         </div>
       </header>
 
-      <main>
-        <ShiftForm
-          onAdd={handleAdd}
-          monthStats={monthStats}
-          onReceiveSalary={receiveSalary}
-          receiveDisabled={!pendingKey}
-          receiveDue={salaryDue}
-        />
-        {loadError && <p className="msg error">{loadError}</p>}
-        <Timesheet
-          shifts={visibleShifts}
-          onDelete={handleDelete}
-          onUpdate={handleUpdate}
-        />
+      <main className="main-layout">
+        <div className="main-col">
+          <ShiftForm
+            onAdd={handleAdd}
+            monthStats={monthStats}
+            onReceiveSalary={receiveSalary}
+            receiveDisabled={!pendingKey}
+            receiveDue={salaryDue}
+          />
+          {loadError && <p className="msg error">{loadError}</p>}
+          <Timesheet
+            shifts={visibleShifts}
+            onDelete={handleDelete}
+            onUpdate={handleUpdate}
+          />
+        </div>
+
+        <aside className="main-aside">
+          <DeductionsCard
+            periodKey={currentKey}
+            deductions={currentDeductions}
+            grossPay={monthStats.pay}
+            onAdd={addDeduction}
+            onDelete={deleteDeduction}
+            defaultOpen
+          />
+        </aside>
       </main>
 
       {showSalary && (
@@ -319,18 +403,30 @@ export default function App() {
             <PayPeriodPanel
               shifts={shifts}
               payrolls={payrolls}
+              deductions={deductions}
               payday={profile?.payday}
               onMarkReceived={markReceived}
               onUnmark={unmarkReceived}
+              onAddDeduction={addDeduction}
+              onDeleteDeduction={deleteDeduction}
             />
           </aside>
         </div>
+      )}
+
+      {showImport && (
+        <ScheduleImportModal
+          defaultEmployeeCode={employeeCode}
+          onImport={importWeekShifts}
+          onClose={() => setShowImport(false)}
+        />
       )}
 
       {showProfile && (
         <ProfileModal
           user={session.user}
           payday={profile?.payday}
+          employeeCode={employeeCode}
           onSavePayday={savePayday}
           onClose={() => setShowProfile(false)}
           onSignOut={signOut}

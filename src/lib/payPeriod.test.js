@@ -5,7 +5,24 @@ import {
   paymentWindow,
   isPeriodEnded,
   payPeriodLabel,
+  sumDeductions,
 } from './payPeriod.js'
+
+describe('sumDeductions', () => {
+  it('cộng dồn số tiền bị trừ', () => {
+    expect(sumDeductions([{ amount: 50000 }, { amount: 100000 }])).toBe(150000)
+  })
+
+  it('rỗng/null trả về 0', () => {
+    expect(sumDeductions([])).toBe(0)
+    expect(sumDeductions(null)).toBe(0)
+    expect(sumDeductions(undefined)).toBe(0)
+  })
+
+  it('bỏ qua amount thiếu/không hợp lệ', () => {
+    expect(sumDeductions([{ amount: 20000 }, {}, { amount: null }])).toBe(20000)
+  })
+})
 
 describe('payPeriodKeyOf', () => {
   it('ngày <= 25 thuộc kỳ tháng hiện tại', () => {

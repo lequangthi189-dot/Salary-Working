@@ -6,12 +6,14 @@ import ChangePasswordModal from './ChangePasswordModal.jsx'
 export default function ProfileModal({
   user,
   payday,
+  employeeCode: employeeCodeProp,
   onSavePayday,
   onClose,
   onSignOut,
 }) {
   const meta = user.user_metadata || {}
   const fullName = meta.full_name || '—'
+  const employeeCode = employeeCodeProp || meta.employee_code || '—'
   const email = user.email || '—'
   const phone = meta.phone || user.phone || '—'
 
@@ -54,6 +56,8 @@ export default function ProfileModal({
         <dl className="profile-info">
           <dt>Full name</dt>
           <dd>{fullName}</dd>
+          <dt>Mã nhân viên</dt>
+          <dd>{employeeCode}</dd>
           <dt>Email</dt>
           <dd>{email}</dd>
           <dt>Phone number</dt>

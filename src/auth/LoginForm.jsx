@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase.js";
 
 const emptySignup = {
   fullName: "",
+  employeeCode: "",
   phone: "",
   email: "",
   password: "",
@@ -66,6 +67,14 @@ export default function LoginForm() {
     e.preventDefault();
     setMessage(null);
 
+    if (!/^\d{9}$/.test(signup.employeeCode.trim())) {
+      setMessage({
+        type: "error",
+        text: "Mã nhân viên phải gồm đúng 9 chữ số (vd: 000000000).",
+      });
+      return;
+    }
+
     if (signup.password !== signup.confirm) {
       setMessage({ type: "error", text: "Passwords do not match." });
       return;
@@ -76,9 +85,10 @@ export default function LoginForm() {
       email: signup.email.trim(),
       password: signup.password,
       options: {
-        // Lưu họ tên + số điện thoại vào user_metadata.
+        // Lưu họ tên + mã nhân viên + số điện thoại vào user_metadata.
         data: {
           full_name: signup.fullName,
+          employee_code: signup.employeeCode.trim(),
           phone: signup.phone,
         },
         // Link xác nhận trong email sẽ quay về app sau khi bấm.
@@ -167,6 +177,24 @@ export default function LoginForm() {
               onChange={(e) => updateSignup("fullName", e.target.value)}
               required
               autoComplete="name"
+            />
+          </label>
+          <label>
+            Mã nhân viên (9 chữ số)
+            <input
+              type="text"
+              value={signup.employeeCode}
+              onChange={(e) =>
+                updateSignup(
+                  "employeeCode",
+                  e.target.value.replace(/\D/g, "").slice(0, 9)
+                )
+              }
+              required
+              inputMode="numeric"
+              pattern="\d{9}"
+              maxLength={9}
+              placeholder="000000000"
             />
           </label>
           <label>

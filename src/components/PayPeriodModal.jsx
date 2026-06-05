@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { periodStats, formatHours, formatMoney } from '../lib/shiftMath.js'
-import { payPeriodLabel, paymentWindow } from '../lib/payPeriod.js'
+import { payPeriodLabel, paymentWindow, sumDeductions } from '../lib/payPeriod.js'
+import DeductionsCard from './DeductionsCard.jsx'
 
 function pad2(n) {
   return String(n).padStart(2, '0')
@@ -18,12 +19,17 @@ export default function PayPeriodModal({
   periodKey,
   shifts,
   payroll,
+  deductions = [],
   payday,
   onMarkReceived,
   onUnmark,
+  onAddDeduction,
+  onDeleteDeduction,
   onClose,
 }) {
   const stats = periodStats(shifts)
+  const dedTotal = sumDeductions(deductions)
+  const netPay = stats.pay - dedTotal
   const pay = paymentWindow(periodKey)
   const received = !!payroll
   const [day, setDay] = useState(payday || 1)
@@ -88,7 +94,25 @@ export default function PayPeriodModal({
             <span className="stat-value">{formatMoney(stats.pay)}</span>
             <span className="stat-label">Tổng lương</span>
           </div>
+          {dedTotal > 0 && (
+            <div className="stat stat-pay stat-grand stat-net">
+              <span className={`stat-value${netPay < 0 ? ' neg' : ''}`}>
+                {formatMoney(netPay)}
+              </span>
+              <span className="stat-label">Thực nhận (sau trừ)</span>
+            </div>
+          )}
         </div>
+
+        {/* Khoản bị trừ của kỳ — chỉnh được ngay tại đây */}
+        <DeductionsCard
+          periodKey={periodKey}
+          deductions={deductions}
+          grossPay={stats.pay}
+          onAdd={onAddDeduction}
+          onDelete={onDeleteDeduction}
+          defaultOpen={dedTotal > 0}
+        />
 
         {/* Bảng chỉ số thêm */}
         <table className="stat-table">

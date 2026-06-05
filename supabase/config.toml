@@ -1,0 +1,5 @@
+# Cấu hình Supabase CLI. Tắt verify_jwt ở cổng cho hàm extract-schedule để
+# request OPTIONS (CORS preflight) đi qua được; việc xác thực người dùng đã
+# được làm thủ công bằng supabase.auth.getUser() bên trong hàm.
+[functions.extract-schedule]
+verify_jwt = false

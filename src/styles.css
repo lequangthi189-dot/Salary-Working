@@ -139,9 +139,35 @@ button[type='submit']:disabled {
 
 /* ---- App ---- */
 .app {
-  max-width: 720px;
+  max-width: 980px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
+}
+
+/* Bố cục chính: cột nội dung (trái) + thẻ "Tiền bị trừ" (phải) */
+.main-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+.main-col {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.main-aside {
+  flex: 0 0 240px;
+  position: sticky;
+  top: 1.5rem;
+}
+@media (max-width: 760px) {
+  .main-layout {
+    flex-direction: column;
+  }
+  .main-aside {
+    position: static;
+    width: 100%;
+    flex-basis: auto;
+  }
 }
 
 /* ---- Thanh bên Kỳ lương (drawer) ---- */
@@ -428,6 +454,22 @@ button[type='submit']:disabled {
 .shift-form .fields.scheduled {
   grid-template-columns: 1fr 1fr;
 }
+/* Cho ô input co lại được trong lưới → không tràn/bể layout trên điện thoại */
+.shift-form .fields label {
+  min-width: 0;
+}
+.shift-form .fields input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+/* Màn rất hẹp: xếp check-in/out & scheduled thành 1 cột cho dễ bấm */
+@media (max-width: 420px) {
+  .shift-form .fields.check-row,
+  .shift-form .fields.scheduled {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ---- Stat summary (giờ + tiền) ---- */
 /* Board: dải thống kê tháng (trái) + thẻ what-if (phải) */
@@ -470,6 +512,282 @@ button[type='submit']:disabled {
   color: var(--green);
 }
 .whatif-row.bad strong {
+  color: var(--danger);
+}
+
+/* ---- Modal nhập lịch tuần từ ảnh ---- */
+.import-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+.import-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.import-fields input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+}
+.import-fields input[type='date'],
+.import-table input[type='time'] {
+  color-scheme: dark;
+}
+.import-file {
+  grid-column: 1 / -1;
+}
+.import-preview {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 0.3rem 0 0.6rem;
+  display: block;
+}
+.import-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.6rem 0;
+}
+.import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.import-table th,
+.import-table td {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+}
+.import-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.import-table tr.off td {
+  opacity: 0.55;
+}
+.import-table input[type='time'] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.35rem;
+  color: var(--text);
+}
+
+/* Thẻ "Tiền bị trừ" có thể mở rộng (dùng ở aside phải + popup kỳ lương) */
+.deduction-card {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.deduction-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+}
+.deduction-title {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.deduction-title .caret {
+  display: inline-block;
+  width: 0.9em;
+  color: var(--muted);
+}
+.deduction-total {
+  font-size: 1.05rem;
+  color: var(--danger);
+}
+.deduction-body {
+  padding: 0 0.85rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.deduction-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.deduction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+}
+.deduction-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.deduction-amt {
+  color: var(--danger);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.deduction-reason {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.deduction-date {
+  color: var(--muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  background: var(--panel-2);
+  border-radius: 6px;
+  padding: 0.12rem 0.4rem;
+}
+.deduction-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 0.2rem;
+}
+.deduction-del:hover {
+  color: var(--danger);
+}
+.deduction-add {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.deduction-add input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+}
+/* Ô ngày bị trừ: chiếm trọn 1 hàng + lịch native tông tối */
+.deduction-add input[type='date'] {
+  flex: 1 1 100%;
+  color-scheme: dark;
+}
+.deduction-add input::placeholder {
+  color: var(--muted);
+}
+.deduction-add input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.deduction-add input[type='number'] {
+  width: 90px;
+  flex: 0 0 auto;
+}
+.deduction-add input[type='text'] {
+  flex: 1;
+  min-width: 110px;
+}
+.deduction-add-btn {
+  flex: 0 0 auto;
+  background: linear-gradient(90deg, #ffd93b, #ff9f43, #f85149);
+  border: none;
+  border-radius: 8px;
+  color: #2a1500;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+.deduction-add-btn:hover {
+  filter: brightness(1.07);
+}
+.deduction-add-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.deduction-net {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.deduction-net strong {
+  font-size: 1.05rem;
+  color: var(--green);
+}
+.deduction-net strong.neg {
+  color: var(--danger);
+}
+.msg.sm,
+.muted.sm {
+  font-size: 0.78rem;
+}
+/* Net của kỳ lương trên card danh sách + ô "Thực nhận" âm trong popup */
+.period-card-net {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+/* Liệt kê từng khoản trừ (ngày · lý do · số tiền) trong thẻ kỳ lương */
+.period-card-deds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+.period-ded-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
+}
+.period-ded-date {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.period-ded-reason {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.period-ded-amt {
+  color: var(--danger);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stat-net .stat-value.neg,
+.stat-value.neg {
   color: var(--danger);
 }
 /* Dòng ca đang nhập: to + chữ màu động cam/trắng/xanh dương/đen */

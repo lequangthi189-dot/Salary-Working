@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { shiftTotals, formatMoney, formatHours } from '../lib/shiftMath.js'
-import { payPeriodKeyOf, payPeriodLabel } from '../lib/payPeriod.js'
+import {
+  payPeriodKeyOf,
+  payPeriodLabel,
+  sumDeductions,
+} from '../lib/payPeriod.js'
 import PayPeriodModal from './PayPeriodModal.jsx'
 
 // "2025-06-05" -> "05/06/2025"
@@ -14,9 +18,12 @@ function fmtDate(d) {
 export default function PayPeriodPanel({
   shifts,
   payrolls,
+  deductions = [],
   payday,
   onMarkReceived,
   onUnmark,
+  onAddDeduction,
+  onDeleteDeduction,
 }) {
   const [openKey, setOpenKey] = useState(null)
 
@@ -26,6 +33,13 @@ export default function PayPeriodPanel({
     const key = payPeriodKeyOf(s.work_date)
     if (!byPeriod.has(key)) byPeriod.set(key, [])
     byPeriod.get(key).push(s)
+  }
+
+  // Gom khoản trừ theo kỳ.
+  const dedByPeriod = new Map()
+  for (const d of deductions) {
+    if (!dedByPeriod.has(d.period_key)) dedByPeriod.set(d.period_key, [])
+    dedByPeriod.get(d.period_key).push(d)
   }
 
   const payrollByKey = new Map((payrolls || []).map((p) => [p.period_key, p]))
@@ -48,6 +62,12 @@ export default function PayPeriodPanel({
           const items = byPeriod.get(key)
           const t = shiftTotals(items)
           const pr = payrollByKey.get(key)
+          const deds = dedByPeriod.get(key) || []
+          const dedTotal = sumDeductions(deds)
+          // Sắp các khoản trừ theo ngày tăng dần để liệt kê.
+          const dedsSorted = [...deds].sort((a, b) =>
+            String(a.deduct_date).localeCompare(String(b.deduct_date))
+          )
           return (
             <button
               type="button"
@@ -62,6 +82,27 @@ export default function PayPeriodPanel({
               <span className="period-card-meta">
                 {formatHours(t.hours)} h · {formatMoney(t.pay)}
               </span>
+              {dedTotal > 0 && (
+                <span className="period-card-net">
+                  Bị trừ −{formatMoney(dedTotal)} · Thực nhận{' '}
+                  {formatMoney(t.pay - dedTotal)}
+                </span>
+              )}
+              {dedsSorted.length > 0 && (
+                <span className="period-card-deds">
+                  {dedsSorted.map((d) => (
+                    <span key={d.id} className="period-ded-row">
+                      <span className="period-ded-date">
+                        {fmtDate(d.deduct_date)}
+                      </span>
+                      <span className="period-ded-reason">{d.reason}</span>
+                      <span className="period-ded-amt">
+                        −{formatMoney(d.amount)}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              )}
               {pr?.received_on && (
                 <span className="period-card-date">
                   Nhận ngày {fmtDate(pr.received_on)}
@@ -77,9 +118,12 @@ export default function PayPeriodPanel({
           periodKey={openKey}
           shifts={byPeriod.get(openKey)}
           payroll={payrollByKey.get(openKey) || null}
+          deductions={dedByPeriod.get(openKey) || []}
           payday={payday}
           onMarkReceived={onMarkReceived}
           onUnmark={onUnmark}
+          onAddDeduction={onAddDeduction}
+          onDeleteDeduction={onDeleteDeduction}
           onClose={() => setOpenKey(null)}
         />
       )}

@@ -85,3 +85,8 @@ export function isPeriodEnded(key, today = localTodayStr()) {
   const { end } = payPeriodRange(key)
   return today > end
 }
+
+// Tổng số tiền bị trừ của một danh sách khoản trừ (VND).
+export function sumDeductions(list) {
+  return (list || []).reduce((acc, d) => acc + Number(d.amount || 0), 0)
+}
