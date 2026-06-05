@@ -1,21 +1,5 @@
 import ShiftCard from './ShiftCard.jsx'
-import { computeShift, formatHours, formatMoney } from '../lib/shiftMath.js'
-
-function hhmm(t) {
-  return String(t).slice(0, 5)
-}
-
-function shiftTotals(list) {
-  return list.reduce(
-    (acc, s) => {
-      const r = computeShift(hhmm(s.start_time), hhmm(s.end_time))
-      acc.hours += r.decimalHours
-      acc.pay += r.pay
-      return acc
-    },
-    { hours: 0, pay: 0 }
-  )
-}
+import { formatHours, formatMoney, shiftTotals } from '../lib/shiftMath.js'
 
 export default function Timesheet({ shifts, onDelete, onUpdate }) {
   if (shifts.length === 0) {
@@ -34,8 +18,6 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
     byDate.get(s.work_date).items.push(s)
   }
 
-  const grand = shiftTotals(shifts)
-
   return (
     <div className="timesheet">
       {groups.map((g) => {
@@ -44,7 +26,13 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
           <section key={g.date} className="date-group">
             <header className="date-header">
               <span className="date-label">{g.date}</span>
-              <span className="muted">{formatHours(t.hours)} h</span>
+              <span className="muted">
+                {formatHours(t.hours)} h · Day {formatHours(t.dayHours)}h ·
+                Night {formatHours(t.nightHours)}h
+                {t.lostHours > 0 && (
+                  <span className="lost"> · Lost {formatHours(t.lostHours)}h</span>
+                )}
+              </span>
               <span className="pay">{formatMoney(t.pay)}</span>
             </header>
             <div className="shift-list">
@@ -60,12 +48,6 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
           </section>
         )
       })}
-
-      <div className="totals">
-        <span>Total ({shifts.length} shifts)</span>
-        <span>{formatHours(grand.hours)} h</span>
-        <span className="pay">{formatMoney(grand.pay)}</span>
-      </div>
     </div>
   )
 }

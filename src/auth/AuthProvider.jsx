@@ -6,6 +6,9 @@ const AuthContext = createContext({ session: null, loading: true })
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
+  // Khi người dùng bấm link "đặt lại mật khẩu" trong email, Supabase phát
+  // sự kiện PASSWORD_RECOVERY → hiện form đổi mật khẩu thay vì app.
+  const [recovery, setRecovery] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -13,7 +16,8 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
       setSession(session)
     })
 
@@ -21,9 +25,12 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signOut = () => supabase.auth.signOut()
+  const endRecovery = () => setRecovery(false)
 
   return (
-    <AuthContext.Provider value={{ session, loading, signOut }}>
+    <AuthContext.Provider
+      value={{ session, loading, signOut, recovery, endRecovery }}
+    >
       {children}
     </AuthContext.Provider>
   )

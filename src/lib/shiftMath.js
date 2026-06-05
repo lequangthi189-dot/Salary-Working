@@ -5,6 +5,9 @@ import {
   NIGHT_END_HOUR,
 } from './rates.js'
 
+// Giới hạn theo spec: mỗi ngày không quá 8 giờ làm việc.
+export const MAX_HOURS_PER_DAY = 8
+
 const MINUTES_PER_DAY = 1440
 const NIGHT_START_MIN = NIGHT_START_HOUR * 60 // 22:00 -> 1320
 const NIGHT_END_MIN = NIGHT_END_HOUR * 60 // 06:00 -> 360
@@ -47,6 +50,141 @@ export function computeShift(startTime, endTime) {
   return { decimalHours, dayHours, nightHours, pay }
 }
 
+// Map a minute-of-day to the representation within ±12h of `ref` (same timeline
+// as the scheduled shift). Lets an actual clock-in a bit before/after schedule,
+// or past midnight, line up with the schedule instead of jumping a whole day.
+function alignNear(value, ref) {
+  let v = (((value - ref) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY
+  if (v > MINUTES_PER_DAY / 2) v -= MINUTES_PER_DAY
+  return ref + v
+}
+
+// Day/night minute split over the half-open range [lo, hi).
+function splitRange(lo, hi) {
+  let dayMin = 0
+  let nightMin = 0
+  for (let t = lo; t < hi; t++) {
+    if (isNightMinute(t)) nightMin++
+    else dayMin++
+  }
+  return { dayMin, nightMin }
+}
+
+function toPart({ dayMin, nightMin }) {
+  return {
+    dayHours: dayMin / 60,
+    nightHours: nightMin / 60,
+    hours: (dayMin + nightMin) / 60,
+  }
+}
+
+/**
+ * Effective paid hours + pay when the shift has a SCHEDULE that governs pay.
+ * The schedule is the source of truth: pay covers only the overlap of the
+ * scheduled window and the actual clock-in/out.
+ *   - Clock in early  → clamped up to the scheduled start (no bonus).
+ *   - Clock in late   → you lose the missed start (lateIn).
+ *   - Clock out late  → clamped down to the scheduled end (no overtime).
+ *   - Clock out early → you lose the missed end (earlyOut).
+ * Lost time is resolved per-minute and split day/night by the window it falls in.
+ *
+ * When no schedule is set, pay falls back to the raw actual interval (no clamp).
+ * Returns { decimalHours, dayHours, nightHours, pay } (effective/paid) plus the
+ * lost breakdown { lateIn, earlyOut, lostDayHours, lostNightHours, lostHours, lostPay }.
+ */
+export function computeEffective(scheduledStart, scheduledEnd, actualStart, actualEnd) {
+  const noLost = {
+    lateIn: { dayHours: 0, nightHours: 0, hours: 0 },
+    earlyOut: { dayHours: 0, nightHours: 0, hours: 0 },
+    lostDayHours: 0,
+    lostNightHours: 0,
+    lostHours: 0,
+    lostPay: 0,
+  }
+
+  if (!scheduledStart || !scheduledEnd) {
+    const r = computeShift(actualStart, actualEnd)
+    return { ...r, ...noLost }
+  }
+
+  const sStart = parseTime(scheduledStart)
+  let sEnd = parseTime(scheduledEnd)
+  if (sEnd <= sStart) sEnd += MINUTES_PER_DAY
+
+  const aStart = alignNear(parseTime(actualStart), sStart)
+  let aEnd = parseTime(actualEnd)
+  while (aEnd <= aStart) aEnd += MINUTES_PER_DAY
+
+  // Paid window = overlap of schedule and actual (clamped to the schedule).
+  const effStart = Math.min(sEnd, Math.max(sStart, aStart))
+  const effEnd = Math.max(sStart, Math.min(sEnd, aEnd))
+
+  const eff = splitRange(effStart, effEnd) // empty range → all zeros
+  const lateIn = toPart(splitRange(sStart, effStart)) // missed at the start
+  const earlyOut = toPart(splitRange(effEnd, sEnd)) // missed at the end
+
+  const dayHours = eff.dayMin / 60
+  const nightHours = eff.nightMin / 60
+  const pay = dayHours * DAY_RATE + nightHours * NIGHT_RATE
+
+  const lostDayHours = lateIn.dayHours + earlyOut.dayHours
+  const lostNightHours = lateIn.nightHours + earlyOut.nightHours
+
+  return {
+    decimalHours: dayHours + nightHours,
+    dayHours,
+    nightHours,
+    pay,
+    lateIn,
+    earlyOut,
+    lostDayHours,
+    lostNightHours,
+    lostHours: lostDayHours + lostNightHours,
+    lostPay: lostDayHours * DAY_RATE + lostNightHours * NIGHT_RATE,
+  }
+}
+
+// "HH:MM:SS" (or "HH:MM") from the DB -> "HH:MM" for computeEffective.
+export function hhmm(t) {
+  return t ? String(t).slice(0, 5) : ''
+}
+
+// Aggregate effective hours/pay across a list of shift rows (as stored in the DB).
+export function shiftTotals(list) {
+  return list.reduce(
+    (acc, s) => {
+      const r = computeEffective(
+        hhmm(s.scheduled_start),
+        hhmm(s.scheduled_end),
+        hhmm(s.start_time),
+        hhmm(s.end_time)
+      )
+      acc.hours += r.decimalHours
+      acc.dayHours += r.dayHours
+      acc.nightHours += r.nightHours
+      acc.lostHours += r.lostHours
+      acc.pay += r.pay
+      return acc
+    },
+    { hours: 0, dayHours: 0, nightHours: 0, lostHours: 0, pay: 0 }
+  )
+}
+
+// Thống kê cho một kỳ lương: tái dùng shiftTotals + tách lương ngày/đêm và
+// vài chỉ số. Lương ngày/đêm tính tuyến tính nên dayPay + nightPay === pay.
+export function periodStats(shifts) {
+  const t = shiftTotals(shifts)
+  const workDays = new Set(shifts.map((s) => s.work_date)).size
+  return {
+    ...t,
+    dayPay: t.dayHours * DAY_RATE,
+    nightPay: t.nightHours * NIGHT_RATE,
+    shiftCount: shifts.length,
+    workDays,
+    avgHoursPerDay: workDays ? t.hours / workDays : 0,
+  }
+}
+
 const currencyFmt = new Intl.NumberFormat('vi-VN')
 
 export function formatMoney(n) {
@@ -55,4 +193,18 @@ export function formatMoney(n) {
 
 export function formatHours(h) {
   return Number(h.toFixed(2)).toString()
+}
+
+// Human-readable lost-hours breakdown (Vietnamese), or null when nothing lost.
+// e.g. "Mất 2h — vào trễ 1h (ngày 1 / đêm 0) · ra sớm 1h (ngày 0 / đêm 1)"
+export function formatLost(lost) {
+  if (!lost || lost.lostHours <= 0) return null
+  const part = (p) =>
+    `${formatHours(p.hours)}h (ngày ${formatHours(p.dayHours)} / đêm ${formatHours(
+      p.nightHours
+    )})`
+  const segs = []
+  if (lost.lateIn.hours > 0) segs.push(`vào trễ ${part(lost.lateIn)}`)
+  if (lost.earlyOut.hours > 0) segs.push(`ra sớm ${part(lost.earlyOut)}`)
+  return `Mất ${formatHours(lost.lostHours)}h — ${segs.join(' · ')}`
 }

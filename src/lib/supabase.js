@@ -10,4 +10,14 @@ if (!url || !anonKey) {
   )
 }
 
-export const supabase = createClient(url, anonKey)
+export const supabase = createClient(url, anonKey, {
+  auth: {
+    // Lưu phiên đăng nhập vào localStorage để khi reload/đóng-mở lại web
+    // người dùng vẫn đăng nhập và dữ liệu ca làm tự load lại từ Supabase.
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage,
+    storageKey: 'salaryworking-auth',
+  },
+})

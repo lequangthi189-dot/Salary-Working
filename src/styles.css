@@ -8,6 +8,8 @@
   --green: #3fb950;
   --danger: #f85149;
   --border: #2b3542;
+  --checkin: #ff9f43;
+  --checkout: #58b3ff;
 }
 
 * {
@@ -74,6 +76,33 @@ label input {
   color: var(--text);
 }
 
+/* Ô mật khẩu có nút Show/Hide */
+.pw-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pw-wrap input {
+  flex: 1;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  padding-right: 3.5rem;
+  color: var(--text);
+}
+.pw-toggle {
+  position: absolute;
+  right: 0.4rem;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.4rem;
+}
+
 button[type='submit'] {
   background: var(--accent);
   color: #fff;
@@ -93,6 +122,9 @@ button[type='submit']:disabled {
   margin-top: 1rem;
   padding: 0;
 }
+.forgot-link {
+  color: var(--danger);
+}
 
 .msg {
   font-size: 0.85rem;
@@ -111,6 +143,130 @@ button[type='submit']:disabled {
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
 }
+
+/* ---- Thanh bên Kỳ lương (drawer) ---- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 40;
+  display: flex;
+}
+.drawer {
+  width: 340px;
+  max-width: 85vw;
+  height: 100%;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.drawer-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+/* ---- Pay-period cards ---- */
+.period-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.6rem;
+  color: var(--text);
+}
+.period-card:hover {
+  border-color: var(--accent);
+}
+.period-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.period-card-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.period-card-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.period-card-date {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.received-badge {
+  color: var(--green);
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.received-badge.sm {
+  font-size: 0.72rem;
+}
+.received-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.inline-day {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+.inline-day select,
+.payday-edit select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  color: var(--text);
+}
+
+/* Bảng chỉ số trong popup kỳ lương */
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 0.5rem;
+  font-size: 0.85rem;
+}
+.stat-table th,
+.stat-table td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+}
+.stat-table th {
+  color: var(--muted);
+  font-weight: 600;
+  width: 25%;
+}
+.modal-card.wide {
+  max-width: 480px;
+}
+.payday-view,
+.payday-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.payday-view .link,
+.payday-edit .link {
+  margin-top: 0;
+}
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -128,6 +284,124 @@ button[type='submit']:disabled {
   color: var(--muted);
   font-size: 0.85rem;
 }
+.account-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-weight: 600;
+}
+.account-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---- Modal ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 50;
+}
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 360px;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.modal-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 0 0.25rem;
+}
+.modal-close:hover {
+  color: var(--text);
+}
+.profile-info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1.25rem;
+}
+.profile-info dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.profile-info dd {
+  margin: 0;
+  font-weight: 600;
+  word-break: break-word;
+}
+.danger-link {
+  color: var(--danger);
+}
+.account-btn.full {
+  width: 100%;
+}
+.change-pw {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.change-pw-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.change-pw-actions button[type='submit'] {
+  flex: 1;
+}
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Nút thao tác trong popup tài khoản — Sign out trái, Đổi mật khẩu phải */
+.profile-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.profile-actions > button {
+  flex: 1;
+  text-align: center;
+}
+.change-pw-btn {
+  color: var(--checkout); /* xanh dương sáng */
+}
+.change-pw-btn:hover {
+  border-color: var(--checkout);
+  color: var(--checkout);
+}
+.signout-btn {
+  color: var(--danger); /* đỏ sáng */
+}
+.signout-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
 
 /* ---- Shift form ---- */
 .shift-form {
@@ -136,29 +410,235 @@ button[type='submit']:disabled {
   border-radius: 12px;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 .shift-form .fields {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr;
   gap: 0.75rem;
 }
-.preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  margin: 1rem 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+.shift-form .fields.date-row {
+  grid-template-columns: 1fr;
 }
-.preview .pay {
-  margin-left: auto;
-  color: var(--green);
-  font-weight: 700;
+.shift-form .fields.check-row {
+  grid-template-columns: 1fr 1fr;
+}
+.shift-form .fields.scheduled {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ---- Stat summary (giờ + tiền) ---- */
+/* Board: dải thống kê tháng (trái) + thẻ what-if (phải) */
+.board-summary {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+.board-summary .summary {
+  flex: 1;
+  min-width: 240px;
+}
+.whatif-card {
+  flex: 0 0 190px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+.whatif-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.whatif-row span {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.whatif-row strong {
   font-size: 1.05rem;
+}
+.whatif-row.good strong {
+  color: var(--green);
+}
+.whatif-row.bad strong {
+  color: var(--danger);
+}
+/* Dòng ca đang nhập: to + chữ màu động cam/trắng/xanh dương/đen */
+.preview-line {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  background: linear-gradient(
+    90deg,
+    #ff9f43,
+    #ffffff,
+    #4f9dff,
+    #0a1d38,
+    #ff9f43
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: previewColorShift 6s linear infinite;
+}
+@keyframes previewColorShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.6rem;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+}
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.stat-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.stat-total {
+  border-color: var(--accent);
+}
+.stat-total .stat-value {
+  color: var(--accent);
+}
+.stat-pay .stat-value {
+  color: var(--green);
+}
+.stat-grand {
+  border-color: var(--green);
+}
+
+.lost {
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin: 0;
+}
+.shift-form > p {
+  margin: 0;
 }
 .shift-form button[type='submit'] {
   width: 100%;
+  margin-top: 0.25rem;
+}
+
+/* Hàng nút: "Đã nhận lương" (trái) + "Add shift" (phải) */
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+.form-actions > button {
+  flex: 1;
+}
+.shift-form .form-actions button[type='submit'] {
+  width: auto;
+  margin-top: 0;
+}
+
+/* 2 nút tông xanh dương đen, phân biệt nhau bằng độ sáng */
+.btn-addshift,
+.btn-received {
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+.btn-addshift {
+  background: linear-gradient(135deg, #4f9dff, #1f5fae);
+}
+.btn-addshift:hover {
+  background: linear-gradient(135deg, #62a9ff, #245fb0);
+}
+/* Nút "Đã nhận lương" — màu động xanh-đen (chỉ hiện khi tới ngày nhận) */
+.btn-received {
+  background: linear-gradient(270deg, #38a0ff, #0a1d38, #1273e6, #0a1d38);
+  background-size: 300% 300%;
+  animation: blueBlackShift 5s ease infinite;
+  box-shadow: 0 0 10px rgba(56, 160, 255, 0.3);
+}
+@keyframes blueBlackShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.btn-addshift:disabled,
+.btn-received:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---- Màu check-in (cam) / check-out (xanh) ---- */
+.checkin {
+  color: var(--checkin);
+}
+.checkin input {
+  color: var(--checkin);
+  border-color: var(--checkin);
+  font-weight: 600;
+}
+.checkout {
+  color: var(--checkout);
+}
+.checkout input {
+  color: var(--checkout);
+  border-color: var(--checkout);
+  font-weight: 600;
+}
+.t-in {
+  color: var(--checkin);
+  font-weight: 700;
+}
+.t-out {
+  color: var(--checkout);
+  font-weight: 700;
+}
+.shift-times .dash {
+  color: var(--muted);
+}
+input.t-in {
+  border-color: var(--checkin);
+}
+input.t-out {
+  border-color: var(--checkout);
 }
 
 /* ---- Timesheet ---- */
@@ -221,17 +701,45 @@ button[type='submit']:disabled {
   padding: 0.4rem;
   color: var(--text);
 }
+.edit-fields input[type='text'] {
+  width: 5rem;
+  text-align: center;
+}
+/* Màu check-in (cam) / check-out (xanh) khi sửa ca — giống board.
+   Ghi đè màu mặc định của .edit-fields input. */
+.edit-fields input.t-in {
+  color: var(--checkin);
+  border-color: var(--checkin);
+  font-weight: 600;
+}
+.edit-fields input.t-out {
+  color: var(--checkout);
+  border-color: var(--checkout);
+  font-weight: 600;
+}
 .edit-actions {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.6rem;
 }
-.edit-actions button:first-child {
-  background: var(--accent);
-  color: #fff;
+/* Save & Cancel cùng định dạng; Save xanh (accent), Cancel đỏ */
+.btn-save,
+.btn-cancel {
   border: none;
   border-radius: 6px;
   padding: 0.4rem 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+.btn-save {
+  background: var(--accent);
+}
+.btn-cancel {
+  background: var(--danger);
+}
+.btn-save:disabled {
+  opacity: 0.6;
 }
 .shift-actions {
   display: flex;
