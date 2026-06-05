@@ -1,12 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Chấp nhận cả hai tên biến để tránh lỗi "Invalid value" khi deploy đặt sai tên.
+const anonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 if (!url || !anonKey) {
   // Surfaced in the console to make missing env config obvious during setup.
   console.error(
-    'Missing Supabase env vars. Copy .env.example to .env.local and fill in your project values.'
+    'Missing Supabase env vars. Set VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY ' +
+      '(trong .env.local khi chạy local, hoặc Environment Variables trên Vercel).'
   )
 }
 
