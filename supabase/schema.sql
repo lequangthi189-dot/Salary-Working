@@ -15,15 +15,39 @@ create table if not exists public.shifts (
   end_time time not null,
   scheduled_start time,
   scheduled_end time,
-  -- Ca nhập từ ảnh lịch tuần: thời điểm TỰ XOÁ (12:00 trưa Thứ 2 tuần kế tiếp).
-  -- null = ca nhập tay, không bao giờ tự xoá. Lưu ở DB để xoá chuẩn trên mọi thiết bị.
-  auto_delete_at timestamptz,
+  -- Ca nhập từ ảnh lịch tuần: MỐC ẨN (12:00 trưa Thứ 2 tuần kế tiếp). Qua mốc này
+  -- ca được ẨN khỏi bảng công nhưng KHÔNG xoá — dữ liệu vẫn dùng để tổng hợp kỳ lương.
+  -- null = ca nhập tay, luôn hiển thị. Lưu ở DB để ẩn nhất quán trên mọi thiết bị.
+  hide_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 alter table public.shifts add column if not exists scheduled_start time;
 alter table public.shifts add column if not exists scheduled_end time;
-alter table public.shifts add column if not exists auto_delete_at timestamptz;
+
+-- Đổi tên cột cũ auto_delete_at -> hide_at (mốc ẨN, không còn tự xoá). An toàn chạy
+-- lại nhiều lần: chỉ rename khi cột cũ còn tồn tại và cột mới chưa có.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'shifts'
+      and column_name = 'auto_delete_at'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'shifts'
+      and column_name = 'hide_at'
+  ) then
+    alter table public.shifts rename column auto_delete_at to hide_at;
+  end if;
+end $$;
+
+alter table public.shifts add column if not exists hide_at timestamptz;
+
+-- Ca nhập từ lịch tuần chỉ có giờ DỰ KIẾN (scheduled_*); check-in/check-out để
+-- trống tới khi đi làm. Vì vậy start_time/end_time được phép null.
+alter table public.shifts alter column start_time drop not null;
+alter table public.shifts alter column end_time drop not null;
 
 alter table public.shifts enable row level security;
 

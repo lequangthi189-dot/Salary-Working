@@ -9,11 +9,11 @@ Nguồn: `supabase/schema.sql`. Backend là Supabase (Postgres + Auth). Chạy f
 | `id` | `uuid` | PK, `default gen_random_uuid()` |
 | `user_id` | `uuid` | `not null`, `default auth.uid()`, FK → `auth.users(id) on delete cascade` |
 | `work_date` | `date` | `not null` |
-| `start_time` | `time` | `not null` (giờ chấm công thực tế — bắt đầu) |
-| `end_time` | `time` | `not null` (giờ chấm công thực tế — kết thúc) |
+| `start_time` | `time` | nullable (giờ chấm công thực tế — bắt đầu; `null` = ca lịch dự kiến chưa chấm công) |
+| `end_time` | `time` | nullable (giờ chấm công thực tế — kết thúc; `null` = ca lịch dự kiến chưa chấm công) |
 | `scheduled_start` | `time` | nullable (giờ ca chuẩn theo lịch — bắt đầu) |
 | `scheduled_end` | `time` | nullable (giờ ca chuẩn theo lịch — kết thúc) |
-| `auto_delete_at` | `timestamptz` | nullable (ca nhập từ ảnh lịch tuần: mốc tự xoá; `null` = nhập tay) |
+| `hide_at` | `timestamptz` | nullable (ca nhập từ ảnh lịch tuần: MỐC ẨN, không xoá; `null` = nhập tay) |
 | `created_at` | `timestamptz` | `not null`, `default now()` |
 
 Lưu ý:
@@ -21,7 +21,7 @@ Lưu ý:
 - `start_time`/`end_time`/`scheduled_*` từ Supabase trả về dạng `"HH:MM:SS"`; client cắt còn `"HH:MM"` bằng helper `hhmm()` trước khi tính.
 - `scheduled_start`/`scheduled_end` để **so với giờ thực tế và tính "giờ bị mất"** khi chấm công không đúng giờ. Nullable để tương thích với các ca cũ chưa có ca chuẩn — khi thiếu, `computeLost` trả về 0. Schema dùng `add column if not exists` để nâng cấp DB cũ.
 - Không có cột phân biệt ngày lễ → tính năng lương lễ vẫn chưa được hỗ trợ ở tầng dữ liệu.
-- `auto_delete_at`: ca tạo từ "Nhập lịch tuần" được gắn mốc = 12:00 trưa Thứ 2 tuần kế tiếp. Khi mở app, client xoá mọi ca có `auto_delete_at <= now()` (`purgeExpiredImports` trong `App.jsx`). Lưu mốc ở DB nên xoá đúng trên mọi thiết bị; ca nhập tay để `null` nên không bao giờ bị tự xoá.
+- `hide_at` (trước đây tên `auto_delete_at`): ca tạo từ "Nhập lịch tuần" được gắn mốc = 12:00 trưa Thứ 2 tuần kế tiếp làm **MỐC ẨN** (không còn tự xoá). Qua mốc này, client **ẩn** ca khỏi bảng công ngày (`visibleShifts` trong `App.jsx` lọc `hide_at <= now()`) nhưng dữ liệu vẫn nằm trong `shifts` để `PayPeriodPanel` tổng hợp vào kỳ lương. Lưu mốc ở DB nên ẩn nhất quán trên mọi thiết bị; ca nhập tay để `null` nên luôn hiển thị. Ca lịch dự kiến chỉ có `scheduled_*` (chưa chấm công) đóng góp 0 vào lương cho tới khi nhập `start_time`/`end_time`. Schema dùng khối `do $$` để đổi tên cột cũ an toàn (idempotent).
 
 ## Bảng `public.profiles`
 

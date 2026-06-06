@@ -27,9 +27,10 @@ import {
 
 const pad2 = (n) => String(n).padStart(2, '0')
 
-// Hạn tự xoá một tuần đã nhập: 12:00 trưa Thứ 2 của TUẦN KẾ TIẾP (giờ địa phương).
-// dateStr là một ngày bất kỳ trong tuần đó ("YYYY-MM-DD"). Trả về ISO string để lưu DB.
-function deleteDeadlineIso(dateStr) {
+// Mốc ẩn một tuần đã nhập khỏi bảng công: 12:00 trưa Thứ 2 của TUẦN KẾ TIẾP (giờ
+// địa phương). Ca KHÔNG bị xoá — chỉ ẩn khỏi danh sách ngày, dữ liệu vẫn được giữ
+// để kỳ lương tổng hợp. dateStr là một ngày bất kỳ trong tuần đó ("YYYY-MM-DD").
+function hideDeadlineIso(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
   const dt = new Date(y, m - 1, d) // 00:00 giờ địa phương
   const dow = dt.getDay() // 0=CN..6=T7
@@ -168,38 +169,19 @@ export default function App() {
     if (data && data.payday == null && !skipped) setShowPaydayPrompt(true)
   }, [session])
 
-  // Tự xoá các ca nhập từ ảnh đã qua hạn (auto_delete_at <= bây giờ). Mốc lưu ở DB
-  // nên chạy đúng trên mọi thiết bị; ca nhập tay (auto_delete_at = null) không bị đụng.
-  const purgeExpiredImports = useCallback(async () => {
-    if (!session) return
-    const { error, count } = await supabase
-      .from('shifts')
-      .delete({ count: 'exact' })
-      .lte('auto_delete_at', new Date().toISOString())
-    if (!error && count) await loadShifts()
-  }, [session, loadShifts])
-
   useEffect(() => {
     if (session) {
       loadShifts()
       loadPayrolls()
       loadDeductions()
       loadProfile()
-      purgeExpiredImports()
     } else {
       setShifts([])
       setPayrolls([])
       setDeductions([])
       setProfile(null)
     }
-  }, [
-    session,
-    loadShifts,
-    loadPayrolls,
-    loadDeductions,
-    loadProfile,
-    purgeExpiredImports,
-  ])
+  }, [session, loadShifts, loadPayrolls, loadDeductions, loadProfile])
 
   async function handleAdd(shift) {
     const closedErr = periodClosedError(shift.work_date)
@@ -292,20 +274,23 @@ export default function App() {
   }
 
   // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI. Trả về mảng lỗi (rỗng nếu OK).
-  // Mỗi ca được gắn auto_delete_at = 12:00 trưa Thứ 2 tuần sau để TỰ XOÁ trên mọi thiết bị.
+  // Mỗi ca được gắn hide_at = 12:00 trưa Thứ 2 tuần sau làm MỐC ẨN (không xoá):
+  // qua mốc này ca ẩn khỏi bảng công nhưng dữ liệu vẫn còn để kỳ lương tổng hợp.
   async function importWeekShifts(rows) {
     const errors = []
-    // Cả tuần dùng chung một hạn xoá, tính theo ngày sớm nhất trong các ca.
+    // Cả tuần dùng chung một mốc ẩn, tính theo ngày sớm nhất trong các ca.
     const minDate = rows.map((r) => r.date).sort()[0]
-    const autoDeleteAt = minDate ? deleteDeadlineIso(minDate) : null
+    const hideAt = minDate ? hideDeadlineIso(minDate) : null
     for (const r of rows) {
       const shift = {
         work_date: r.date,
-        start_time: r.start,
-        end_time: r.end,
+        // Lịch tuần chỉ là ca DỰ KIẾN → chỉ đổ vào Sched. start/end.
+        // Check-in/check-out để trống, người dùng tự nhập khi đi làm.
+        start_time: null,
+        end_time: null,
         scheduled_start: r.start,
         scheduled_end: r.end,
-        auto_delete_at: autoDeleteAt,
+        hide_at: hideAt,
       }
       const closedErr = periodClosedError(r.date)
       if (closedErr) {
@@ -351,9 +336,14 @@ export default function App() {
 
   // Ẩn các ca thuộc kỳ ĐÃ NHẬN lương khỏi UI dưới board (chúng đã chuyển sang
   // thanh bên "Kỳ lương"). Phần còn lại = kỳ hiện tại + kỳ chưa nhận.
+  // Cũng ẩn ca nhập từ lịch tuần đã qua MỐC ẨN (hide_at <= now) — không xoá,
+  // dữ liệu vẫn nằm trong `shifts` để PayPeriodPanel tổng hợp vào kỳ lương.
   const receivedKeys = new Set((payrolls || []).map((p) => p.period_key))
+  const nowIso = new Date().toISOString()
   const visibleShifts = shifts.filter(
-    (s) => !receivedKeys.has(payPeriodKeyOf(s.work_date))
+    (s) =>
+      !receivedKeys.has(payPeriodKeyOf(s.work_date)) &&
+      !(s.hide_at && s.hide_at <= nowIso)
   )
 
   // Thống kê tháng hiện tại (kỳ lương chứa hôm nay) cho board.
@@ -366,6 +356,10 @@ export default function App() {
   // Khoản trừ của kỳ hiện tại (cho card trên board).
   const currentDeductions = deductions.filter(
     (d) => d.period_key === currentKey
+  )
+  // Các ngày đã có lịch dự kiến (vd nhập từ ảnh tuần) — form Add shift sẽ ẩn ô Sched.
+  const scheduledDates = new Set(
+    shifts.filter((s) => s.scheduled_start).map((s) => s.work_date)
   )
 
   // Nhắc nhận lương: chỉ khi đã đặt ngày nhận (payday), có kỳ đang chờ nhận,
@@ -418,6 +412,7 @@ export default function App() {
             onAdd={handleAdd}
             monthStats={monthStats}
             minWorkDate={minWorkDate}
+            scheduledDates={scheduledDates}
             onReceiveSalary={receiveSalary}
             receiveDisabled={!pendingKey}
             receiveDue={salaryDue}
