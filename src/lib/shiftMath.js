@@ -50,6 +50,16 @@ export function computeShift(startTime, endTime) {
   return { decimalHours, dayHours, nightHours, pay }
 }
 
+// Tổng số giờ của một khung giờ "HH:MM"–"HH:MM" (qua nửa đêm nếu end<=start).
+// Trả 0 nếu thiếu một trong hai mốc. Dùng để kiểm tra giới hạn 8 giờ/ca cho lịch dự kiến.
+export function durationHours(startTime, endTime) {
+  if (!startTime || !endTime) return 0
+  const start = parseTime(startTime)
+  let end = parseTime(endTime)
+  if (end <= start) end += MINUTES_PER_DAY
+  return (end - start) / 60
+}
+
 // Map a minute-of-day to the representation within ±12h of `ref` (same timeline
 // as the scheduled shift). Lets an actual clock-in a bit before/after schedule,
 // or past midnight, line up with the schedule instead of jumping a whole day.
@@ -170,9 +180,10 @@ export function shiftTotals(list) {
       acc.nightHours += r.nightHours
       acc.lostHours += r.lostHours
       acc.pay += r.pay
+      acc.lostPay += r.lostPay
       return acc
     },
-    { hours: 0, dayHours: 0, nightHours: 0, lostHours: 0, pay: 0 }
+    { hours: 0, dayHours: 0, nightHours: 0, lostHours: 0, pay: 0, lostPay: 0 }
   )
 }
 
@@ -181,11 +192,33 @@ export function shiftTotals(list) {
 export function periodStats(shifts) {
   const t = shiftTotals(shifts)
   const workDays = new Set(shifts.map((s) => s.work_date)).size
+  // Số ca ngày/đêm: CHỈ đếm ca đã chấm công (có giờ thực tế). Ca chỉ có lịch dự
+  // kiến (chưa check-in) không tính. Ca đêm = giờ đêm > giờ ngày.
+  let dayShiftCount = 0
+  let nightShiftCount = 0
+  for (const s of shifts) {
+    const r = computeEffective(
+      hhmm(s.scheduled_start),
+      hhmm(s.scheduled_end),
+      hhmm(s.start_time),
+      hhmm(s.end_time)
+    )
+    if (r.dayHours > 0 || r.nightHours > 0) {
+      if (r.nightHours > r.dayHours) nightShiftCount++
+      else dayShiftCount++
+    }
+  }
   return {
     ...t,
     dayPay: t.dayHours * DAY_RATE,
     nightPay: t.nightHours * NIGHT_RATE,
+    // Giờ "trước khi trễ" = giờ đáng lẽ làm nếu đúng giờ (= đã làm + bị mất do trễ).
+    idealHours: t.hours + t.lostHours,
+    // Lương "trước khi trễ" (nếu đi đúng giờ) = lương thực nhận + tiền mất do trễ.
+    idealPay: t.pay + t.lostPay,
     shiftCount: shifts.length,
+    dayShiftCount,
+    nightShiftCount,
     workDays,
     avgHoursPerDay: workDays ? t.hours / workDays : 0,
   }

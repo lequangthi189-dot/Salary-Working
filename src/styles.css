@@ -170,36 +170,8 @@ button[type='submit']:disabled {
   }
 }
 
-/* ---- Thanh bên Kỳ lương (drawer) ---- */
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 40;
-  display: flex;
-}
-.drawer {
-  width: 340px;
-  max-width: 85vw;
-  height: 100%;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
-  padding: 1.25rem;
-  overflow-y: auto;
-}
-.drawer-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-.drawer-head h2 {
-  margin: 0;
-  font-size: 1.15rem;
-}
-
 /* ---- Pay-period cards ---- */
-/* Tổng lương đã nhận (cộng dồn mọi kỳ đã nhận) — nổi bật ở đầu drawer */
+/* Tổng lương đã nhận (cộng dồn mọi kỳ đã nhận) — nổi bật ở đầu trang Kỳ lương */
 .period-total {
   display: flex;
   flex-direction: column;
@@ -321,8 +293,10 @@ button[type='submit']:disabled {
 }
 .app-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem 0.75rem;
   margin-bottom: 1.5rem;
 }
 .app-header h1 {
@@ -332,7 +306,8 @@ button[type='submit']:disabled {
 .user {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   color: var(--muted);
   font-size: 0.85rem;
 }
@@ -609,7 +584,7 @@ button[type='submit']:disabled {
 .import-table {
   width: 100%;
   /* Giữ độ rộng tối thiểu để các cột giờ không bị bóp méo; hẹp hơn thì cuộn ngang */
-  min-width: 360px;
+  min-width: 320px;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
@@ -914,6 +889,11 @@ button[type='submit']:disabled {
   font-size: 0.85rem;
   margin: 0;
 }
+.lost-detail {
+  font-weight: 500;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
 .shift-form > p {
   margin: 0;
 }
@@ -1098,6 +1078,21 @@ input.t-out {
   border-color: var(--checkout);
   font-weight: 600;
 }
+/* Giờ lịch dự kiến (mốc tính trễ) — viền/màu trung tính để phân biệt với check-in/out */
+.edit-fields input.t-sched {
+  color: var(--muted);
+  border-color: var(--border);
+  border-style: dashed;
+  font-weight: 600;
+}
+/* Nhãn nhỏ phía trên mỗi ô giờ trong chế độ sửa ca */
+.edit-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
 .edit-actions {
   display: flex;
   gap: 0.5rem;
@@ -1186,11 +1181,196 @@ input.t-out {
   font-size: 1.1rem;
 }
 
+/* ---- Trang Kỳ lương (full page + biểu đồ) ---- */
+.salary-page {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 60;
+  overflow-y: auto;
+}
+.salary-page-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+.salary-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.salary-page-head h1 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.salary-back {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-weight: 600;
+}
+.salary-back:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.scope-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+.salary-section-title {
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1rem;
+}
+
+/* Lưới card kỳ lương: mỗi tháng 1 card, bấm mở popup biểu đồ */
+.period-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+.period-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+.period-stat-card:hover {
+  border-color: var(--accent);
+}
+.period-stat-card:active {
+  transform: scale(0.99);
+}
+.period-stat-card.all {
+  border-color: var(--green);
+}
+.period-stat-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.period-stat-main {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.period-stat-lost {
+  font-size: 0.75rem;
+  color: var(--danger);
+}
+
+/* Biểu đồ tròn (donut) — lưới 2×2 gọn trong popup, không cần cuộn */
+.stats-donuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 0.75rem;
+}
+.donut-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.donut-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.donut {
+  max-width: 100%;
+  height: auto;
+}
+.donut-center-val {
+  fill: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+}
+.donut-center-label {
+  fill: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.donut-empty {
+  justify-content: center;
+}
+/* Tooltip khi rê chuột vào lát donut */
+.donut-tip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 10px));
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.3rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Chú thích biểu đồ — xếp dọc gọn dưới donut */
+.chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.legend-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
 @media (max-width: 560px) {
   .shift-form .fields {
     grid-template-columns: 1fr;
   }
-  .shift-card {
+  /* Thẻ what-if xuống dòng full width dưới dải thống kê (không chèn nhau) */
+  .whatif-card {
+    flex: 1 1 100%;
+  }
+  /* Card ca: hàng 1 = giờ + nút, hàng 2 = breakdown + lương (căn phải) */
+  .shift-card:not(.editing) {
     grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'times actions'
+      'breakdown pay';
+    gap: 0.4rem 0.75rem;
+  }
+  .shift-card:not(.editing) .shift-times {
+    grid-area: times;
+  }
+  .shift-card:not(.editing) .shift-breakdown {
+    grid-area: breakdown;
+  }
+  .shift-card:not(.editing) .shift-pay {
+    grid-area: pay;
+    align-self: center;
+  }
+  .shift-card:not(.editing) .shift-actions {
+    grid-area: actions;
+    justify-self: end;
   }
 }
