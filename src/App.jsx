@@ -1,315 +1,63 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from './auth/AuthProvider.jsx'
 import LoginForm from './auth/LoginForm.jsx'
 import ResetPasswordForm from './auth/ResetPasswordForm.jsx'
 import ShiftForm from './components/ShiftForm.jsx'
 import Timesheet from './components/Timesheet.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
-import PayPeriodPanel from './components/PayPeriodPanel.jsx'
+import PayPeriodPage from './components/PayPeriodPage.jsx'
 import DeductionsCard from './components/DeductionsCard.jsx'
 import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
-import { supabase } from './lib/supabase.js'
+import { useShifts } from './controllers/useShifts.js'
+import { usePayrolls } from './controllers/usePayrolls.js'
+import { useDeductions } from './controllers/useDeductions.js'
+import { useProfile } from './controllers/useProfile.js'
+import { periodStats } from './lib/shiftMath.js'
 import {
-  shiftTotals,
-  computeEffective,
-  formatHours,
-  MAX_HOURS_PER_DAY,
-} from './lib/shiftMath.js'
+  pendingPeriodKey,
+  visibleBoardShifts,
+  buildSchedByDate,
+  isSalaryDue,
+} from './lib/shiftRules.js'
 import {
   payPeriodKeyOf,
   payPeriodRange,
-  isPeriodEnded,
   paymentWindow,
   localTodayStr,
 } from './lib/payPeriod.js'
 
-const pad2 = (n) => String(n).padStart(2, '0')
-
-// Mốc ẩn một tuần đã nhập khỏi bảng công: 12:00 trưa Thứ 2 của TUẦN KẾ TIẾP (giờ
-// địa phương). Ca KHÔNG bị xoá — chỉ ẩn khỏi danh sách ngày, dữ liệu vẫn được giữ
-// để kỳ lương tổng hợp. dateStr là một ngày bất kỳ trong tuần đó ("YYYY-MM-DD").
-function hideDeadlineIso(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const dt = new Date(y, m - 1, d) // 00:00 giờ địa phương
-  const dow = dt.getDay() // 0=CN..6=T7
-  const toMonday = dow === 0 ? -6 : 1 - dow // về Thứ 2 của tuần hiện tại
-  dt.setDate(dt.getDate() + toMonday + 7) // Thứ 2 tuần kế tiếp
-  dt.setHours(12, 0, 0, 0) // 12:00 trưa
-  return dt.toISOString()
-}
-
-// Thống kê cho board: tổng giờ/lương kỳ hiện tại + tiền nếu đúng giờ & tiền đã mất
-// + số ca ngày/đêm (ca đêm = giờ đêm > giờ ngày).
-function boardStats(periodShifts) {
-  const t = shiftTotals(periodShifts)
-  let lostPay = 0
-  let dayShiftCount = 0
-  let nightShiftCount = 0
-  for (const s of periodShifts) {
-    const r = computeEffective(
-      s.scheduled_start || '',
-      s.scheduled_end || '',
-      s.start_time,
-      s.end_time
-    )
-    lostPay += r.lostPay
-    if (r.nightHours > r.dayHours) nightShiftCount++
-    else dayShiftCount++
-  }
-  return {
-    hours: t.hours,
-    dayHours: t.dayHours,
-    nightHours: t.nightHours,
-    pay: t.pay,
-    lostPay,
-    idealPay: t.pay + lostPay,
-    dayShiftCount,
-    nightShiftCount,
-  }
-}
-
-// Kỳ lương ĐÃ KẾT THÚC, gần nhất mà CHƯA được đánh dấu đã nhận (kỳ đang chờ nhận).
-function pendingPeriodKey(shifts, payrolls) {
-  const received = new Set((payrolls || []).map((p) => p.period_key))
-  const keys = [...new Set(shifts.map((s) => payPeriodKeyOf(s.work_date)))]
-  return (
-    keys
-      .filter((k) => isPeriodEnded(k) && !received.has(k))
-      .sort()
-      .pop() || null
-  )
-}
-
-// Tổng giờ của một ca từ thời gian thô (chưa lưu).
-function shiftHours(s) {
-  return computeEffective(
-    s.scheduled_start || '',
-    s.scheduled_end || '',
-    s.start_time,
-    s.end_time
-  ).decimalHours
-}
-
-// Chặn nhập công cho kỳ lương ĐÃ CHỐT (đã qua ngày 25 của kỳ chứa ngày làm).
-// Trả về chuỗi lỗi nếu kỳ đã đóng, ngược lại null.
-function periodClosedError(workDate) {
-  if (isPeriodEnded(payPeriodKeyOf(workDate))) {
-    return `Kỳ lương của ngày ${workDate} đã chốt (qua ngày 25). Không thể nhập công cho kỳ cũ.`
-  }
-  return null
-}
-
-// Kiểm tra giới hạn 8 giờ/ngày. Trả về chuỗi lỗi nếu vượt, ngược lại null.
-// excludeId: bỏ qua ca đang sửa khi cộng dồn.
-function dayLimitError(shifts, workDate, newHours, excludeId = null) {
-  const existing = shiftTotals(
-    shifts.filter((s) => s.work_date === workDate && s.id !== excludeId)
-  ).hours
-  const total = existing + newHours
-  if (total > MAX_HOURS_PER_DAY + 1e-9) {
-    return `Vượt giới hạn ${MAX_HOURS_PER_DAY} giờ/ngày: ngày ${workDate} sẽ thành ${formatHours(
-      total
-    )}h (đã có ${formatHours(existing)}h). Hãy giảm giờ lại.`
-  }
-  return null
-}
-
 export default function App() {
   const { session, loading, signOut, recovery, endRecovery } = useAuth()
-  const [shifts, setShifts] = useState([])
-  const [payrolls, setPayrolls] = useState([])
-  const [deductions, setDeductions] = useState([])
-  const [profile, setProfile] = useState(null)
-  const [loadError, setLoadError] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
-  const [showPaydayPrompt, setShowPaydayPrompt] = useState(false)
   const [showSalary, setShowSalary] = useState(false)
   const [showImport, setShowImport] = useState(false)
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
-  const loadShifts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('shifts')
-      .select('*')
-      .order('work_date', { ascending: false })
-      .order('created_at', { ascending: false })
-    if (error) setLoadError(error.message)
-    else {
-      setLoadError(null)
-      setShifts(data ?? [])
-    }
-  }, [])
-
-  const loadPayrolls = useCallback(async () => {
-    const { data } = await supabase.from('payrolls').select('*')
-    setPayrolls(data ?? [])
-  }, [])
-
-  const loadDeductions = useCallback(async () => {
-    const { data } = await supabase
-      .from('deductions')
-      .select('*')
-      .order('created_at', { ascending: true })
-    setDeductions(data ?? [])
-  }, [])
-
-  const loadProfile = useCallback(async () => {
-    if (!session) return
-    const { data } = await supabase
-      .from('profiles')
-      .select('payday, full_name, employee_code')
-      .eq('id', session.user.id)
-      .maybeSingle()
-    setProfile(data ?? null)
-    // Hỏi ngày nhận lương nếu chưa đặt và chưa từng bỏ qua trên máy này.
-    const skipped = localStorage.getItem(`payday-skipped-${session.user.id}`)
-    if (data && data.payday == null && !skipped) setShowPaydayPrompt(true)
-  }, [session])
-
-  useEffect(() => {
-    if (session) {
-      loadShifts()
-      loadPayrolls()
-      loadDeductions()
-      loadProfile()
-    } else {
-      setShifts([])
-      setPayrolls([])
-      setDeductions([])
-      setProfile(null)
-    }
-  }, [session, loadShifts, loadPayrolls, loadDeductions, loadProfile])
-
-  async function handleAdd(shift) {
-    const closedErr = periodClosedError(shift.work_date)
-    if (closedErr) return closedErr
-    const limitErr = dayLimitError(shifts, shift.work_date, shiftHours(shift))
-    if (limitErr) return limitErr
-    const { error } = await supabase
-      .from('shifts')
-      .insert({ ...shift, user_id: session.user.id })
-    if (error) return error.message
-    await loadShifts()
-    return null
-  }
-
-  async function handleUpdate(id, fields) {
-    const limitErr = dayLimitError(
-      shifts,
-      fields.work_date,
-      shiftHours(fields),
-      id
-    )
-    if (limitErr) return limitErr
-    const { error } = await supabase.from('shifts').update(fields).eq('id', id)
-    if (error) return error.message
-    await loadShifts()
-    return null
-  }
-
-  async function handleDelete(id) {
-    const { error } = await supabase.from('shifts').delete().eq('id', id)
-    if (error) setLoadError(error.message)
-    else setShifts((prev) => prev.filter((s) => s.id !== id))
-  }
-
-  async function savePayday(day) {
-    // Dùng UPDATE (dòng profile đã được trigger tạo sẵn) — chỉ cần update policy,
-    // tránh lỗi RLS khi profiles không có insert policy.
-    const { error } = await supabase
-      .from('profiles')
-      .update({ payday: day })
-      .eq('id', session.user.id)
-    if (error) return error.message
-    await loadProfile()
-    return null
-  }
-
-  function skipPayday() {
-    localStorage.setItem(`payday-skipped-${session.user.id}`, '1')
-    setShowPaydayPrompt(false)
-  }
-
-  async function markReceived(periodKey, receivedOn) {
-    const { error } = await supabase
-      .from('payrolls')
-      .upsert(
-        { user_id: session.user.id, period_key: periodKey, received_on: receivedOn },
-        { onConflict: 'user_id,period_key' }
-      )
-    if (error) setLoadError(error.message)
-    await loadPayrolls()
-  }
-
-  async function unmarkReceived(periodKey) {
-    const { error } = await supabase
-      .from('payrolls')
-      .delete()
-      .eq('user_id', session.user.id)
-      .eq('period_key', periodKey)
-    if (error) setLoadError(error.message)
-    await loadPayrolls()
-  }
-
-  async function addDeduction(periodKey, amount, reason, deductDate) {
-    const { error } = await supabase.from('deductions').insert({
-      user_id: session.user.id,
-      period_key: periodKey,
-      amount,
-      reason,
-      deduct_date: deductDate,
-    })
-    if (error) return error.message
-    await loadDeductions()
-    return null
-  }
-
-  async function deleteDeduction(id) {
-    const { error } = await supabase.from('deductions').delete().eq('id', id)
-    if (error) setLoadError(error.message)
-    else setDeductions((prev) => prev.filter((d) => d.id !== id))
-  }
-
-  // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI. Trả về mảng lỗi (rỗng nếu OK).
-  // Mỗi ca được gắn hide_at = 12:00 trưa Thứ 2 tuần sau làm MỐC ẨN (không xoá):
-  // qua mốc này ca ẩn khỏi bảng công nhưng dữ liệu vẫn còn để kỳ lương tổng hợp.
-  async function importWeekShifts(rows) {
-    const errors = []
-    // Cả tuần dùng chung một mốc ẩn, tính theo ngày sớm nhất trong các ca.
-    const minDate = rows.map((r) => r.date).sort()[0]
-    const hideAt = minDate ? hideDeadlineIso(minDate) : null
-    for (const r of rows) {
-      const shift = {
-        work_date: r.date,
-        // Lịch tuần chỉ là ca DỰ KIẾN → chỉ đổ vào Sched. start/end.
-        // Check-in/check-out để trống, người dùng tự nhập khi đi làm.
-        start_time: null,
-        end_time: null,
-        scheduled_start: r.start,
-        scheduled_end: r.end,
-        hide_at: hideAt,
-      }
-      const closedErr = periodClosedError(r.date)
-      if (closedErr) {
-        errors.push(`${r.date}: ${closedErr}`)
-        continue
-      }
-      const limitErr = dayLimitError(shifts, r.date, shiftHours(shift))
-      if (limitErr) {
-        errors.push(`${r.date}: ${limitErr}`)
-        continue
-      }
-      const { error } = await supabase
-        .from('shifts')
-        .insert({ ...shift, user_id: session.user.id })
-      if (error) errors.push(`${r.date}: ${error.message}`)
-    }
-    await loadShifts()
-    return errors
-  }
+  // Controllers (custom hooks): mỗi hook giữ state + thao tác của một loại dữ liệu.
+  const {
+    shifts,
+    loadError,
+    setLoadError,
+    addShift,
+    updateShift,
+    deleteShift,
+    importWeekShifts,
+  } = useShifts(session)
+  const { payrolls, markReceived, unmarkReceived } = usePayrolls(session, setLoadError)
+  const { deductions, addDeduction, deleteDeduction } = useDeductions(
+    session,
+    setLoadError
+  )
+  const {
+    profile,
+    savePayday,
+    showPaydayPrompt,
+    setShowPaydayPrompt,
+    skipPayday,
+  } = useProfile(session)
 
   // Đánh dấu kỳ đang chờ nhận = đã nhận (ngày nhận = hôm nay).
   async function receiveSalary() {
@@ -332,44 +80,18 @@ export default function App() {
       </div>
     )
 
+  // ---- Dữ liệu suy ra cho View (ráp từ nhiều controller) ----
   const pendingKey = pendingPeriodKey(shifts, payrolls)
-
-  // Ẩn các ca thuộc kỳ ĐÃ NHẬN lương khỏi UI dưới board (chúng đã chuyển sang
-  // thanh bên "Kỳ lương"). Phần còn lại = kỳ hiện tại + kỳ chưa nhận.
-  // Cũng ẩn ca nhập từ lịch tuần đã qua MỐC ẨN (hide_at <= now) — không xoá,
-  // dữ liệu vẫn nằm trong `shifts` để PayPeriodPanel tổng hợp vào kỳ lương.
-  const receivedKeys = new Set((payrolls || []).map((p) => p.period_key))
-  const nowIso = new Date().toISOString()
-  const visibleShifts = shifts.filter(
-    (s) =>
-      !receivedKeys.has(payPeriodKeyOf(s.work_date)) &&
-      !(s.hide_at && s.hide_at <= nowIso)
-  )
-
-  // Thống kê tháng hiện tại (kỳ lương chứa hôm nay) cho board.
+  const visibleShifts = visibleBoardShifts(shifts, payrolls)
   const currentKey = payPeriodKeyOf(localTodayStr())
   // Ngày sớm nhất được phép nhập công = đầu kỳ hiện tại (26 của tháng trước).
   const minWorkDate = payPeriodRange(currentKey).start
-  const monthStats = boardStats(
+  const monthStats = periodStats(
     shifts.filter((s) => payPeriodKeyOf(s.work_date) === currentKey)
   )
-  // Khoản trừ của kỳ hiện tại (cho card trên board).
-  const currentDeductions = deductions.filter(
-    (d) => d.period_key === currentKey
-  )
-  // Các ngày đã có lịch dự kiến (vd nhập từ ảnh tuần) — form Add shift sẽ ẩn ô Sched.
-  const scheduledDates = new Set(
-    shifts.filter((s) => s.scheduled_start).map((s) => s.work_date)
-  )
-
-  // Nhắc nhận lương: chỉ khi đã đặt ngày nhận (payday), có kỳ đang chờ nhận,
-  // và hôm nay đã tới/qua ngày nhận trong tháng trả lương.
-  let salaryDue = false
-  if (pendingKey && profile?.payday) {
-    const pw = paymentWindow(pendingKey)
-    const dueDate = `${pw.year}-${pad2(pw.month)}-${pad2(profile.payday)}`
-    salaryDue = localTodayStr() >= dueDate
-  }
+  const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
+  const schedByDate = buildSchedByDate(shifts)
+  const salaryDue = isSalaryDue(pendingKey, profile?.payday, paymentWindow)
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt
 
   const fullName =
@@ -409,10 +131,10 @@ export default function App() {
       <main className="main-layout">
         <div className="main-col">
           <ShiftForm
-            onAdd={handleAdd}
+            onAdd={addShift}
             monthStats={monthStats}
             minWorkDate={minWorkDate}
-            scheduledDates={scheduledDates}
+            schedByDate={schedByDate}
             onReceiveSalary={receiveSalary}
             receiveDisabled={!pendingKey}
             receiveDue={salaryDue}
@@ -420,8 +142,8 @@ export default function App() {
           {loadError && <p className="msg error">{loadError}</p>}
           <Timesheet
             shifts={visibleShifts}
-            onDelete={handleDelete}
-            onUpdate={handleUpdate}
+            onDelete={deleteShift}
+            onUpdate={updateShift}
           />
         </div>
 
@@ -438,31 +160,17 @@ export default function App() {
       </main>
 
       {showSalary && (
-        <div className="drawer-overlay" onClick={() => setShowSalary(false)}>
-          <aside className="drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="drawer-head">
-              <h2>Kỳ lương</h2>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={() => setShowSalary(false)}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-            </div>
-            <PayPeriodPanel
-              shifts={shifts}
-              payrolls={payrolls}
-              deductions={deductions}
-              payday={profile?.payday}
-              onMarkReceived={markReceived}
-              onUnmark={unmarkReceived}
-              onAddDeduction={addDeduction}
-              onDeleteDeduction={deleteDeduction}
-            />
-          </aside>
-        </div>
+        <PayPeriodPage
+          shifts={shifts}
+          payrolls={payrolls}
+          deductions={deductions}
+          payday={profile?.payday}
+          onMarkReceived={markReceived}
+          onUnmark={unmarkReceived}
+          onAddDeduction={addDeduction}
+          onDeleteDeduction={deleteDeduction}
+          onClose={() => setShowSalary(false)}
+        />
       )}
 
       {showImport && (

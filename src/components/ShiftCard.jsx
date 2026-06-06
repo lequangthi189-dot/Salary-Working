@@ -1,5 +1,13 @@
 import { useState } from 'react'
-import { computeEffective, formatHours, formatMoney } from '../lib/shiftMath.js'
+import {
+  computeShift,
+  computeEffective,
+  durationHours,
+  formatHours,
+  formatMoney,
+  formatLost,
+  MAX_HOURS_PER_DAY,
+} from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
 
 function hhmm(t) {
@@ -27,6 +35,15 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   }
 
   async function save() {
+    const schedDur = durationHours(schedStart, schedEnd)
+    if (schedDur > MAX_HOURS_PER_DAY + 1e-9) {
+      setError(
+        `Lịch dự kiến không được quá ${MAX_HOURS_PER_DAY} giờ (đang ${formatHours(
+          schedDur
+        )}h).`
+      )
+      return
+    }
     setBusy(true)
     setError(null)
     const err = await onUpdate(shift.id, {
@@ -51,18 +68,42 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
             value={workDate}
             onChange={(e) => setWorkDate(e.target.value)}
           />
-          <TimeInput
-            className="t-in"
-            title="Check-in"
-            value={start}
-            onChange={setStart}
-          />
-          <TimeInput
-            className="t-out"
-            title="Check-out"
-            value={end}
-            onChange={setEnd}
-          />
+          <label className="edit-time">
+            <span>Vào</span>
+            <TimeInput
+              className="t-in"
+              title="Check-in (giờ thực tế)"
+              value={start}
+              onChange={setStart}
+            />
+          </label>
+          <label className="edit-time">
+            <span>Ra</span>
+            <TimeInput
+              className="t-out"
+              title="Check-out (giờ thực tế)"
+              value={end}
+              onChange={setEnd}
+            />
+          </label>
+          <label className="edit-time">
+            <span>Lịch vào</span>
+            <TimeInput
+              className="t-sched"
+              title="Lịch dự kiến vào (mốc tính trễ)"
+              value={schedStart}
+              onChange={setSchedStart}
+            />
+          </label>
+          <label className="edit-time">
+            <span>Lịch ra</span>
+            <TimeInput
+              className="t-sched"
+              title="Lịch dự kiến ra (mốc tính trễ)"
+              value={schedEnd}
+              onChange={setSchedEnd}
+            />
+          </label>
           <span className="muted">
             {formatHours(preview.decimalHours)}h · {formatMoney(preview.pay)}
           </span>
@@ -89,14 +130,24 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     e
   )
   const { decimalHours, dayHours, nightHours, pay } = eff
-  // Phân loại ca: ca đêm nếu giờ đêm nhiều hơn giờ ngày.
-  const isNight = nightHours > dayHours
-  // Chỉ hiện giờ trễ của đúng loại ca (ngày → trễ ngày, đêm → trễ đêm).
-  const lostHours = isNight ? eff.lostNightHours : eff.lostDayHours
-  // Ca mới nhập từ lịch (chưa check-in/out) → hiện lịch dự kiến + nhãn "chưa check-in".
-  const noActual = !s || !e
   const schedS = hhmm(shift.scheduled_start)
   const schedE = hhmm(shift.scheduled_end)
+  // Giờ ngày/đêm để hiển thị: ưu tiên giờ THỰC TẾ; nếu ca chưa check-in (giờ thực
+  // tế = 0) thì lấy theo LỊCH DỰ KIẾN. Phần nào = 0 sẽ được ẩn ở dưới.
+  let dispDay = dayHours
+  let dispNight = nightHours
+  if (dayHours === 0 && nightHours === 0 && schedS && schedE) {
+    const sc = computeShift(schedS, schedE)
+    dispDay = sc.dayHours
+    dispNight = sc.nightHours
+  }
+  // Giờ trễ = TỔNG so với lịch dự kiến (cả phần ngày lẫn đêm, cả vào trễ lẫn ra sớm).
+  // KHÔNG lọc theo loại ca — nếu trễ rơi vào khung giờ khác vẫn phải hiện.
+  const lostHours = eff.lostHours
+  const lateInHours = eff.lateIn.hours // vào trễ
+  const earlyOutHours = eff.earlyOut.hours // ra sớm
+  // Ca mới nhập từ lịch (chưa check-in/out) → hiện lịch dự kiến + nhãn "chưa check-in".
+  const noActual = !s || !e
   const crossesMidnight = s && e && e <= s
 
   return (
@@ -120,14 +171,21 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
       </div>
       <div className="shift-breakdown">
         <span>{formatHours(decimalHours)} h</span>
-        <span className="muted">
-          {isNight
-            ? `Night ${formatHours(nightHours)}h`
-            : `Day ${formatHours(dayHours)}h`}
-        </span>
+        {dispDay > 0 && (
+          <span className="muted">Day {formatHours(dispDay)}h</span>
+        )}
+        {dispNight > 0 && (
+          <span className="muted">Night {formatHours(dispNight)}h</span>
+        )}
         {lostHours > 0 && (
-          <span className="lost">
-            Trễ {formatHours(lostHours)}h {isNight ? '(đêm)' : '(ngày)'}
+          <span className="lost" title={formatLost(eff) || undefined}>
+            Trễ {formatHours(lostHours)}h
+            {(lateInHours > 0 || earlyOutHours > 0) && (
+              <span className="lost-detail">
+                {lateInHours > 0 && ` · vào trễ ${formatHours(lateInHours)}h`}
+                {earlyOutHours > 0 && ` · ra sớm ${formatHours(earlyOutHours)}h`}
+              </span>
+            )}
           </span>
         )}
       </div>

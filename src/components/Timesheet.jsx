@@ -36,10 +36,11 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
             <header className="date-header">
               <span className="date-label">{g.date}</span>
               <span className="muted">
-                {formatHours(t.hours)} h · Day {formatHours(t.dayHours)}h ·
-                Night {formatHours(t.nightHours)}h
+                {formatHours(t.hours)} h
+                {t.dayHours > 0 && ` · Day ${formatHours(t.dayHours)}h`}
+                {t.nightHours > 0 && ` · Night ${formatHours(t.nightHours)}h`}
                 {t.lostHours > 0 && (
-                  <span className="lost"> · Lost {formatHours(t.lostHours)}h</span>
+                  <span className="lost"> · Trễ {formatHours(t.lostHours)}h</span>
                 )}
               </span>
               <span className="pay">{formatMoney(t.pay)}</span>

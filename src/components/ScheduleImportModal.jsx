@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
+import { durationHours, formatHours, MAX_HOURS_PER_DAY } from '../lib/shiftMath.js'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const WD_VI = {
@@ -141,6 +142,22 @@ export default function ScheduleImportModal({
   async function createShifts() {
     const picked = rows.filter((r) => !r.off && r.start && r.end)
     if (picked.length === 0) return setError('Không có ca nào để tạo.')
+    // Lịch dự kiến: mỗi ca không được quá 8 giờ.
+    const tooLong = picked.filter(
+      (r) => durationHours(r.start, r.end) > MAX_HOURS_PER_DAY + 1e-9
+    )
+    if (tooLong.length) {
+      return setError(
+        `Lịch dự kiến không được quá ${MAX_HOURS_PER_DAY} giờ/ca. Sửa lại: ${tooLong
+          .map(
+            (r) =>
+              `${WD_VI[r.weekday]} ${r.start}-${r.end} (${formatHours(
+                durationHours(r.start, r.end)
+              )}h)`
+          )
+          .join(', ')}`
+      )
+    }
     setSaving(true)
     setError(null)
     const errs = await onImport(picked)

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { computeShift, computeEffective, periodStats } from './shiftMath.js'
+import {
+  computeShift,
+  computeEffective,
+  periodStats,
+  durationHours,
+} from './shiftMath.js'
 import { DAY_RATE, NIGHT_RATE } from './rates.js'
 
 describe('computeShift', () => {
@@ -45,6 +50,25 @@ describe('computeShift', () => {
   it('half-hour precision 09:00–09:30', () => {
     const r = computeShift('09:00', '09:30')
     expect(r.decimalHours).toBe(0.5)
+  })
+})
+
+describe('durationHours', () => {
+  it('khung giờ trong ngày 08:00–16:00 = 8h', () => {
+    expect(durationHours('08:00', '16:00')).toBe(8)
+  })
+
+  it('qua nửa đêm 22:00–06:00 = 8h', () => {
+    expect(durationHours('22:00', '06:00')).toBe(8)
+  })
+
+  it('quá 8h: 08:00–17:00 = 9h', () => {
+    expect(durationHours('08:00', '17:00')).toBe(9)
+  })
+
+  it('thiếu mốc → 0', () => {
+    expect(durationHours('', '16:00')).toBe(0)
+    expect(durationHours('08:00', '')).toBe(0)
   })
 })
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   computeEffective,
+  durationHours,
   formatHours,
   formatMoney,
   formatLost,
@@ -24,7 +25,7 @@ export default function ShiftForm({
   onAdd,
   monthStats = emptyMonth,
   minWorkDate,
-  scheduledDates = new Set(),
+  schedByDate = new Map(),
   onReceiveSalary,
   receiveDisabled = true,
   receiveDue = false,
@@ -40,20 +41,33 @@ export default function ShiftForm({
   const [error, setError] = useState(null)
 
   // Ngày đang chọn đã có lịch dự kiến (vd nhập từ ảnh) → ẩn ô Sched, không nhập lại.
-  const hasSched = scheduledDates.has(workDate)
-  // Khi đã có lịch thì ca thêm tay tính theo giờ thực (không gắn lịch riêng).
-  const preview = hasSched
-    ? computeEffective('', '', startTime, endTime)
-    : computeEffective(schedStart, schedEnd, startTime, endTime)
+  const daySched = schedByDate.get(workDate)
+  const hasSched = !!daySched
+  // Mốc lịch dự kiến để tính trễ: nếu ngày đã có lịch (import) thì dùng lịch đó cho
+  // ca thêm tay; nếu chưa thì dùng ô Sched nhập trong form.
+  const effSchedStart = hasSched ? daySched.start : schedStart
+  const effSchedEnd = hasSched ? daySched.end : schedEnd
+  const preview = computeEffective(effSchedStart, effSchedEnd, startTime, endTime)
   const lostText = formatLost(preview)
   const equalTimes = startTime === endTime
   const overLimit = preview.decimalHours > MAX_HOURS_PER_DAY + 1e-9
+  // Lịch dự kiến cũng không được quá 8 giờ/ca.
+  const schedDur = durationHours(effSchedStart, effSchedEnd)
+  const schedOverLimit = schedDur > MAX_HOURS_PER_DAY + 1e-9
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     if (!workDate) {
       setError('Please pick a date.')
+      return
+    }
+    if (schedOverLimit) {
+      setError(
+        `Lịch dự kiến không được quá ${MAX_HOURS_PER_DAY} giờ (đang ${formatHours(
+          schedDur
+        )}h).`
+      )
       return
     }
     if (overLimit) {
@@ -69,8 +83,8 @@ export default function ShiftForm({
       work_date: workDate,
       start_time: startTime,
       end_time: endTime,
-      scheduled_start: hasSched ? null : schedStart,
-      scheduled_end: hasSched ? null : schedEnd,
+      scheduled_start: effSchedStart,
+      scheduled_end: effSchedEnd,
     })
     setBusy(false)
     if (err) setError(err)
@@ -159,7 +173,8 @@ export default function ShiftForm({
 
       {hasSched ? (
         <p className="muted import-empcode">
-          Ngày này đã có lịch dự kiến — chỉ cần nhập Check-in / Check-out.
+          Ngày này đã có lịch dự kiến ({daySched.start}–{daySched.end}) — chỉ cần
+          nhập Check-in / Check-out, hệ thống tự tính trễ so với lịch.
         </p>
       ) : (
         <div className="fields scheduled">
@@ -174,6 +189,11 @@ export default function ShiftForm({
         </div>
       )}
 
+      {schedOverLimit && (
+        <p className="lost">
+          Lịch dự kiến tối đa {MAX_HOURS_PER_DAY} giờ — đang {formatHours(schedDur)}h.
+        </p>
+      )}
       {overLimit && (
         <p className="lost">
           Một ca tối đa {MAX_HOURS_PER_DAY} giờ — đang {formatHours(preview.decimalHours)}h.
@@ -192,7 +212,11 @@ export default function ShiftForm({
             Đã nhận lương
           </button>
         )}
-        <button type="submit" className="btn-addshift" disabled={busy || overLimit}>
+        <button
+          type="submit"
+          className="btn-addshift"
+          disabled={busy || overLimit || schedOverLimit}
+        >
           {busy ? 'Adding…' : 'Add shift'}
         </button>
       </div>
