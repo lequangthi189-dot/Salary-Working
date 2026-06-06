@@ -23,6 +23,7 @@ const emptyMonth = {
 export default function ShiftForm({
   onAdd,
   monthStats = emptyMonth,
+  minWorkDate,
   onReceiveSalary,
   receiveDisabled = true,
   receiveDue = false,
@@ -131,6 +132,7 @@ export default function ShiftForm({
           <input
             type="date"
             value={workDate}
+            min={minWorkDate}
             onChange={(e) => setWorkDate(e.target.value)}
             required
           />

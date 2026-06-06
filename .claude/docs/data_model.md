@@ -13,6 +13,7 @@ Nguồn: `supabase/schema.sql`. Backend là Supabase (Postgres + Auth). Chạy f
 | `end_time` | `time` | `not null` (giờ chấm công thực tế — kết thúc) |
 | `scheduled_start` | `time` | nullable (giờ ca chuẩn theo lịch — bắt đầu) |
 | `scheduled_end` | `time` | nullable (giờ ca chuẩn theo lịch — kết thúc) |
+| `auto_delete_at` | `timestamptz` | nullable (ca nhập từ ảnh lịch tuần: mốc tự xoá; `null` = nhập tay) |
 | `created_at` | `timestamptz` | `not null`, `default now()` |
 
 Lưu ý:
@@ -20,6 +21,7 @@ Lưu ý:
 - `start_time`/`end_time`/`scheduled_*` từ Supabase trả về dạng `"HH:MM:SS"`; client cắt còn `"HH:MM"` bằng helper `hhmm()` trước khi tính.
 - `scheduled_start`/`scheduled_end` để **so với giờ thực tế và tính "giờ bị mất"** khi chấm công không đúng giờ. Nullable để tương thích với các ca cũ chưa có ca chuẩn — khi thiếu, `computeLost` trả về 0. Schema dùng `add column if not exists` để nâng cấp DB cũ.
 - Không có cột phân biệt ngày lễ → tính năng lương lễ vẫn chưa được hỗ trợ ở tầng dữ liệu.
+- `auto_delete_at`: ca tạo từ "Nhập lịch tuần" được gắn mốc = 12:00 trưa Thứ 2 tuần kế tiếp. Khi mở app, client xoá mọi ca có `auto_delete_at <= now()` (`purgeExpiredImports` trong `App.jsx`). Lưu mốc ở DB nên xoá đúng trên mọi thiết bị; ca nhập tay để `null` nên không bao giờ bị tự xoá.
 
 ## Bảng `public.profiles`
 

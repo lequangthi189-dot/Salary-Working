@@ -23,8 +23,14 @@ const cors = {
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-// Model Gemini đọc ảnh + trả JSON. flash = nhanh, rẻ, có free tier.
-const GEMINI_MODEL = 'gemini-2.0-flash'
+// Danh sách model Gemini thử lần lượt (env GEMINI_MODEL, ngăn cách bằng dấu phẩy).
+// flash = nhanh, rẻ, có free tier. Nếu model đầu hết quota (429) sẽ thử model kế.
+// Mặc định: 3.5-flash (mới nhất) -> 2.5-flash -> 2.0-flash.
+const GEMINI_MODELS = (Deno.env.get('GEMINI_MODEL') ||
+  'gemini-3.5-flash,gemini-2.5-flash,gemini-2.0-flash')
+  .split(',')
+  .map((s: string) => s.trim())
+  .filter(Boolean)
 
 // responseSchema theo định dạng OpenAPI của Gemini (type viết HOA).
 const SCHEMA = {
@@ -60,7 +66,7 @@ Người dùng cung cấp MÃ NHÂN VIÊN. Nhiệm vụ:
 3. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
 Chỉ trả JSON đúng schema, không thêm chữ.`
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
@@ -91,45 +97,89 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const url =
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=` +
-      encodeURIComponent(apiKey)
-
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { inline_data: { mime_type: mediaType, data: image } },
-              {
-                text: `Mã nhân viên cần lấy lịch: "${employeeCode}". Trả về ca từng thứ Mon..Sun.`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: SCHEMA,
-          temperature: 0,
+    const reqBody = JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { inline_data: { mime_type: mediaType, data: image } },
+            {
+              text: `Mã nhân viên cần lấy lịch: "${employeeCode}". Trả về ca từng thứ Mon..Sun.`,
+            },
+          ],
         },
-      }),
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: SCHEMA,
+        temperature: 0,
+        maxOutputTokens: 2048,
+      },
     })
 
-    if (!resp.ok) {
+    // Thử lần lượt từng model; nếu 429 (hết quota) thì chuyển model kế tiếp.
+    let resp: Response | null = null
+    for (const model of GEMINI_MODELS) {
+      const url =
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` +
+        encodeURIComponent(apiKey)
+      resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: reqBody,
+      })
+      if (resp.ok) break
+      if (resp.status === 429) continue // hết quota model này, thử model sau
+      // Lỗi khác (4xx/5xx) → báo luôn, không thử tiếp.
       const errText = await resp.text()
       return json({ error: `Lỗi gọi Gemini (${resp.status}): ${errText}` }, 502)
     }
 
+    // Hết danh sách mà vẫn không OK → tất cả model đều hết quota (429).
+    if (!resp || !resp.ok) {
+      return json(
+        {
+          error:
+            `Hết hạn mức (quota) Gemini cho các model đã thử (${GEMINI_MODELS.join(', ')}).\n` +
+            `Vui lòng bật thanh toán cho API key tại https://aistudio.google.com/app/apikey ` +
+            `hoặc dùng API key của project khác còn free tier, rồi đặt lại GEMINI_API_KEY.`,
+        },
+        429
+      )
+    }
+
     const data = await resp.json()
+    // Nếu bị chặn (safety) hoặc không có ứng viên → báo rõ lý do.
+    if (data?.promptFeedback?.blockReason) {
+      return json(
+        { error: `Gemini chặn ảnh: ${data.promptFeedback.blockReason}` },
+        502
+      )
+    }
+    const cand = data?.candidates?.[0]
     const text =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p: { text?: string }) => p.text || '')
-        .join('') || ''
-    const parsed = JSON.parse(text)
+      cand?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') ||
+      ''
+    if (!text) {
+      return json(
+        {
+          error: `Gemini không trả nội dung (finishReason: ${
+            cand?.finishReason || 'unknown'
+          }).`,
+        },
+        502
+      )
+    }
+    let parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      return json(
+        { error: `Gemini trả không phải JSON: ${text.slice(0, 300)}` },
+        502
+      )
+    }
     return json(parsed, 200)
   } catch (e) {
     return json({ error: `Lỗi xử lý: ${String((e as Error)?.message || e)}` }, 502)

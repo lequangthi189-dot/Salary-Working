@@ -48,15 +48,15 @@ function readImage(file) {
   })
 }
 
-// Modal: tải ảnh lịch → AI đọc theo họ tên → xem trước & sửa → tạo ca cả tuần.
+// Modal: tải ảnh lịch → AI đọc theo mã nhân viên (lấy từ hồ sơ) → xem trước & sửa
+// → tạo ca cả tuần.
 export default function ScheduleImportModal({
-  defaultEmployeeCode = '',
+  employeeCode = '',
   onImport,
   onClose,
 }) {
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
-  const [employeeCode, setEmployeeCode] = useState(defaultEmployeeCode)
   const [weekStart, setWeekStart] = useState(mondayOfThisWeek())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -78,8 +78,10 @@ export default function ScheduleImportModal({
     setError(null)
     setInfo(null)
     if (!file) return setError('Hãy chọn ảnh lịch.')
-    if (!/^\d{9}$/.test(employeeCode.trim()))
-      return setError('Mã nhân viên phải gồm đúng 9 chữ số.')
+    if (!/^\d{9}$/.test(String(employeeCode).trim()))
+      return setError(
+        'Tài khoản chưa có mã nhân viên 9 số. Hãy cập nhật mã trong hồ sơ rồi thử lại.'
+      )
     setLoading(true)
     try {
       const { base64, mediaType } = await readImage(file)
@@ -87,7 +89,20 @@ export default function ScheduleImportModal({
         'extract-schedule',
         { body: { image: base64, mediaType, employeeCode: employeeCode.trim() } }
       )
-      if (fnErr) throw new Error(fnErr.message)
+      if (fnErr) {
+        // Lỗi non-2xx: thông điệp thật nằm trong error.context (Response).
+        let detail = fnErr.message
+        try {
+          const ctx = fnErr.context
+          if (ctx && typeof ctx.json === 'function') {
+            const b = await ctx.json()
+            if (b?.error) detail = b.error
+          }
+        } catch {
+          /* ignore */
+        }
+        throw new Error(detail)
+      }
       if (data?.error) throw new Error(data.error)
       if (!data?.found) {
         setError(
@@ -162,20 +177,7 @@ export default function ScheduleImportModal({
             <span>Ảnh lịch</span>
             <input type="file" accept="image/*" onChange={pickFile} />
           </label>
-          <label>
-            <span>Mã nhân viên (9 chữ số)</span>
-            <input
-              type="text"
-              value={employeeCode}
-              inputMode="numeric"
-              maxLength={9}
-              onChange={(e) =>
-                setEmployeeCode(e.target.value.replace(/\D/g, '').slice(0, 9))
-              }
-              placeholder="000000000"
-            />
-          </label>
-          <label>
+          <label className="import-week">
             <span>Tuần bắt đầu (Thứ 2)</span>
             <input
               type="date"
@@ -184,6 +186,10 @@ export default function ScheduleImportModal({
             />
           </label>
         </div>
+        <p className="import-empcode">
+          Mã nhân viên (từ hồ sơ):{' '}
+          <strong>{employeeCode || '— chưa có —'}</strong>
+        </p>
 
         {previewUrl && (
           <img className="import-preview" src={previewUrl} alt="Xem trước ảnh lịch" />
@@ -205,6 +211,7 @@ export default function ScheduleImportModal({
 
         {rows && (
           <>
+            <div className="import-table-wrap">
             <table className="import-table">
               <thead>
                 <tr>
@@ -247,6 +254,7 @@ export default function ScheduleImportModal({
                 ))}
               </tbody>
             </table>
+            </div>
 
             <div className="import-actions">
               <button

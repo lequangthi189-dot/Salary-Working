@@ -50,8 +50,28 @@ export default function PayPeriodPanel({
     .sort()
     .reverse()
 
+  // Tổng cộng dồn tất cả kỳ đã nhận: lương gộp, bị trừ, và thực nhận (= gộp − trừ).
+  const grandGross = keys.reduce(
+    (sum, k) => sum + shiftTotals(byPeriod.get(k)).pay,
+    0
+  )
+  const grandDed = keys.reduce(
+    (sum, k) => sum + sumDeductions(dedByPeriod.get(k) || []),
+    0
+  )
+  const grandNet = grandGross - grandDed
+
   return (
     <div className="period-list">
+      {keys.length > 0 && (
+        <div className="period-total">
+          <span className="period-total-label">Tổng thực nhận (sau trừ)</span>
+          <span className="period-total-value">{formatMoney(grandNet)}</span>
+          <span className="period-total-sub">
+            Trước trừ {formatMoney(grandGross)} · đã trừ −{formatMoney(grandDed)}
+          </span>
+        </div>
+      )}
       {keys.length === 0 ? (
         <p className="muted">
           Chưa có kỳ lương nào được đánh dấu đã nhận. Bấm "Đã nhận lương" ở khung
