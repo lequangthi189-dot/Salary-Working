@@ -199,6 +199,32 @@ button[type='submit']:disabled {
 }
 
 /* ---- Pay-period cards ---- */
+/* Tổng lương đã nhận (cộng dồn mọi kỳ đã nhận) — nổi bật ở đầu drawer */
+.period-total {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+.period-total-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.period-total-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.period-total-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
 .period-card {
   display: flex;
   flex-direction: column;
@@ -340,6 +366,14 @@ button[type='submit']:disabled {
   padding: 1.5rem;
   width: 100%;
   max-width: 360px;
+  /* Nội dung cao (ảnh + bảng 7 ngày) không tràn ra ngoài màn hình → cho cuộn dọc */
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+@media (max-width: 380px) {
+  .modal-card {
+    padding: 1rem;
+  }
 }
 .modal-head {
   display: flex;
@@ -540,8 +574,24 @@ button[type='submit']:disabled {
 .import-table input[type='time'] {
   color-scheme: dark;
 }
-.import-file {
+.import-file,
+.import-week {
   grid-column: 1 / -1;
+}
+.import-empcode {
+  margin: 0 0 0.8rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.import-empcode strong {
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+/* Bảng 7 ngày cuộn ngang trên màn hẹp thay vì làm bể layout modal */
+.import-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0.3rem 0;
 }
 .import-preview {
   max-width: 100%;
@@ -558,6 +608,8 @@ button[type='submit']:disabled {
 }
 .import-table {
   width: 100%;
+  /* Giữ độ rộng tối thiểu để các cột giờ không bị bóp méo; hẹp hơn thì cuộn ngang */
+  min-width: 360px;
   border-collapse: collapse;
   font-size: 0.85rem;
 }

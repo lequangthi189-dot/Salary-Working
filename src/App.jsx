@@ -19,12 +19,25 @@ import {
 } from './lib/shiftMath.js'
 import {
   payPeriodKeyOf,
+  payPeriodRange,
   isPeriodEnded,
   paymentWindow,
   localTodayStr,
 } from './lib/payPeriod.js'
 
 const pad2 = (n) => String(n).padStart(2, '0')
+
+// Hạn tự xoá một tuần đã nhập: 12:00 trưa Thứ 2 của TUẦN KẾ TIẾP (giờ địa phương).
+// dateStr là một ngày bất kỳ trong tuần đó ("YYYY-MM-DD"). Trả về ISO string để lưu DB.
+function deleteDeadlineIso(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const dt = new Date(y, m - 1, d) // 00:00 giờ địa phương
+  const dow = dt.getDay() // 0=CN..6=T7
+  const toMonday = dow === 0 ? -6 : 1 - dow // về Thứ 2 của tuần hiện tại
+  dt.setDate(dt.getDate() + toMonday + 7) // Thứ 2 tuần kế tiếp
+  dt.setHours(12, 0, 0, 0) // 12:00 trưa
+  return dt.toISOString()
+}
 
 // Thống kê cho board: tổng giờ/lương kỳ hiện tại + tiền nếu đúng giờ & tiền đã mất
 // + số ca ngày/đêm (ca đêm = giờ đêm > giờ ngày).
@@ -76,6 +89,15 @@ function shiftHours(s) {
     s.start_time,
     s.end_time
   ).decimalHours
+}
+
+// Chặn nhập công cho kỳ lương ĐÃ CHỐT (đã qua ngày 25 của kỳ chứa ngày làm).
+// Trả về chuỗi lỗi nếu kỳ đã đóng, ngược lại null.
+function periodClosedError(workDate) {
+  if (isPeriodEnded(payPeriodKeyOf(workDate))) {
+    return `Kỳ lương của ngày ${workDate} đã chốt (qua ngày 25). Không thể nhập công cho kỳ cũ.`
+  }
+  return null
 }
 
 // Kiểm tra giới hạn 8 giờ/ngày. Trả về chuỗi lỗi nếu vượt, ngược lại null.
@@ -146,21 +168,42 @@ export default function App() {
     if (data && data.payday == null && !skipped) setShowPaydayPrompt(true)
   }, [session])
 
+  // Tự xoá các ca nhập từ ảnh đã qua hạn (auto_delete_at <= bây giờ). Mốc lưu ở DB
+  // nên chạy đúng trên mọi thiết bị; ca nhập tay (auto_delete_at = null) không bị đụng.
+  const purgeExpiredImports = useCallback(async () => {
+    if (!session) return
+    const { error, count } = await supabase
+      .from('shifts')
+      .delete({ count: 'exact' })
+      .lte('auto_delete_at', new Date().toISOString())
+    if (!error && count) await loadShifts()
+  }, [session, loadShifts])
+
   useEffect(() => {
     if (session) {
       loadShifts()
       loadPayrolls()
       loadDeductions()
       loadProfile()
+      purgeExpiredImports()
     } else {
       setShifts([])
       setPayrolls([])
       setDeductions([])
       setProfile(null)
     }
-  }, [session, loadShifts, loadPayrolls, loadDeductions, loadProfile])
+  }, [
+    session,
+    loadShifts,
+    loadPayrolls,
+    loadDeductions,
+    loadProfile,
+    purgeExpiredImports,
+  ])
 
   async function handleAdd(shift) {
+    const closedErr = periodClosedError(shift.work_date)
+    if (closedErr) return closedErr
     const limitErr = dayLimitError(shifts, shift.work_date, shiftHours(shift))
     if (limitErr) return limitErr
     const { error } = await supabase
@@ -249,8 +292,12 @@ export default function App() {
   }
 
   // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI. Trả về mảng lỗi (rỗng nếu OK).
+  // Mỗi ca được gắn auto_delete_at = 12:00 trưa Thứ 2 tuần sau để TỰ XOÁ trên mọi thiết bị.
   async function importWeekShifts(rows) {
     const errors = []
+    // Cả tuần dùng chung một hạn xoá, tính theo ngày sớm nhất trong các ca.
+    const minDate = rows.map((r) => r.date).sort()[0]
+    const autoDeleteAt = minDate ? deleteDeadlineIso(minDate) : null
     for (const r of rows) {
       const shift = {
         work_date: r.date,
@@ -258,6 +305,12 @@ export default function App() {
         end_time: r.end,
         scheduled_start: r.start,
         scheduled_end: r.end,
+        auto_delete_at: autoDeleteAt,
+      }
+      const closedErr = periodClosedError(r.date)
+      if (closedErr) {
+        errors.push(`${r.date}: ${closedErr}`)
+        continue
       }
       const limitErr = dayLimitError(shifts, r.date, shiftHours(shift))
       if (limitErr) {
@@ -305,6 +358,8 @@ export default function App() {
 
   // Thống kê tháng hiện tại (kỳ lương chứa hôm nay) cho board.
   const currentKey = payPeriodKeyOf(localTodayStr())
+  // Ngày sớm nhất được phép nhập công = đầu kỳ hiện tại (26 của tháng trước).
+  const minWorkDate = payPeriodRange(currentKey).start
   const monthStats = boardStats(
     shifts.filter((s) => payPeriodKeyOf(s.work_date) === currentKey)
   )
@@ -362,6 +417,7 @@ export default function App() {
           <ShiftForm
             onAdd={handleAdd}
             monthStats={monthStats}
+            minWorkDate={minWorkDate}
             onReceiveSalary={receiveSalary}
             receiveDisabled={!pendingKey}
             receiveDue={salaryDue}
@@ -416,7 +472,7 @@ export default function App() {
 
       {showImport && (
         <ScheduleImportModal
-          defaultEmployeeCode={employeeCode}
+          employeeCode={employeeCode}
           onImport={importWeekShifts}
           onClose={() => setShowImport(false)}
         />

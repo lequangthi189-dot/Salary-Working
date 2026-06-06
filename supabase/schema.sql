@@ -15,11 +15,15 @@ create table if not exists public.shifts (
   end_time time not null,
   scheduled_start time,
   scheduled_end time,
+  -- Ca nhập từ ảnh lịch tuần: thời điểm TỰ XOÁ (12:00 trưa Thứ 2 tuần kế tiếp).
+  -- null = ca nhập tay, không bao giờ tự xoá. Lưu ở DB để xoá chuẩn trên mọi thiết bị.
+  auto_delete_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 alter table public.shifts add column if not exists scheduled_start time;
 alter table public.shifts add column if not exists scheduled_end time;
+alter table public.shifts add column if not exists auto_delete_at timestamptz;
 
 alter table public.shifts enable row level security;
 
