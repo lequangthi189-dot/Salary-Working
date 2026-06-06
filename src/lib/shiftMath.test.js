@@ -57,6 +57,22 @@ describe('computeEffective', () => {
     expect(r.lostHours).toBe(0)
   })
 
+  it('ca mới nhập từ lịch (có Sched, chưa check-in/out) → 0 giờ, 0 lương', () => {
+    const r = computeEffective('08:00', '16:00', '', '')
+    expect(r.decimalHours).toBe(0)
+    expect(r.dayHours).toBe(0)
+    expect(r.nightHours).toBe(0)
+    expect(r.pay).toBe(0)
+    expect(r.lostHours).toBe(0)
+    expect(r.lostPay).toBe(0)
+  })
+
+  it('chỉ có check-in, thiếu check-out → vẫn 0 (chưa đủ giờ thực tế)', () => {
+    const r = computeEffective('08:00', '16:00', '08:00', '')
+    expect(r.decimalHours).toBe(0)
+    expect(r.pay).toBe(0)
+  })
+
   it('worked exactly the schedule → full pay, nothing lost', () => {
     const r = computeEffective('08:00', '16:00', '08:00', '16:00')
     expect(r.decimalHours).toBe(8)

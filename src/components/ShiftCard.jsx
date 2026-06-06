@@ -31,8 +31,8 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     setError(null)
     const err = await onUpdate(shift.id, {
       work_date: workDate,
-      start_time: start,
-      end_time: end,
+      start_time: start || null,
+      end_time: end || null,
       scheduled_start: schedStart || null,
       scheduled_end: schedEnd || null,
     })
@@ -93,15 +93,30 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   const isNight = nightHours > dayHours
   // Chỉ hiện giờ trễ của đúng loại ca (ngày → trễ ngày, đêm → trễ đêm).
   const lostHours = isNight ? eff.lostNightHours : eff.lostDayHours
-  const crossesMidnight = e <= s
+  // Ca mới nhập từ lịch (chưa check-in/out) → hiện lịch dự kiến + nhãn "chưa check-in".
+  const noActual = !s || !e
+  const schedS = hhmm(shift.scheduled_start)
+  const schedE = hhmm(shift.scheduled_end)
+  const crossesMidnight = s && e && e <= s
 
   return (
-    <div className="shift-card">
+    <div className={`shift-card${noActual ? ' not-checked-in' : ''}`}>
       <div className="shift-times">
-        <span className="t-in">{s}</span>
-        <span className="dash"> – </span>
-        <span className="t-out">{e}</span>
-        {crossesMidnight && <span className="next-day"> (+1d)</span>}
+        {noActual ? (
+          <>
+            <span className="t-in muted">{schedS || '—'}</span>
+            <span className="dash"> – </span>
+            <span className="t-out muted">{schedE || '—'}</span>
+            <span className="next-day"> (chưa check-in)</span>
+          </>
+        ) : (
+          <>
+            <span className="t-in">{s}</span>
+            <span className="dash"> – </span>
+            <span className="t-out">{e}</span>
+            {crossesMidnight && <span className="next-day"> (+1d)</span>}
+          </>
+        )}
       </div>
       <div className="shift-breakdown">
         <span>{formatHours(decimalHours)} h</span>

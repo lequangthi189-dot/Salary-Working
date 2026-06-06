@@ -1058,6 +1058,17 @@ input.t-out {
 .shift-card.editing {
   grid-template-columns: 1fr;
 }
+/* Ngày chưa chấm công (chỉ có lịch dự kiến): khung đỏ SÁNG để nhắc nhập check-in. */
+.shift-card.not-checked-in {
+  border-color: #ff1f1f;
+  border-width: 2px;
+  background: rgba(255, 31, 31, 0.18);
+  box-shadow: 0 0 0 1px rgba(255, 31, 31, 0.5), 0 0 12px rgba(255, 31, 31, 0.45);
+}
+.shift-card.not-checked-in .next-day {
+  color: #ff3b3b;
+  font-weight: 700;
+}
 .edit-fields {
   display: flex;
   flex-wrap: wrap;

@@ -24,6 +24,7 @@ export default function ShiftForm({
   onAdd,
   monthStats = emptyMonth,
   minWorkDate,
+  scheduledDates = new Set(),
   onReceiveSalary,
   receiveDisabled = true,
   receiveDue = false,
@@ -38,7 +39,12 @@ export default function ShiftForm({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
-  const preview = computeEffective(schedStart, schedEnd, startTime, endTime)
+  // Ngày đang chọn đã có lịch dự kiến (vd nhập từ ảnh) → ẩn ô Sched, không nhập lại.
+  const hasSched = scheduledDates.has(workDate)
+  // Khi đã có lịch thì ca thêm tay tính theo giờ thực (không gắn lịch riêng).
+  const preview = hasSched
+    ? computeEffective('', '', startTime, endTime)
+    : computeEffective(schedStart, schedEnd, startTime, endTime)
   const lostText = formatLost(preview)
   const equalTimes = startTime === endTime
   const overLimit = preview.decimalHours > MAX_HOURS_PER_DAY + 1e-9
@@ -63,8 +69,8 @@ export default function ShiftForm({
       work_date: workDate,
       start_time: startTime,
       end_time: endTime,
-      scheduled_start: schedStart,
-      scheduled_end: schedEnd,
+      scheduled_start: hasSched ? null : schedStart,
+      scheduled_end: hasSched ? null : schedEnd,
     })
     setBusy(false)
     if (err) setError(err)
@@ -151,16 +157,22 @@ export default function ShiftForm({
         </label>
       </div>
 
-      <div className="fields scheduled">
-        <label>
-          Sched. start
-          <TimeInput value={schedStart} onChange={setSchedStart} />
-        </label>
-        <label>
-          Sched. end
-          <TimeInput value={schedEnd} onChange={setSchedEnd} />
-        </label>
-      </div>
+      {hasSched ? (
+        <p className="muted import-empcode">
+          Ngày này đã có lịch dự kiến — chỉ cần nhập Check-in / Check-out.
+        </p>
+      ) : (
+        <div className="fields scheduled">
+          <label>
+            Sched. start
+            <TimeInput value={schedStart} onChange={setSchedStart} />
+          </label>
+          <label>
+            Sched. end
+            <TimeInput value={schedEnd} onChange={setSchedEnd} />
+          </label>
+        </div>
+      )}
 
       {overLimit && (
         <p className="lost">

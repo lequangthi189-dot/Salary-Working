@@ -102,6 +102,12 @@ export function computeEffective(scheduledStart, scheduledEnd, actualStart, actu
     lostPay: 0,
   }
 
+  // Chưa có giờ check-in/check-out thực tế (vd ca mới nhập từ lịch tuần): coi như
+  // chưa đi làm → chưa tính giờ/lương, chờ tới khi nhập check-in/out mới tính.
+  if (!actualStart || !actualEnd) {
+    return { decimalHours: 0, dayHours: 0, nightHours: 0, pay: 0, ...noLost }
+  }
+
   if (!scheduledStart || !scheduledEnd) {
     const r = computeShift(actualStart, actualEnd)
     return { ...r, ...noLost }
