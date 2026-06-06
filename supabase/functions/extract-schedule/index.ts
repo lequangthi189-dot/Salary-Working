@@ -1,16 +1,17 @@
 // Supabase Edge Function: extract-schedule
-// Nhận ảnh lịch làm việc + họ tên, dùng Claude (vision) đọc lịch và trả về
-// ca theo từng thứ trong tuần cho đúng người. API key Anthropic được giữ ở
-// server (biến môi trường ANTHROPIC_API_KEY) — KHÔNG bao giờ lộ ra frontend.
+// Nhận ảnh lịch làm việc + mã nhân viên, dùng Google Gemini (vision) đọc lịch
+// và trả về ca theo từng thứ trong tuần cho đúng người. API key Gemini được giữ
+// ở server (biến môi trường GEMINI_API_KEY) — KHÔNG bao giờ lộ ra frontend.
+//
+// Lấy API key: https://aistudio.google.com/app/apikey  (có gói miễn phí)
 //
 // Triển khai:
-//   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+//   supabase secrets set GEMINI_API_KEY=AIza...
 //   supabase functions deploy extract-schedule
 //
 // Gọi từ frontend (kèm Authorization: Bearer <user access token>):
 //   POST { image: "<base64 không gồm tiền tố data:>", mediaType: "image/png", employeeCode: "..." }
 
-import Anthropic from 'npm:@anthropic-ai/sdk@0.70.0'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const cors = {
@@ -22,36 +23,25 @@ const cors = {
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-// Schema cho structured output: mỗi thứ có giờ vào/ra (HH:MM 24h) hoặc nghỉ.
+// Model Gemini đọc ảnh + trả JSON. flash = nhanh, rẻ, có free tier.
+const GEMINI_MODEL = 'gemini-2.0-flash'
+
+// responseSchema theo định dạng OpenAPI của Gemini (type viết HOA).
 const SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
+  type: 'OBJECT',
   properties: {
-    found: {
-      type: 'boolean',
-      description: 'true nếu tìm thấy dòng khớp tên trong ảnh',
-    },
-    matched_code: {
-      type: 'string',
-      description: 'Mã nhân viên trong ảnh đã khớp (chuỗi rỗng nếu không tìm thấy)',
-    },
+    found: { type: 'BOOLEAN' },
+    matched_code: { type: 'STRING' },
     days: {
-      type: 'array',
+      type: 'ARRAY',
       items: {
-        type: 'object',
-        additionalProperties: false,
+        type: 'OBJECT',
         properties: {
-          weekday: { type: 'string', enum: WEEKDAYS },
-          start: {
-            type: 'string',
-            description: 'Giờ bắt đầu "HH:MM" 24h, rỗng nếu nghỉ/không rõ',
-          },
-          end: {
-            type: 'string',
-            description: 'Giờ kết thúc "HH:MM" 24h, rỗng nếu nghỉ/không rõ',
-          },
-          off: { type: 'boolean', description: 'true nếu ngày này nghỉ' },
-          raw: { type: 'string', description: 'Nội dung ô gốc trong ảnh' },
+          weekday: { type: 'STRING', enum: WEEKDAYS },
+          start: { type: 'STRING' },
+          end: { type: 'STRING' },
+          off: { type: 'BOOLEAN' },
+          raw: { type: 'STRING' },
         },
         required: ['weekday', 'start', 'end', 'off', 'raw'],
       },
@@ -72,9 +62,7 @@ Chỉ trả JSON đúng schema, không thêm chữ.`
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405)
-  }
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
   // Xác thực người dùng qua JWT của Supabase (chỉ user đã đăng nhập mới gọi được).
   const authHeader = req.headers.get('Authorization') || ''
@@ -88,8 +76,8 @@ Deno.serve(async (req) => {
   } = await supabase.auth.getUser()
   if (!user) return json({ error: 'Unauthorized' }, 401)
 
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) return json({ error: 'Server chưa cấu hình ANTHROPIC_API_KEY' }, 500)
+  const apiKey = Deno.env.get('GEMINI_API_KEY')
+  if (!apiKey) return json({ error: 'Server chưa cấu hình GEMINI_API_KEY' }, 500)
 
   let body: { image?: string; mediaType?: string; employeeCode?: string }
   try {
@@ -102,45 +90,49 @@ Deno.serve(async (req) => {
     return json({ error: 'Thiếu image / mediaType / employeeCode' }, 400)
   }
 
-  const anthropic = new Anthropic({ apiKey })
-
   try {
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 2048,
-      output_config: {
-        format: { type: 'json_schema', schema: SCHEMA },
-      },
-      system: SYSTEM,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType,
-                data: image,
+    const url =
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=` +
+      encodeURIComponent(apiKey)
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inline_data: { mime_type: mediaType, data: image } },
+              {
+                text: `Mã nhân viên cần lấy lịch: "${employeeCode}". Trả về ca từng thứ Mon..Sun.`,
               },
-            },
-            {
-              type: 'text',
-              text: `Mã nhân viên cần lấy lịch: "${employeeCode}". Trả về ca từng thứ Mon..Sun.`,
-            },
-          ],
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: SCHEMA,
+          temperature: 0,
         },
-      ],
+      }),
     })
 
-    const text = msg.content
-      .filter((b: { type: string }) => b.type === 'text')
-      .map((b: { text: string }) => b.text)
-      .join('')
+    if (!resp.ok) {
+      const errText = await resp.text()
+      return json({ error: `Lỗi gọi Gemini (${resp.status}): ${errText}` }, 502)
+    }
+
+    const data = await resp.json()
+    const text =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((p: { text?: string }) => p.text || '')
+        .join('') || ''
     const parsed = JSON.parse(text)
     return json(parsed, 200)
   } catch (e) {
-    return json({ error: `Lỗi gọi Claude: ${String(e?.message || e)}` }, 502)
+    return json({ error: `Lỗi xử lý: ${String((e as Error)?.message || e)}` }, 502)
   }
 })
 
