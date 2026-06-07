@@ -270,9 +270,6 @@ export default function PayPeriodPage({
   onUnmark,
   onAddDeduction,
   onDeleteDeduction,
-  onClose,
-  // embedded = nhúng vào sidebar: bỏ wrapper fullscreen + tiêu đề/nút quay lại.
-  embedded = false,
 }) {
   const periodKeys = [...new Set(shifts.map((s) => payPeriodKeyOf(s.work_date)))]
     .sort()
@@ -291,15 +288,6 @@ export default function PayPeriodPage({
 
   const inner = (
     <>
-      {!embedded && (
-        <div className="salary-page-head">
-          <h1>Kỳ lương</h1>
-          <button type="button" className="salary-back" onClick={onClose}>
-            ← Quay lại
-          </button>
-        </div>
-      )}
-
       <p className="muted scope-hint">Bấm vào một kỳ để xem biểu đồ chi tiết.</p>
 
       <div className="period-stat-grid">
@@ -382,18 +370,9 @@ export default function PayPeriodPage({
     />
   )
 
-  if (embedded) {
-    return (
-      <div className="salary-embedded">
-        {inner}
-        {modal}
-      </div>
-    )
-  }
-
   return (
-    <div className="salary-page">
-      <div className="salary-page-inner">{inner}</div>
+    <div className="salary-embedded">
+      {inner}
       {modal}
     </div>
   )

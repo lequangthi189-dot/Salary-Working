@@ -196,7 +196,6 @@ export default function App() {
             </div>
             <div className="sidebar-scroll">
               <PayPeriodPage
-                embedded
                 shifts={shifts}
                 payrolls={payrolls}
                 deductions={deductions}

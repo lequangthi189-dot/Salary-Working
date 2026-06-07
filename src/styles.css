@@ -483,11 +483,6 @@ button[type='submit']:disabled {
 .sidebar-close:hover {
   color: var(--text);
 }
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
 /* Ghim Tài khoản + Hướng dẫn xuống đáy sidebar — nút gọn, vừa nội dung */
 .sidebar-footer {
   margin-top: auto;
@@ -498,22 +493,16 @@ button[type='submit']:disabled {
   padding-top: 0.8rem;
 }
 .sidebar-footer button {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-}
-.sidebar-nav button,
-.sidebar-footer button {
   text-align: left;
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 8px;
-  padding: 0.7rem 0.9rem;
+  padding: 0.4rem 0.8rem;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   cursor: pointer;
 }
-.sidebar-nav button:hover,
 .sidebar-footer button:hover {
   border-color: var(--accent);
   color: var(--accent);
@@ -1430,43 +1419,7 @@ input.t-out {
   font-size: 1.1rem;
 }
 
-/* ---- Trang Kỳ lương (full page + biểu đồ) ---- */
-.salary-page {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  z-index: 60;
-  overflow-y: auto;
-}
-.salary-page-inner {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
-}
-.salary-page-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 0.75rem;
-  margin-bottom: 1.25rem;
-}
-.salary-page-head h1 {
-  margin: 0;
-  font-size: 1.3rem;
-}
-.salary-back {
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 0.45rem 0.9rem;
-  font-weight: 600;
-}
-.salary-back:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
+/* ---- Kỳ lương (biểu đồ + danh sách kỳ) ---- */
 .scope-hint {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;
