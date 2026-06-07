@@ -3,6 +3,7 @@ import { useAuth } from './auth/AuthProvider.jsx'
 import LoginForm from './auth/LoginForm.jsx'
 import ResetPasswordForm from './auth/ResetPasswordForm.jsx'
 import ShiftForm from './components/ShiftForm.jsx'
+import MonthStats from './components/MonthStats.jsx'
 import Timesheet from './components/Timesheet.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import PayPeriodPage from './components/PayPeriodPage.jsx'
@@ -33,6 +34,7 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false)
   const [showSalary, setShowSalary] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [showDeductions, setShowDeductions] = useState(false)
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
@@ -121,6 +123,13 @@ export default function App() {
           <button
             type="button"
             className="account-btn"
+            onClick={() => setShowDeductions(true)}
+          >
+            Tiền bồi thường
+          </button>
+          <button
+            type="button"
+            className="account-btn"
             onClick={() => setShowProfile(true)}
           >
             Tài khoản
@@ -128,35 +137,25 @@ export default function App() {
         </div>
       </header>
 
-      <main className="main-layout">
-        <div className="main-col">
+      <main className="main-col">
+        {/* Khối chính: Nhập ca (trái 40%) + Thống kê (phải 60%); 1 cột trên mobile */}
+        <div className="board-grid">
           <ShiftForm
             onAdd={addShift}
-            monthStats={monthStats}
             minWorkDate={minWorkDate}
             schedByDate={schedByDate}
             onReceiveSalary={receiveSalary}
             receiveDisabled={!pendingKey}
             receiveDue={salaryDue}
           />
-          {loadError && <p className="msg error">{loadError}</p>}
-          <Timesheet
-            shifts={visibleShifts}
-            onDelete={deleteShift}
-            onUpdate={updateShift}
-          />
+          <MonthStats stats={monthStats} />
         </div>
-
-        <aside className="main-aside">
-          <DeductionsCard
-            periodKey={currentKey}
-            deductions={currentDeductions}
-            grossPay={monthStats.pay}
-            onAdd={addDeduction}
-            onDelete={deleteDeduction}
-            defaultOpen
-          />
-        </aside>
+        {loadError && <p className="msg error">{loadError}</p>}
+        <Timesheet
+          shifts={visibleShifts}
+          onDelete={deleteShift}
+          onUpdate={updateShift}
+        />
       </main>
 
       {showSalary && (
@@ -171,6 +170,37 @@ export default function App() {
           onDeleteDeduction={deleteDeduction}
           onClose={() => setShowSalary(false)}
         />
+      )}
+
+      {showDeductions && (
+        <div className="modal-overlay" onClick={() => setShowDeductions(false)}>
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-head">
+              <h2>Tiền bồi thường</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setShowDeductions(false)}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+            </div>
+            <DeductionsCard
+              periodKey={currentKey}
+              deductions={currentDeductions}
+              grossPay={monthStats.pay}
+              onAdd={addDeduction}
+              onDelete={deleteDeduction}
+              embedded
+            />
+          </div>
+        </div>
       )}
 
       {showImport && (

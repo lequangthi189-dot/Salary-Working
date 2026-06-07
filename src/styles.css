@@ -1,5 +1,5 @@
 :root {
-  --bg: #0f1419;
+  --bg: #0d1117;
   --panel: #1a212b;
   --panel-2: #232c38;
   --text: #e6edf3;
@@ -144,30 +144,9 @@ button[type='submit']:disabled {
   padding: 1.5rem 1rem 4rem;
 }
 
-/* Bố cục chính: cột nội dung (trái) + thẻ "Tiền bị trừ" (phải) */
-.main-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-}
+/* Bố cục chính: một cột nội dung (form + bảng công), căn giữa qua .app */
 .main-col {
-  flex: 1 1 auto;
   min-width: 0;
-}
-.main-aside {
-  flex: 0 0 240px;
-  position: sticky;
-  top: 1.5rem;
-}
-@media (max-width: 760px) {
-  .main-layout {
-    flex-direction: column;
-  }
-  .main-aside {
-    position: static;
-    width: 100%;
-    flex-basis: auto;
-  }
 }
 
 /* ---- Pay-period cards ---- */
@@ -302,6 +281,20 @@ button[type='submit']:disabled {
 .app-header h1 {
   margin: 0;
   font-size: 1.4rem;
+  font-weight: 800;
+  /* Chữ gradient ĐỘNG xanh dương ↔ trắng, chạy ngang lặp vô hạn */
+  background: linear-gradient(90deg, #4f9dff, #ffffff, #4f9dff, #ffffff);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: salaryShimmer 6s linear infinite;
+}
+@keyframes salaryShimmer {
+  to {
+    background-position: 300% center;
+  }
 }
 .user {
   display: flex;
@@ -444,10 +437,17 @@ button[type='submit']:disabled {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem;
-  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.7rem;
+}
+/* Tiêu đề khối nhập ca */
+.form-title {
+  margin: 0 0 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .shift-form .fields {
   display: grid;
@@ -480,49 +480,22 @@ button[type='submit']:disabled {
   }
 }
 
-/* ---- Stat summary (giờ + tiền) ---- */
-/* Board: dải thống kê tháng (trái) + thẻ what-if (phải) */
-.board-summary {
-  display: flex;
-  gap: 1rem;
-  align-items: stretch;
-  flex-wrap: wrap;
+/* ---- Khối chính: Nhập ca (trái 40%) + Thống kê (phải 60%) ----
+   Dùng 2fr/3fr (≈40/60) + minmax(0,…) để gap không làm tràn, card không giãn quá. */
+.board-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1.25rem;
+  align-items: stretch; /* 2 cột cao bằng nhau */
 }
-.board-summary .summary {
-  flex: 1;
-  min-width: 240px;
+/* Mobile: xếp 1 cột dọc */
+@media (max-width: 760px) {
+  .board-grid {
+    grid-template-columns: 1fr;
+  }
 }
-.whatif-card {
-  flex: 0 0 190px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.7rem;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
-}
-.whatif-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-.whatif-row span {
-  font-size: 0.7rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-.whatif-row strong {
-  font-size: 1.05rem;
-}
-.whatif-row.good strong {
-  color: var(--green);
-}
-.whatif-row.bad strong {
-  color: var(--danger);
-}
+
+/* Khối Thống kê & Lương: style nằm ở src/components/MonthStats.css (.stats-panel). */
 
 /* ---- Modal nhập lịch tuần từ ảnh ---- */
 .import-fields {
@@ -609,7 +582,7 @@ button[type='submit']:disabled {
   color: var(--text);
 }
 
-/* Thẻ "Tiền bị trừ" có thể mở rộng (dùng ở aside phải + popup kỳ lương) */
+/* Thẻ "Tiền bồi thường" có thể mở rộng (dùng trong popup) */
 .deduction-card {
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -906,7 +879,8 @@ button[type='submit']:disabled {
 .form-actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 0.25rem;
+  margin-top: auto; /* đẩy nút xuống đáy khi form giãn cao → cân với cột thống kê */
+  padding-top: 0.25rem;
 }
 .form-actions > button {
   flex: 1;
@@ -1346,10 +1320,6 @@ input.t-out {
 @media (max-width: 560px) {
   .shift-form .fields {
     grid-template-columns: 1fr;
-  }
-  /* Thẻ what-if xuống dòng full width dưới dải thống kê (không chèn nhau) */
-  .whatif-card {
-    flex: 1 1 100%;
   }
   /* Card ca: hàng 1 = giờ + nút, hàng 2 = breakdown + lương (căn phải) */
   .shift-card:not(.editing) {

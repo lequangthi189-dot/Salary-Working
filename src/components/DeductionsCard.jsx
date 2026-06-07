@@ -28,8 +28,11 @@ export default function DeductionsCard({
   onAdd,
   onDelete,
   defaultOpen = false,
+  // embedded = đặt trong popup: luôn mở, không hiện thanh tiêu đề gập/mở.
+  embedded = false,
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  const isOpen = embedded || open
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
   const [date, setDate] = useState(localTodayStr())
@@ -67,22 +70,24 @@ export default function DeductionsCard({
   }
 
   return (
-    <div className={`deduction-card${open ? ' open' : ''}`}>
-      <button
-        type="button"
-        className="deduction-head"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        <span className="deduction-title">
-          <span className="caret">{open ? '▾' : '▸'}</span> Tiền bị trừ
-        </span>
-        <strong className="deduction-total">
-          {total > 0 ? `−${formatMoney(total)}` : formatMoney(0)}
-        </strong>
-      </button>
+    <div className={`deduction-card${isOpen ? ' open' : ''}`}>
+      {!embedded && (
+        <button
+          type="button"
+          className="deduction-head"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+        >
+          <span className="deduction-title">
+            <span className="caret">{open ? '▾' : '▸'}</span> Tiền bồi thường
+          </span>
+          <strong className="deduction-total">
+            {total > 0 ? `−${formatMoney(total)}` : formatMoney(0)}
+          </strong>
+        </button>
+      )}
 
-      {open && (
+      {isOpen && (
         <div className="deduction-body">
           {/* Ô nhập: số tiền + lý do (bắt buộc) + ngày bị trừ */}
           <div className="deduction-add">

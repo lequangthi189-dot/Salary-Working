@@ -53,6 +53,7 @@ Tuyệt đối KHÔNG được thay đổi hoặc tự ý giả định những 
 - **Bảo mật dữ liệu**: mọi truy vấn dựa vào Row Level Security của Supabase (`auth.uid() = user_id`). Không tự thêm filter `user_id` ở client để thay thế RLS, và không tắt RLS.
 - **Lương lễ và giới hạn 8 giờ/ngày hiện CHƯA được implement**. Đừng giả định chúng đã có; nếu cần thêm, đọc `.claude/docs/pay_logic.md` và xác nhận với chủ dự án trước.
 - Khi đổi logic tính toán, phải cập nhật và chạy `src/lib/shiftMath.test.js`.
+- **Branch Management**: Trước khi thêm bất kỳ tính năng nào hoặc sửa lỗi, luôn luôn làm việc trên một nhánh (branch) git mới. Không bao giờ commit trực tiếp trên nhánh main. Các nhánh sửa lỗi phải tuân theo quy ước đặt tên bug/[des], các nhánh tính năng phải tuân theo quy ước đặt tên feature/[desc].
 
 ## Additional Documentation
 
