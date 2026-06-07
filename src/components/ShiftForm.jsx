@@ -10,28 +10,18 @@ import {
 import TimeInput from './TimeInput.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
 
-const emptyMonth = {
-  hours: 0,
-  dayHours: 0,
-  nightHours: 0,
-  pay: 0,
-  lostPay: 0,
-  idealPay: 0,
-  dayShiftCount: 0,
-  nightShiftCount: 0,
-}
-
+// ShiftForm = KHỐI NHẬP CA (cột phải). Tự quản lý state các ô nhập; khi bấm
+// "Add shift" gọi callback onAdd(shiftData) để truyền dữ liệu lên component cha (App).
+// schedByDate (từ cha) cho biết ngày đã có lịch dự kiến để ẩn ô Sched + làm mốc tính trễ.
 export default function ShiftForm({
   onAdd,
-  monthStats = emptyMonth,
   minWorkDate,
   schedByDate = new Map(),
   onReceiveSalary,
   receiveDisabled = true,
   receiveDue = false,
 }) {
-  // Mặc định = hôm nay theo GIỜ ĐỊA PHƯƠNG (thời gian thực). Ô <input type="date">
-  // cho phép chọn lùi về ngày trước tùy ý.
+  // --- STATE các trường nhập ---
   const [workDate, setWorkDate] = useState(localTodayStr())
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
@@ -40,18 +30,17 @@ export default function ShiftForm({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
-  // Ngày đang chọn đã có lịch dự kiến (vd nhập từ ảnh) → ẩn ô Sched, không nhập lại.
+  // Ngày đang chọn đã có lịch dự kiến (vd nhập từ ảnh) → ẩn ô Sched, dùng lịch đó.
   const daySched = schedByDate.get(workDate)
   const hasSched = !!daySched
-  // Mốc lịch dự kiến để tính trễ: nếu ngày đã có lịch (import) thì dùng lịch đó cho
-  // ca thêm tay; nếu chưa thì dùng ô Sched nhập trong form.
   const effSchedStart = hasSched ? daySched.start : schedStart
   const effSchedEnd = hasSched ? daySched.end : schedEnd
+
+  // --- TÍNH TOÁN xem trước (preview) cho dòng trạng thái/cảnh báo ---
   const preview = computeEffective(effSchedStart, effSchedEnd, startTime, endTime)
   const lostText = formatLost(preview)
   const equalTimes = startTime === endTime
   const overLimit = preview.decimalHours > MAX_HOURS_PER_DAY + 1e-9
-  // Lịch dự kiến cũng không được quá 8 giờ/ca.
   const schedDur = durationHours(effSchedStart, effSchedEnd)
   const schedOverLimit = schedDur > MAX_HOURS_PER_DAY + 1e-9
 
@@ -79,6 +68,7 @@ export default function ShiftForm({
       return
     }
     setBusy(true)
+    // Truyền dữ liệu ca lên CHA (App) qua callback.
     const err = await onAdd({
       work_date: workDate,
       start_time: startTime,
@@ -92,60 +82,9 @@ export default function ShiftForm({
 
   return (
     <form className="shift-form" onSubmit={handleSubmit}>
-      {/* Thống kê THÁNG NÀY (kỳ hiện tại) + thẻ "nếu đúng giờ / đã mất" bên phải */}
-      <div className="board-summary">
-        <div className="summary">
-          <div className="stat stat-total">
-            <span className="stat-value">{formatHours(monthStats.hours)}</span>
-            <span className="stat-label">Tổng giờ tháng này</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{formatHours(monthStats.dayHours)}</span>
-            <span className="stat-label">Giờ ngày</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{formatHours(monthStats.nightHours)}</span>
-            <span className="stat-label">Giờ đêm</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{monthStats.dayShiftCount}</span>
-            <span className="stat-label">Ca ngày</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{monthStats.nightShiftCount}</span>
-            <span className="stat-label">Ca đêm</span>
-          </div>
-          <div className="stat stat-pay stat-grand">
-            <span className="stat-value">{formatMoney(monthStats.pay)}</span>
-            <span className="stat-label">Lương tháng này</span>
-          </div>
-        </div>
+      <h2 className="form-title">Nhập ca làm việc</h2>
 
-        <div className="whatif-card">
-          <div className="whatif-row good">
-            <span>Nếu đi đúng giờ</span>
-            <strong>{formatMoney(monthStats.idealPay)}</strong>
-          </div>
-          <div className="whatif-row bad">
-            <span>Đã mất vì đi trễ</span>
-            <strong>−{formatMoney(monthStats.lostPay)}</strong>
-          </div>
-        </div>
-      </div>
-
-      {/* Xem nhanh ca đang nhập (ngày/đêm), chữ to + màu động */}
-      <p className="preview-line">
-        Ca đang nhập ({preview.nightHours > preview.dayHours ? 'đêm' : 'ngày'}):{' '}
-        {formatHours(preview.decimalHours)} h · {formatMoney(preview.pay)}
-        {equalTimes && ' · full 24h (giờ vào = giờ ra)'}
-      </p>
-      {lostText && (
-        <p className="lost">
-          {lostText} · −{formatMoney(preview.lostPay)}
-        </p>
-      )}
-
-      {/* Ngày của ca làm — nằm dưới phần giờ, trên check-in/check-out */}
+      {/* Ngày làm */}
       <div className="fields date-row">
         <label>
           Date
@@ -189,6 +128,17 @@ export default function ShiftForm({
         </div>
       )}
 
+      {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập */}
+      <p className="preview-line">
+        Ca đang nhập ({preview.nightHours > preview.dayHours ? 'đêm' : 'ngày'}):{' '}
+        {formatHours(preview.decimalHours)} h · {formatMoney(preview.pay)}
+        {equalTimes && ' · full 24h (giờ vào = giờ ra)'}
+      </p>
+      {lostText && (
+        <p className="lost">
+          {lostText} · −{formatMoney(preview.lostPay)}
+        </p>
+      )}
       {schedOverLimit && (
         <p className="lost">
           Lịch dự kiến tối đa {MAX_HOURS_PER_DAY} giờ — đang {formatHours(schedDur)}h.
@@ -196,12 +146,13 @@ export default function ShiftForm({
       )}
       {overLimit && (
         <p className="lost">
-          Một ca tối đa {MAX_HOURS_PER_DAY} giờ — đang {formatHours(preview.decimalHours)}h.
+          Một ca tối đa {MAX_HOURS_PER_DAY} giờ — đang{' '}
+          {formatHours(preview.decimalHours)}h.
         </p>
       )}
 
+      {/* Hàng nút: "Đã nhận lương" (khi tới hạn) + "Add shift" */}
       <div className="form-actions">
-        {/* Chỉ hiện khi đã tới ngày nhận lương; còn lại chỉ có Add shift */}
         {receiveDue && !receiveDisabled && (
           <button
             type="button"
