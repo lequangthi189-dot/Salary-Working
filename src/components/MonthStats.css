@@ -1,0 +1,109 @@
+/* Style RIÊNG cho khối thống kê lương — bọc trong .stats-panel để không đụng CSS sẵn có. */
+
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%; /* cao bằng cột nhập ca (board-grid align-items: stretch) */
+}
+
+/* ---- Ô lương lớn (full width, viền xanh lá) ---- */
+.stats-panel .salary-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  background: #1c2128;
+  border: 2px solid #2ea043;
+  border-radius: 14px;
+  padding: 1.15rem 1.3rem;
+  text-align: center;
+}
+.stats-panel .salary-hero__label {
+  color: #2ea043;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.stats-panel .salary-hero__value {
+  color: #fff;
+  font-weight: 800;
+  font-size: 2.2rem;
+  line-height: 1.1;
+}
+.stats-panel .salary-hero__sub {
+  margin-top: 0.1rem;
+  color: #9da7b3;
+  font-size: 0.8rem;
+}
+.stats-panel .salary-hero__sep {
+  opacity: 0.5;
+}
+/* Phần "Phạt" — màu đỏ */
+.stats-panel .salary-hero__penalty {
+  color: #f85149;
+}
+
+/* ---- Các hàng ô thống kê (CSS Grid) ---- */
+/* 2 hàng giãn đều (flex:1) để lấp đầy chiều cao, kéo giãn từng ô theo cột. */
+.stats-panel .stat-row {
+  display: grid;
+  gap: 0.5rem;
+  flex: 1 1 0;
+}
+.stats-panel .stat-row--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.stats-panel .stat-row--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* ---- Mỗi ô: LABEL trên, GIÁ TRỊ dưới, căn giữa ---- */
+.stats-panel .info-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* căn giữa nội dung khi ô bị kéo cao */
+  gap: 0.3rem;
+  background: #1c2128;
+  border: 1px solid #2d333b;
+  border-radius: 12px;
+  padding: 0.85rem 0.6rem;
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.stats-panel .info-card:hover {
+  border-color: #444c56;
+  background: #22272e;
+}
+.stats-panel .info-card__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.stats-panel .info-card__value {
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.4rem;
+  line-height: 1.1;
+}
+
+/* Màu nhãn theo tone */
+.stats-panel .tone-orange {
+  color: #f0883e;
+}
+.stats-panel .tone-green {
+  color: #2ea043;
+}
+.stats-panel .tone-blue {
+  color: #539bf5;
+}
+
+/* Responsive: màn nhỏ → hàng 3 cột co lại 2 cột */
+@media (max-width: 480px) {
+  .stats-panel .stat-row--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
