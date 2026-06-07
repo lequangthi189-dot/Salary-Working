@@ -227,7 +227,7 @@ export function periodStats(shifts) {
 const currencyFmt = new Intl.NumberFormat('vi-VN')
 
 export function formatMoney(n) {
-  return currencyFmt.format(Math.round(n))
+  return `${currencyFmt.format(Math.round(n))} VND`
 }
 
 export function formatHours(h) {

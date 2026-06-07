@@ -73,10 +73,7 @@ export default function PayPeriodPanel({
         </div>
       )}
       {keys.length === 0 ? (
-        <p className="muted">
-          Chưa có kỳ lương nào được đánh dấu đã nhận. Bấm "Đã nhận lương" ở khung
-          nhập ca khi đã nhận tiền.
-        </p>
+        <p className="muted sm">Chưa có kỳ nào được đánh dấu đã nhận.</p>
       ) : (
         keys.map((key) => {
           const items = byPeriod.get(key)

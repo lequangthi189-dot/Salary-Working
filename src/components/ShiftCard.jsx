@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  computeShift,
   computeEffective,
   durationHours,
   formatHours,
@@ -129,18 +128,9 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     s,
     e
   )
-  const { decimalHours, dayHours, nightHours, pay } = eff
+  const { pay } = eff
   const schedS = hhmm(shift.scheduled_start)
   const schedE = hhmm(shift.scheduled_end)
-  // Giờ ngày/đêm để hiển thị: ưu tiên giờ THỰC TẾ; nếu ca chưa check-in (giờ thực
-  // tế = 0) thì lấy theo LỊCH DỰ KIẾN. Phần nào = 0 sẽ được ẩn ở dưới.
-  let dispDay = dayHours
-  let dispNight = nightHours
-  if (dayHours === 0 && nightHours === 0 && schedS && schedE) {
-    const sc = computeShift(schedS, schedE)
-    dispDay = sc.dayHours
-    dispNight = sc.nightHours
-  }
   // Giờ trễ = TỔNG so với lịch dự kiến (cả phần ngày lẫn đêm, cả vào trễ lẫn ra sớm).
   // KHÔNG lọc theo loại ca — nếu trễ rơi vào khung giờ khác vẫn phải hiện.
   const lostHours = eff.lostHours
@@ -148,7 +138,6 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   const earlyOutHours = eff.earlyOut.hours // ra sớm
   // Ca mới nhập từ lịch (chưa check-in/out) → hiện lịch dự kiến + nhãn "chưa check-in".
   const noActual = !s || !e
-  const crossesMidnight = s && e && e <= s
 
   return (
     <div className={`shift-card${noActual ? ' not-checked-in' : ''}`}>
@@ -165,18 +154,10 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
             <span className="t-in">{s}</span>
             <span className="dash"> – </span>
             <span className="t-out">{e}</span>
-            {crossesMidnight && <span className="next-day"> (+1d)</span>}
           </>
         )}
       </div>
       <div className="shift-breakdown">
-        <span>{formatHours(decimalHours)} h</span>
-        {dispDay > 0 && (
-          <span className="muted">Day {formatHours(dispDay)}h</span>
-        )}
-        {dispNight > 0 && (
-          <span className="muted">Night {formatHours(dispNight)}h</span>
-        )}
         {lostHours > 0 && (
           <span className="lost" title={formatLost(eff) || undefined}>
             Trễ {formatHours(lostHours)}h

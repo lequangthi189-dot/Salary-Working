@@ -110,12 +110,7 @@ export default function ShiftForm({
         </label>
       </div>
 
-      {hasSched ? (
-        <p className="muted import-empcode">
-          Ngày này đã có lịch dự kiến ({daySched.start}–{daySched.end}) — chỉ cần
-          nhập Check-in / Check-out, hệ thống tự tính trễ so với lịch.
-        </p>
-      ) : (
+      {!hasSched && (
         <div className="fields scheduled">
           <label>
             Sched. start

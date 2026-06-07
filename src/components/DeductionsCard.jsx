@@ -127,6 +127,12 @@ export default function DeductionsCard({
           </div>
           {error && <p className="msg error sm">{error}</p>}
 
+          {/* Thực nhận sau trừ — đặt ngay kế khu nhập để thấy số liền tay */}
+          <div className="deduction-net">
+            <span>Thực nhận sau trừ</span>
+            <strong className={net < 0 ? 'neg' : ''}>{formatMoney(net)}</strong>
+          </div>
+
           {/* Danh sách khoản trừ — hiện DƯỚI ô nhập, mỗi khoản là card bo góc */}
           {deductions.length === 0 ? (
             <p className="muted sm">Chưa có khoản trừ nào trong kỳ này.</p>
@@ -151,11 +157,6 @@ export default function DeductionsCard({
               ))}
             </ul>
           )}
-
-          <div className="deduction-net">
-            <span>Thực nhận sau trừ</span>
-            <strong className={net < 0 ? 'neg' : ''}>{formatMoney(net)}</strong>
-          </div>
         </div>
       )}
     </div>

@@ -5,19 +5,29 @@ import './MonthStats.css'
 // KHỐI THỐNG KÊ & LƯƠNG. Presentational — nhận `stats` (đã tính ở App) qua props.
 // Bố cục: ô lương lớn (trên) + hàng 3 ô + hàng 2 ô. Toàn bộ bọc trong .stats-panel.
 // formatMoney dùng Intl.NumberFormat('vi-VN') → phân cách nghìn bằng dấu chấm.
-export default function MonthStats({ stats }) {
+export default function MonthStats({ stats, deductionTotal = 0 }) {
+  // Lương thực nhận của tháng = lương ca − tiền bồi thường (bị trừ) của kỳ.
+  const netPay = stats.pay - deductionTotal
   return (
     <section className="stats-panel">
       {/* Ô lương lớn */}
       <div className="salary-hero">
         <span className="salary-hero__label">Lương tháng này:</span>
-        <span className="salary-hero__value">{formatMoney(stats.pay)} đ</span>
+        <span className="salary-hero__value">{formatMoney(netPay)}</span>
         <span className="salary-hero__sub">
-          (Dự kiến: {formatMoney(stats.idealPay)} đ
+          (Dự kiến: {formatMoney(stats.idealPay)}
           <span className="salary-hero__sep"> | </span>
           <span className="salary-hero__penalty">
-            Phạt: −{formatMoney(stats.lostPay)} đ
+            Phạt: −{formatMoney(stats.lostPay)}
           </span>
+          {deductionTotal > 0 && (
+            <>
+              <span className="salary-hero__sep"> | </span>
+              <span className="salary-hero__penalty">
+                Bồi thường: −{formatMoney(deductionTotal)}
+              </span>
+            </>
+          )}
           )
         </span>
       </div>
@@ -26,7 +36,7 @@ export default function MonthStats({ stats }) {
       <div className="stat-row stat-row--3">
         <StatCard
           tone="orange"
-          title="Tổng Giờ Tháng Này"
+          title="Tổng Giờ Tháng"
           value={`${formatHours(stats.hours)} (h)`}
         />
         <StatCard

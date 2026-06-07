@@ -66,10 +66,11 @@
   align-items: center;
   justify-content: center; /* căn giữa nội dung khi ô bị kéo cao */
   gap: 0.3rem;
+  min-width: 0; /* cho phép ô co lại trong grid → không tràn/bể trên mobile */
   background: #1c2128;
   border: 1px solid #2d333b;
   border-radius: 12px;
-  padding: 0.85rem 0.6rem;
+  padding: 0.85rem 0.5rem;
   text-align: center;
   transition:
     border-color 0.15s ease,
@@ -82,12 +83,16 @@
 .stats-panel .info-card__label {
   font-size: 0.8rem;
   font-weight: 600;
+  max-width: 100%;
+  overflow-wrap: anywhere; /* nhãn dài tự xuống dòng, không tràn ô */
 }
 .stats-panel .info-card__value {
   color: #fff;
   font-weight: 800;
   font-size: 1.4rem;
   line-height: 1.1;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* Màu nhãn theo tone */
@@ -101,9 +106,56 @@
   color: #539bf5;
 }
 
-/* Responsive: màn nhỏ → hàng 3 cột co lại 2 cột */
-@media (max-width: 480px) {
-  .stats-panel .stat-row--3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* ===== Responsive: thiết bị nhỏ 320–560px =====
+   Giữ NGUYÊN 3 cột cho hàng 3 ô (tránh bố cục 2+1 lệch khi ép xuống 2 cột),
+   chỉ thu nhỏ chữ/padding để các ô vẫn vừa khít, không tràn/bể. */
+@media (max-width: 560px) {
+  .stats-panel {
+    gap: 0.4rem;
+  }
+
+  /* Ô lương lớn: thu nhỏ padding + chữ cho khỏi tràn ngang */
+  .stats-panel .salary-hero {
+    padding: 0.9rem 0.75rem;
+  }
+  .stats-panel .salary-hero__label {
+    font-size: 0.72rem;
+  }
+  .stats-panel .salary-hero__value {
+    font-size: 1.7rem;
+    overflow-wrap: anywhere; /* số tiền dài tự xuống dòng thay vì tràn ô */
+  }
+  .stats-panel .salary-hero__sub {
+    font-size: 0.72rem;
+  }
+
+  /* Hàng ô thống kê: thu gọn gap + padding, nhãn/giá trị nhỏ lại */
+  .stats-panel .stat-row {
+    gap: 0.4rem;
+  }
+  .stats-panel .info-card {
+    padding: 0.7rem 0.3rem;
+  }
+  .stats-panel .info-card__value {
+    font-size: 1.05rem;
+  }
+  .stats-panel .info-card__label {
+    font-size: 0.7rem;
+  }
+}
+
+/* Màn rất hẹp ≤380px: thu nhỏ thêm 1 nấc cho khỏi bể trên 320px */
+@media (max-width: 380px) {
+  .stats-panel .salary-hero__value {
+    font-size: 1.45rem;
+  }
+  .stats-panel .info-card {
+    padding: 0.6rem 0.25rem;
+  }
+  .stats-panel .info-card__value {
+    font-size: 0.95rem;
+  }
+  .stats-panel .info-card__label {
+    font-size: 0.66rem;
   }
 }
