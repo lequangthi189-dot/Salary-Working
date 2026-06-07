@@ -276,11 +276,11 @@ button[type='submit']:disabled {
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.85rem;
 }
 .app-header h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.05rem;
   font-weight: 800;
   /* Chữ gradient ĐỘNG xanh dương ↔ trắng, chạy ngang lặp vô hạn */
   background: linear-gradient(90deg, #4f9dff, #ffffff, #4f9dff, #ffffff);
@@ -316,6 +316,208 @@ button[type='submit']:disabled {
   border-color: var(--accent);
   color: var(--accent);
 }
+/* Nút "Nhập lịch tuần" ở header: thấp bằng logo (26px) */
+.header-import {
+  height: 26px;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ---- Header trái: nút mở menu + tiêu đề ---- */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.app-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  flex: 0 0 auto;
+}
+
+/* ---- Dropdown ở tiêu đề "Salary Working" ---- */
+.title-menu {
+  position: relative;
+}
+.title-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.title-caret {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 41;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.dropdown-menu button {
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  border-radius: 7px;
+  padding: 0.55rem 0.7rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.dropdown-menu button:hover {
+  background: var(--panel-2);
+  color: var(--accent);
+}
+.menu-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 9px;
+}
+.menu-toggle:hover {
+  filter: brightness(1.08);
+}
+.menu-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- Thanh bên (sidebar) ---- */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 60;
+}
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: max-content;
+  min-width: 260px;
+  max-width: 92vw;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  animation: sidebarIn 0.18s ease;
+}
+/* Vùng cuộn chứa nội dung Kỳ lương; head/footer cố định trên/dưới */
+.sidebar-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* Trong sidebar: xếp các kỳ theo chiều dọc (1 cột) + bố cục gọn */
+.salary-embedded .period-stat-grid {
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  justify-items: start; /* card co vừa nội dung, không kéo full chiều ngang */
+}
+.salary-embedded .scope-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+}
+.salary-embedded .period-stat-card {
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+.salary-embedded .salary-section-title {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+@keyframes sidebarIn {
+  from {
+    transform: translateX(-100%);
+  }
+}
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+}
+.sidebar-title {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+.sidebar-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.sidebar-close:hover {
+  color: var(--text);
+}
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+/* Ghim Tài khoản + Hướng dẫn xuống đáy sidebar — nút gọn, vừa nội dung */
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.8rem;
+}
+.sidebar-footer button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+.sidebar-nav button,
+.sidebar-footer button {
+  text-align: left;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.sidebar-nav button:hover,
+.sidebar-footer button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 /* ---- Modal ---- */
 .modal-overlay {
@@ -348,6 +550,35 @@ button[type='submit']:disabled {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
+}
+
+/* ---- Hướng dẫn người mới (Welcome) ---- */
+.welcome-steps {
+  list-style: none;
+  margin: 0.5rem 0 1.1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.welcome-step {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+.welcome-step-icon {
+  font-size: 1.3rem;
+  line-height: 1.3;
+  flex: 0 0 auto;
+}
+.welcome-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.85rem;
+}
+.welcome-start {
+  width: 100%;
 }
 .modal-head h2 {
   margin: 0;
@@ -681,7 +912,7 @@ button[type='submit']:disabled {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: center;
 }
 .deduction-add input {
   background: var(--bg);
@@ -690,9 +921,9 @@ button[type='submit']:disabled {
   padding: 0.5rem 0.6rem;
   color: var(--text);
 }
-/* Ô ngày bị trừ: chiếm trọn 1 hàng + lịch native tông tối */
+/* Ô ngày bị trừ: chia hàng với nút "+ Thêm" + lịch native tông tối */
 .deduction-add input[type='date'] {
-  flex: 1 1 100%;
+  flex: 1 1 140px;
   color-scheme: dark;
 }
 .deduction-add input::placeholder {
@@ -732,8 +963,11 @@ button[type='submit']:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid var(--border);
-  padding-top: 0.55rem;
+  gap: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -971,14 +1205,21 @@ input.t-out {
   text-align: center;
   padding: 2rem;
 }
+.timesheet {
+  margin-top: 1.25rem; /* tách bảng công khỏi khối Nhập ca + Thống kê phía trên */
+}
 .shift-list {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
 }
-/* Date grouping */
+/* Date grouping — mỗi ngày là 1 thẻ riêng để phân biệt rõ giữa các block. */
 .date-group {
   margin-bottom: 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
 }
 .date-header {
   display: flex;
@@ -997,6 +1238,40 @@ input.t-out {
 .date-header .pay {
   color: var(--green);
   font-weight: 700;
+}
+
+/* Màn nhỏ 320–560px: tiêu đề ngày xuống 2 dòng cho khỏi bể.
+   Dòng 1: Ngày ........ Tiền | Dòng 2: tổng giờ · Day/Night · Trễ (full width). */
+@media (max-width: 560px) {
+  .date-header {
+    flex-wrap: wrap;
+    column-gap: 0.6rem;
+    row-gap: 0.2rem;
+  }
+  .date-label {
+    order: 0;
+  }
+  .date-header .pay {
+    order: 1;
+    margin-left: auto; /* đẩy tiền sang phải, cùng dòng với ngày */
+  }
+  .date-header .muted {
+    order: 2;
+    flex-basis: 100%; /* xuống dòng riêng, chiếm hết bề ngang */
+    margin-left: 0;
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+  }
+
+  /* Mobile: ẩn bớt thông tin phụ cho gọn layout.
+     Tiêu đề ngày: bỏ Day/Night (giữ tổng giờ + Trễ + tiền).
+     Card ca: bỏ chi tiết "vào trễ / ra sớm" (giữ tổng Trễ). */
+  .date-header .hours-detail {
+    display: none;
+  }
+  .shift-card .lost-detail {
+    display: none;
+  }
 }
 
 .shift-card {

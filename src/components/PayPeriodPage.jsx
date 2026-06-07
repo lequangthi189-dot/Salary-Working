@@ -271,6 +271,8 @@ export default function PayPeriodPage({
   onAddDeduction,
   onDeleteDeduction,
   onClose,
+  // embedded = nhúng vào sidebar: bỏ wrapper fullscreen + tiêu đề/nút quay lại.
+  embedded = false,
 }) {
   const periodKeys = [...new Set(shifts.map((s) => payPeriodKeyOf(s.work_date)))]
     .sort()
@@ -287,19 +289,20 @@ export default function PayPeriodPage({
   const openTitle =
     openScope === 'all' ? 'Tất cả các kỳ' : payPeriodLabel(openScope || '')
 
-  return (
-    <div className="salary-page">
-      <div className="salary-page-inner">
+  const inner = (
+    <>
+      {!embedded && (
         <div className="salary-page-head">
           <h1>Kỳ lương</h1>
           <button type="button" className="salary-back" onClick={onClose}>
             ← Quay lại
           </button>
         </div>
+      )}
 
-        <p className="muted scope-hint">Bấm vào một kỳ để xem biểu đồ chi tiết.</p>
+      <p className="muted scope-hint">Bấm vào một kỳ để xem biểu đồ chi tiết.</p>
 
-        <div className="period-stat-grid">
+      <div className="period-stat-grid">
           {/* Card tổng tất cả các kỳ */}
           {periodKeys.length > 0 &&
             (() => {
@@ -351,32 +354,47 @@ export default function PayPeriodPage({
           )}
         </div>
 
-        {/* Chức năng cũ: danh sách kỳ đã nhận + khoản trừ + đánh dấu */}
-        <h2 className="salary-section-title">Các kỳ đã nhận</h2>
-        <PayPeriodPanel
-          shifts={shifts}
-          payrolls={payrolls}
-          deductions={deductions}
-          payday={payday}
-          onMarkReceived={onMarkReceived}
-          onUnmark={onUnmark}
-          onAddDeduction={onAddDeduction}
-          onDeleteDeduction={onDeleteDeduction}
-        />
-      </div>
+      {/* Chức năng cũ: danh sách kỳ đã nhận + khoản trừ + đánh dấu */}
+      <h2 className="salary-section-title">Các kỳ đã nhận</h2>
+      <PayPeriodPanel
+        shifts={shifts}
+        payrolls={payrolls}
+        deductions={deductions}
+        payday={payday}
+        onMarkReceived={onMarkReceived}
+        onUnmark={onUnmark}
+        onAddDeduction={onAddDeduction}
+        onDeleteDeduction={onDeleteDeduction}
+      />
+    </>
+  )
 
-      {openScope && (
-        <StatsModal
-          title={openTitle}
-          st={periodStats(shiftsOf(openScope))}
-          deductions={
-            openScope === 'all'
-              ? deductions
-              : deductions.filter((d) => d.period_key === openScope)
-          }
-          onClose={() => setOpenScope(null)}
-        />
-      )}
+  const modal = openScope && (
+    <StatsModal
+      title={openTitle}
+      st={periodStats(shiftsOf(openScope))}
+      deductions={
+        openScope === 'all'
+          ? deductions
+          : deductions.filter((d) => d.period_key === openScope)
+      }
+      onClose={() => setOpenScope(null)}
+    />
+  )
+
+  if (embedded) {
+    return (
+      <div className="salary-embedded">
+        {inner}
+        {modal}
+      </div>
+    )
+  }
+
+  return (
+    <div className="salary-page">
+      <div className="salary-page-inner">{inner}</div>
+      {modal}
     </div>
   )
 }

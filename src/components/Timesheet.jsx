@@ -37,8 +37,16 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
               <span className="date-label">{g.date}</span>
               <span className="muted">
                 {formatHours(t.hours)} h
-                {t.dayHours > 0 && ` · Day ${formatHours(t.dayHours)}h`}
-                {t.nightHours > 0 && ` · Night ${formatHours(t.nightHours)}h`}
+                {t.dayHours > 0 && (
+                  <span className="hours-detail">
+                    {' '}· Day {formatHours(t.dayHours)}h
+                  </span>
+                )}
+                {t.nightHours > 0 && (
+                  <span className="hours-detail">
+                    {' '}· Night {formatHours(t.nightHours)}h
+                  </span>
+                )}
                 {t.lostHours > 0 && (
                   <span className="lost"> · Trễ {formatHours(t.lostHours)}h</span>
                 )}
