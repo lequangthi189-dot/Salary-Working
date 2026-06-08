@@ -14,6 +14,8 @@ import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import WelcomeGuide from './components/WelcomeGuide.jsx'
 import LangToggle from './components/LangToggle.jsx'
 import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
+import WhatsNewModal from './components/WhatsNewModal.jsx'
+import { APP_VERSION, entriesSince } from './lib/changelog.js'
 import { useI18n } from './lib/i18n.jsx'
 import { useCurrency } from './lib/currency.jsx'
 import { useShifts } from './controllers/useShifts.js'
@@ -43,21 +45,38 @@ export default function App() {
   const [showImport, setShowImport] = useState(false)
   const [showDeductions, setShowDeductions] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
   const [showSidebar, setShowSidebar] = useState(false)
   const [showTitleMenu, setShowTitleMenu] = useState(false)
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
   // Người mới: tự hiện hướng dẫn lần đầu (lưu "đã xem" theo user trên máy này).
+  // Người cũ: nếu có bản cập nhật mới (APP_VERSION khác bản đã xem) → hiện "Có cập nhật mới".
   useEffect(() => {
-    if (session && !localStorage.getItem(`welcome-seen-${session.user.id}`)) {
+    if (!session) return
+    const seenWelcome = localStorage.getItem(`welcome-seen-${session.user.id}`)
+    if (!seenWelcome) {
       setShowWelcome(true)
+      return
+    }
+    const seenVer = localStorage.getItem('whatsnew-version')
+    if (seenVer !== APP_VERSION) {
+      const entries = entriesSince(seenVer)
+      if (entries.length) setWhatsNew(entries)
     }
   }, [session])
 
   function closeWelcome() {
     if (session) localStorage.setItem(`welcome-seen-${session.user.id}`, '1')
+    // Người mới vừa xem hướng dẫn → coi như đã biết bản hiện tại, không hiện What's new.
+    localStorage.setItem('whatsnew-version', APP_VERSION)
     setShowWelcome(false)
+  }
+
+  function closeWhatsNew() {
+    localStorage.setItem('whatsnew-version', APP_VERSION)
+    setWhatsNew(null)
   }
 
   // Mở một mục từ sidebar rồi đóng sidebar lại.
@@ -323,6 +342,10 @@ export default function App() {
       )}
 
       {showWelcome && <WelcomeGuide onClose={closeWelcome} />}
+
+      {whatsNew && !showWelcome && (
+        <WhatsNewModal entries={whatsNew} onClose={closeWhatsNew} />
+      )}
 
       {showPaydayPrompt && !showWelcome && (
         <PaydayPrompt

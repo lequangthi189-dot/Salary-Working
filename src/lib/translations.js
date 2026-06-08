@@ -221,6 +221,8 @@ export const translations = {
     'reminder.received': 'Received',
 
     // welcome guide
+    'whatsnew.title': "What's new",
+    'whatsnew.ok': 'Got it',
     'welcome.title': 'Welcome to Salary Working 👋',
     'welcome.subtitle': 'A few quick steps to get started:',
     'welcome.start': 'Get started',
@@ -530,6 +532,8 @@ export const translations = {
     'reminder.received': 'Đã nhận',
 
     // welcome guide
+    'whatsnew.title': 'Có cập nhật mới',
+    'whatsnew.ok': 'Đã hiểu',
     'welcome.title': 'Chào mừng đến Salary Working 👋',
     'welcome.subtitle': 'Vài bước nhanh để bắt đầu:',
     'welcome.start': 'Bắt đầu',
