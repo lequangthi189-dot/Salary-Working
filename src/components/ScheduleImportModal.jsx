@@ -73,8 +73,7 @@ export default function ScheduleImportModal({
     setError(null)
     setInfo(null)
     if (!file) return setError(t('import.errPickImage'))
-    if (!/^\d{9}$/.test(String(employeeCode).trim()))
-      return setError(t('import.errNoCode'))
+    if (!String(employeeCode).trim()) return setError(t('import.errNoCode'))
     setLoading(true)
     try {
       const { base64, mediaType } = await readImage(file)

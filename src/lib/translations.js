@@ -263,7 +263,7 @@ export const translations = {
     'import.createAll': 'Create whole week',
     'import.errPickImage': 'Please choose a schedule image.',
     'import.errNoCode':
-      'Your account has no 9-digit employee code. Update it in your profile and try again.',
+      'Your account has no employee code. Update it in your profile and try again.',
     'import.errNotFound':
       'Code "{code}" not found in the image. Check the code or the image.',
     'import.infoRead':
@@ -586,7 +586,7 @@ export const translations = {
     'import.createAll': 'Tạo ca cả tuần',
     'import.errPickImage': 'Hãy chọn ảnh lịch.',
     'import.errNoCode':
-      'Tài khoản chưa có mã nhân viên 9 số. Hãy cập nhật mã trong hồ sơ rồi thử lại.',
+      'Tài khoản chưa có mã nhân viên. Hãy cập nhật mã trong hồ sơ rồi thử lại.',
     'import.errNotFound':
       'Không tìm thấy mã "{code}" trong ảnh. Kiểm tra lại mã hoặc ảnh.',
     'import.infoRead':
