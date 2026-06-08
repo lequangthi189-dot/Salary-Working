@@ -726,17 +726,19 @@ button[type='submit']:disabled {
 .welcome-start {
   width: 100%;
 }
-/* Bảng đối chiếu công: tô màu theo trạng thái */
-.reconcile-table .rec-match td {
+/* Bảng đối chiếu công: tô màu từng ô (thực tế / dự kiến) theo trạng thái */
+.reconcile-table td.rec-match {
   color: var(--green);
+  font-weight: 600;
 }
-.reconcile-table .rec-diff td {
+.reconcile-table td.rec-diff {
   color: var(--danger);
+  font-weight: 600;
 }
-.reconcile-table .rec-missing td {
+.reconcile-table td.rec-missing {
   color: var(--checkin);
 }
-.reconcile-table .rec-extra td {
+.reconcile-table td.rec-extra {
   color: #c084fc;
 }
 

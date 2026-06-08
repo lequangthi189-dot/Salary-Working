@@ -51,11 +51,25 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
   const [error, setError] = useState(null)
   const [rows, setRows] = useState(null)
 
-  // Map ngày -> ca thực tế trong bảng công (ưu tiên ca đã check-in).
-  const byDate = new Map()
+  // Map ngày -> giờ THỰC TẾ (đã check-in) và giờ DỰ KIẾN (lịch) trong bảng công.
+  // Hai loại có thể nằm ở hai dòng ca khác nhau cùng ngày.
+  const actualByDate = new Map()
+  const schedByDate = new Map()
   for (const s of shifts) {
-    const cur = byDate.get(s.work_date)
-    if (!cur || (s.start_time && !cur.start_time)) byDate.set(s.work_date, s)
+    if (s.start_time && s.end_time && !actualByDate.has(s.work_date))
+      actualByDate.set(s.work_date, s)
+    if (s.scheduled_start && s.scheduled_end && !schedByDate.has(s.work_date))
+      schedByDate.set(s.work_date, s)
+  }
+
+  // Trạng thái khi so một cặp giờ (bảng công) với ảnh.
+  function cmp(imgOff, imgStart, imgEnd, appStart, appEnd) {
+    const appHas = !!(appStart && appEnd)
+    if (!imgOff && appHas)
+      return imgStart === appStart && imgEnd === appEnd ? 'match' : 'diff'
+    if (!imgOff && !appHas) return 'missing'
+    if (imgOff && appHas) return 'extra'
+    return 'off'
   }
 
   function pickFile(e) {
@@ -114,19 +128,12 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
         const imgStart = imgOff ? '' : d.start
         const imgEnd = imgOff ? '' : d.end
 
-        const shift = byDate.get(date)
-        const appStart = shift
-          ? hhmm(shift.start_time || shift.scheduled_start)
-          : ''
-        const appEnd = shift ? hhmm(shift.end_time || shift.scheduled_end) : ''
-        const appHas = !!(appStart && appEnd)
-
-        let status
-        if (!imgOff && appHas)
-          status = imgStart === appStart && imgEnd === appEnd ? 'match' : 'diff'
-        else if (!imgOff && !appHas) status = 'missing'
-        else if (imgOff && appHas) status = 'extra'
-        else status = 'off'
+        const aS = actualByDate.get(date)
+        const actualStart = aS ? hhmm(aS.start_time) : ''
+        const actualEnd = aS ? hhmm(aS.end_time) : ''
+        const sS = schedByDate.get(date)
+        const schedStart = sS ? hhmm(sS.scheduled_start) : ''
+        const schedEnd = sS ? hhmm(sS.scheduled_end) : ''
 
         return {
           weekday: wd,
@@ -134,10 +141,12 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
           imgStart,
           imgEnd,
           imgOff,
-          appStart,
-          appEnd,
-          appHas,
-          status,
+          actualStart,
+          actualEnd,
+          schedStart,
+          schedEnd,
+          statusActual: cmp(imgOff, imgStart, imgEnd, actualStart, actualEnd),
+          statusSched: cmp(imgOff, imgStart, imgEnd, schedStart, schedEnd),
         }
       })
       setRows(compared)
@@ -148,9 +157,12 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
     }
   }
 
-  // Bỏ qua ngày cả hai đều nghỉ.
-  const visibleRows = rows ? rows.filter((r) => r.status !== 'off') : []
-  const matchCount = visibleRows.filter((r) => r.status === 'match').length
+  // Bỏ qua ngày mà cả ảnh, thực tế, dự kiến đều nghỉ/không có.
+  const visibleRows = rows
+    ? rows.filter((r) => !(r.statusActual === 'off' && r.statusSched === 'off'))
+    : []
+  const matchActual = visibleRows.filter((r) => r.statusActual === 'match').length
+  const matchSched = visibleRows.filter((r) => r.statusSched === 'match').length
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -219,10 +231,13 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
         {rows && (
           <>
             <p
-              className={`msg ${matchCount === visibleRows.length ? 'info' : 'error'}`}
+              className={`msg ${
+                matchActual === visibleRows.length ? 'info' : 'error'
+              }`}
             >
-              {t('reconcile.summary', {
-                match: matchCount,
+              {t('reconcile.summary2', {
+                a: matchActual,
+                s: matchSched,
                 total: visibleRows.length,
               })}
             </p>
@@ -232,19 +247,27 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
                   <tr>
                     <th>{t('import.thDate')}</th>
                     <th>{t('reconcile.colImage')}</th>
-                    <th>{t('reconcile.colApp')}</th>
-                    <th>{t('reconcile.colStatus')}</th>
+                    <th>{t('reconcile.colActual')}</th>
+                    <th>{t('reconcile.colSched')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visibleRows.map((r) => (
-                    <tr key={r.weekday} className={`rec-${r.status}`}>
+                    <tr key={r.weekday}>
                       <td>{dmShort(r.date)}</td>
-                      <td>
-                        {r.imgOff ? '—' : `${r.imgStart}–${r.imgEnd}`}
+                      <td>{r.imgOff ? '—' : `${r.imgStart}–${r.imgEnd}`}</td>
+                      <td
+                        className={`rec-${r.statusActual}`}
+                        title={t(`reconcile.${r.statusActual}`)}
+                      >
+                        {r.actualStart ? `${r.actualStart}–${r.actualEnd}` : '—'}
                       </td>
-                      <td>{r.appHas ? `${r.appStart}–${r.appEnd}` : '—'}</td>
-                      <td>{t(`reconcile.${r.status}`)}</td>
+                      <td
+                        className={`rec-${r.statusSched}`}
+                        title={t(`reconcile.${r.statusSched}`)}
+                      >
+                        {r.schedStart ? `${r.schedStart}–${r.schedEnd}` : '—'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
