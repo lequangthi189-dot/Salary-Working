@@ -334,6 +334,8 @@ export default function App() {
       {showImport && (
         <ScheduleImportModal
           employeeCode={employeeCode}
+          fullName={fullName}
+          phone={profile?.phone || ''}
           onImport={importWeekShifts}
           onClose={() => setShowImport(false)}
         />
@@ -342,6 +344,8 @@ export default function App() {
       {showReconcile && (
         <ReconcileModal
           employeeCode={employeeCode}
+          fullName={fullName}
+          phone={profile?.phone || ''}
           shifts={shifts}
           onClose={() => setShowReconcile(false)}
         />

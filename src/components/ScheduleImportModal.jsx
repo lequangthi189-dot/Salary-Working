@@ -46,6 +46,8 @@ function readImage(file) {
 // → tạo ca cả tuần.
 export default function ScheduleImportModal({
   employeeCode = '',
+  fullName = '',
+  phone = '',
   onImport,
   onClose,
 }) {
@@ -73,7 +75,8 @@ export default function ScheduleImportModal({
     setError(null)
     setInfo(null)
     if (!file) return setError(t('import.errPickImage'))
-    if (!String(employeeCode).trim()) return setError(t('import.errNoCode'))
+    if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
+      return setError(t('import.errNoCode'))
     setLoading(true)
     try {
       const { base64, mediaType } = await readImage(file)
@@ -84,6 +87,8 @@ export default function ScheduleImportModal({
             image: base64,
             mediaType,
             employeeCode: employeeCode.trim(),
+            fullName,
+            phone,
             weekStart,
           },
         }
