@@ -10,6 +10,27 @@ const emptySignup = {
   confirm: "",
 };
 
+// Lưu nháp form đăng ký (email + SĐT) để "Quay lại đăng ký" không mất dữ liệu.
+// KHÔNG lưu mật khẩu (bảo mật). sessionStorage: tự xoá khi đóng tab.
+const SIGNUP_DRAFT = "signup-draft";
+function loadSignupDraft() {
+  try {
+    return JSON.parse(sessionStorage.getItem(SIGNUP_DRAFT) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveSignupDraft(s) {
+  try {
+    sessionStorage.setItem(
+      SIGNUP_DRAFT,
+      JSON.stringify({ email: s.email, phone: s.phone })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 // Chế độ mở đầu: 'signup' nếu vừa bấm "Quay lại đăng ký" từ form thông tin.
 function initialMode() {
   try {
@@ -28,13 +49,20 @@ export default function LoginForm() {
   const [mode, setMode] = useState(initialMode); // 'signin' | 'signup'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [signup, setSignup] = useState(emptySignup);
+  const [signup, setSignup] = useState(() => ({
+    ...emptySignup,
+    ...loadSignupDraft(),
+  }));
   const [message, setMessage] = useState(null);
   const [busy, setBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
 
   function updateSignup(field, value) {
-    setSignup((prev) => ({ ...prev, [field]: value }));
+    setSignup((prev) => {
+      const next = { ...prev, [field]: value };
+      saveSignupDraft(next);
+      return next;
+    });
   }
 
   async function handleSignin(e) {

@@ -1,33 +1,100 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useI18n } from '../lib/i18n.jsx'
 import LangToggle from './LangToggle.jsx'
 import { DEFAULT_NIGHT_PCT } from '../lib/rates.js'
+
+// Lưu nháp thông tin nhân viên (chỉ ở chế độ gate sau đăng ký) để bấm "Quay lại
+// đăng ký" rồi quay vào không mất dữ liệu. sessionStorage: tự xoá khi đóng tab.
+const EMP_DRAFT = 'empinfo-draft'
+function loadEmpDraft() {
+  try {
+    return JSON.parse(sessionStorage.getItem(EMP_DRAFT) || '{}')
+  } catch {
+    return {}
+  }
+}
+function saveEmpDraft(d) {
+  try {
+    sessionStorage.setItem(EMP_DRAFT, JSON.stringify(d))
+  } catch {
+    /* ignore */
+  }
+}
+function clearEmpDraft() {
+  try {
+    sessionStorage.removeItem(EMP_DRAFT)
+  } catch {
+    /* ignore */
+  }
+}
 
 // Form thông tin nhân viên — BẮT BUỘC điền sau đăng ký mới vào được app.
 // Thứ tự: họ, tên, mã NV, lương 1 giờ, phụ cấp đêm (%), phụ cấp lễ ca ngày/đêm (%).
 // Cũng dùng lại để chỉnh trong Hồ sơ (truyền onCancel để hiện nút Hủy).
 export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBack }) {
   const { t } = useI18n()
-  const [lastName, setLastName] = useState(initial.last_name || '')
-  const [firstName, setFirstName] = useState(initial.first_name || '')
-  const [employeeCode, setEmployeeCode] = useState(initial.employee_code || '')
+  // Chỉ giữ nháp ở chế độ gate (có onBack), không áp dụng khi chỉnh trong Hồ sơ.
+  const [draft] = useState(() => (onBack ? loadEmpDraft() : {}))
+  const pick = (k, fallback) => (draft[k] !== undefined ? draft[k] : fallback)
+
+  const [lastName, setLastName] = useState(pick('lastName', initial.last_name || ''))
+  const [firstName, setFirstName] = useState(
+    pick('firstName', initial.first_name || '')
+  )
+  const [employeeCode, setEmployeeCode] = useState(
+    pick('employeeCode', initial.employee_code || '')
+  )
   const [hourlyRate, setHourlyRate] = useState(
-    initial.hourly_rate != null ? String(initial.hourly_rate) : ''
+    pick('hourlyRate', initial.hourly_rate != null ? String(initial.hourly_rate) : '')
   )
   const [nightPct, setNightPct] = useState(
-    initial.night_pct != null ? String(initial.night_pct) : String(DEFAULT_NIGHT_PCT)
+    pick(
+      'nightPct',
+      initial.night_pct != null ? String(initial.night_pct) : String(DEFAULT_NIGHT_PCT)
+    )
   )
   const [holidayDayPct, setHolidayDayPct] = useState(
-    initial.holiday_day_pct != null ? String(initial.holiday_day_pct) : '300'
+    pick(
+      'holidayDayPct',
+      initial.holiday_day_pct != null ? String(initial.holiday_day_pct) : '300'
+    )
   )
   const [holidayNightPct, setHolidayNightPct] = useState(
-    initial.holiday_night_pct != null ? String(initial.holiday_night_pct) : '300'
+    pick(
+      'holidayNightPct',
+      initial.holiday_night_pct != null ? String(initial.holiday_night_pct) : '300'
+    )
   )
   const [hasNightShift, setHasNightShift] = useState(
-    initial.has_night_shift != null ? initial.has_night_shift : true
+    pick('hasNightShift', initial.has_night_shift != null ? initial.has_night_shift : true)
   )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+
+  // Lưu nháp mỗi khi đổi (chỉ chế độ gate).
+  useEffect(() => {
+    if (!onBack) return
+    saveEmpDraft({
+      lastName,
+      firstName,
+      employeeCode,
+      hourlyRate,
+      nightPct,
+      holidayDayPct,
+      holidayNightPct,
+      hasNightShift,
+    })
+  }, [
+    onBack,
+    lastName,
+    firstName,
+    employeeCode,
+    hourlyRate,
+    nightPct,
+    holidayDayPct,
+    holidayNightPct,
+    hasNightShift,
+  ])
 
   async function submit(e) {
     e.preventDefault()
@@ -58,6 +125,7 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
     })
     setBusy(false)
     if (err) setError(err)
+    else clearEmpDraft() // lưu xong thì bỏ nháp
   }
 
   return (
