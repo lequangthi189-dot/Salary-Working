@@ -1,7 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../lib/i18n.jsx'
 import LangToggle from './LangToggle.jsx'
 import { DEFAULT_NIGHT_PCT } from '../lib/rates.js'
+import { getRate } from '../lib/currency.jsx'
+
+// Quy đổi giữa VND (lưu trong DB) và ngoại tệ đang hiển thị.
+const CUR_CODE = { en: 'GBP', us: 'USD', au: 'AUD' }
+function vndToCur(vnd, lang) {
+  const code = CUR_CODE[lang]
+  if (!code) return vnd
+  const r = getRate(code)
+  return r ? vnd * r : vnd
+}
+function curToVnd(amount, lang) {
+  const code = CUR_CODE[lang]
+  if (!code) return amount
+  const r = getRate(code)
+  return r ? amount / r : amount
+}
+// Chuỗi cho ô lương: VND → số nguyên; ngoại tệ → tối đa 2 số lẻ.
+function fmtRateInput(vnd, lang) {
+  if (vnd == null || vnd === '') return ''
+  const v = vndToCur(Number(vnd), lang)
+  return lang === 'vi' || !CUR_CODE[lang]
+    ? String(Math.round(v))
+    : String(Number(v.toFixed(2)))
+}
 
 // Lưu nháp thông tin nhân viên (chỉ ở chế độ gate sau đăng ký) để bấm "Quay lại
 // đăng ký" rồi quay vào không mất dữ liệu. sessionStorage: tự xoá khi đóng tab.
@@ -49,7 +73,7 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
     pick('employeeCode', initial.employee_code || '')
   )
   const [hourlyRate, setHourlyRate] = useState(
-    pick('hourlyRate', initial.hourly_rate != null ? String(initial.hourly_rate) : '')
+    pick('hourlyRate', fmtRateInput(initial.hourly_rate, lang))
   )
   const [nightPct, setNightPct] = useState(
     pick(
@@ -74,6 +98,15 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
   )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+
+  // Đổi ngôn ngữ giữa chừng → quy đổi số tiền đang nhập sang đơn vị tiền mới.
+  const prevLang = useRef(lang)
+  useEffect(() => {
+    if (prevLang.current === lang) return
+    const from = prevLang.current
+    prevLang.current = lang
+    setHourlyRate((v) => (v ? fmtRateInput(curToVnd(Number(v), from), lang) : v))
+  }, [lang])
 
   // Lưu nháp mỗi khi đổi (chỉ chế độ gate).
   useEffect(() => {
@@ -107,7 +140,8 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
       setError(t('emp.errRequired'))
       return
     }
-    const rate = Math.round(Number(hourlyRate))
+    // Nhập theo đơn vị tiền đang hiển thị → quy về VND để lưu.
+    const rate = Math.round(curToVnd(Number(hourlyRate), lang))
     if (!Number.isFinite(rate) || rate <= 0) {
       setError(t('emp.errRate'))
       return
@@ -182,12 +216,12 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
           <input
             type="number"
             min="0"
-            step="500"
-            inputMode="numeric"
+            step={lang === 'vi' || !CUR_CODE[lang] ? '500' : '0.01'}
+            inputMode="decimal"
             value={hourlyRate}
             onChange={(e) => setHourlyRate(e.target.value)}
             required
-            placeholder="25500"
+            placeholder={lang === 'vi' || !CUR_CODE[lang] ? '25500' : ''}
           />
         </label>
         {hasNightShift && (
