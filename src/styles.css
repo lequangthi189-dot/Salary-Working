@@ -352,6 +352,12 @@ button[type='submit']:disabled {
   border-color: var(--accent);
   color: var(--accent);
 }
+/* Nhóm nút bên phải header */
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
 /* Nút "Nhập lịch tuần" ở header: thấp bằng logo (26px) */
 .header-import {
   height: 26px;
@@ -720,6 +726,22 @@ button[type='submit']:disabled {
 .welcome-start {
   width: 100%;
 }
+/* Bảng đối chiếu công: tô màu từng ô (thực tế / dự kiến) theo trạng thái */
+.reconcile-table td.rec-match {
+  color: var(--green);
+  font-weight: 600;
+}
+.reconcile-table td.rec-diff {
+  color: var(--danger);
+  font-weight: 600;
+}
+.reconcile-table td.rec-missing {
+  color: var(--checkin);
+}
+.reconcile-table td.rec-extra {
+  color: #c084fc;
+}
+
 /* "Có cập nhật mới" */
 .whatsnew-entry {
   margin-bottom: 0.5rem;

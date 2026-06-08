@@ -15,6 +15,7 @@ import WelcomeGuide from './components/WelcomeGuide.jsx'
 import LangToggle from './components/LangToggle.jsx'
 import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
 import WhatsNewModal from './components/WhatsNewModal.jsx'
+import ReconcileModal from './components/ReconcileModal.jsx'
 import { APP_VERSION, entriesSince } from './lib/changelog.js'
 import { useI18n } from './lib/i18n.jsx'
 import { useCurrency } from './lib/currency.jsx'
@@ -43,6 +44,7 @@ export default function App() {
   const { session, loading, signOut, recovery, endRecovery } = useAuth()
   const [showProfile, setShowProfile] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [showReconcile, setShowReconcile] = useState(false)
   const [showDeductions, setShowDeductions] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
@@ -212,13 +214,22 @@ export default function App() {
             )}
           </div>
         </div>
-        <button
-          type="button"
-          className="account-btn header-import"
-          onClick={() => setShowImport(true)}
-        >
-          {t('nav.importWeek')}
-        </button>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="account-btn header-import"
+            onClick={() => setShowImport(true)}
+          >
+            {t('nav.importWeek')}
+          </button>
+          <button
+            type="button"
+            className="account-btn header-import"
+            onClick={() => setShowReconcile(true)}
+          >
+            {t('reconcile.title')}
+          </button>
+        </div>
       </header>
 
       {showSidebar && (
@@ -325,6 +336,14 @@ export default function App() {
           employeeCode={employeeCode}
           onImport={importWeekShifts}
           onClose={() => setShowImport(false)}
+        />
+      )}
+
+      {showReconcile && (
+        <ReconcileModal
+          employeeCode={employeeCode}
+          shifts={shifts}
+          onClose={() => setShowReconcile(false)}
         />
       )}
 
