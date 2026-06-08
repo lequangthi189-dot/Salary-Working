@@ -1,0 +1,615 @@
+// Từ điển đa ngôn ngữ. Key dạng "namespace.name". Placeholder dạng {var}.
+// en = mặc định; vi = Tiếng Việt.
+
+export const translations = {
+  en: {
+    // common
+    'common.close': 'Close',
+    'common.save': 'Save',
+    'common.cancel': 'Cancel',
+    'common.edit': 'Edit',
+    'common.day': 'day',
+    'common.night': 'night',
+    'common.you': 'You',
+    'common.show': 'Show',
+    'common.hide': 'Hide',
+    'common.notSet': 'Not set',
+
+    // nav / app
+    'nav.importWeek': 'Import weekly schedule',
+    'nav.payPeriod': 'Pay period',
+    'nav.account': 'Account',
+    'nav.guide': 'Guide',
+    'nav.deductions': 'Compensation',
+    'nav.openMenu': 'Open menu',
+    'nav.closeMenu': 'Close menu',
+    'lang.toggle': 'Tiếng Việt',
+    'lang.label': 'EN',
+
+    // auth
+    'auth.signInSubtitle': 'Sign in to your timesheet',
+    'auth.signUpSubtitle': 'Create an account',
+    'auth.email': 'Email',
+    'auth.password': 'Password',
+    'auth.signIn': 'Sign in',
+    'auth.signUp': 'Sign up',
+    'auth.forgot': 'Forgot password?',
+    'auth.fullName': 'Full name',
+    'auth.employeeCode': 'Employee code (9 digits)',
+    'auth.phone': 'Phone number',
+    'auth.confirmPassword': 'Confirm password',
+    'auth.noAccount': "Don't have an account? Sign up",
+    'auth.haveAccount': 'Already have an account? Sign in',
+    'auth.invalidCreds': 'Wrong email or password.',
+    'auth.enterEmailFirst': 'Enter your email above first.',
+    'auth.resetSent':
+      'Sent a password reset link to {email}. Open the email and click the link.',
+    'auth.empCodeInvalid':
+      'Employee code must be exactly 9 digits (e.g. 000000000).',
+    'auth.phoneInvalid':
+      'Invalid phone number (7–15 digits, optional country code, e.g. +84901234567).',
+    'auth.pwMismatch': 'Passwords do not match.',
+    'auth.accountCreatedSignedIn':
+      'Account created and signed in. (Email confirmation is disabled on the server, so no email was sent.)',
+    'auth.accountCreatedConfirm':
+      'Account created. We sent a confirmation link to {email}. Open it to activate your account.',
+
+    // reset password
+    'reset.title': 'Reset password',
+    'reset.subtitle': 'Enter a new password for your account.',
+    'reset.newPassword': 'New password',
+    'reset.confirmNew': 'Confirm new password',
+    'reset.submit': 'Change password',
+    'reset.done': 'Password changed. Entering app…',
+
+    // change password
+    'changePw.title': 'Change password',
+    'changePw.current': 'Current password',
+    'changePw.new': 'New password',
+    'changePw.confirm': 'Confirm new password',
+    'changePw.save': 'Save password',
+    'changePw.mustDiffer': 'New password must differ from the current one.',
+    'changePw.currentWrong': 'Current password is incorrect.',
+    'changePw.success': 'Password changed successfully.',
+
+    // shift form
+    'shiftForm.title': 'Add a shift',
+    'shiftForm.date': 'Date',
+    'shiftForm.checkin': 'Check-in',
+    'shiftForm.checkout': 'Check-out',
+    'shiftForm.schedStart': 'Sched. start',
+    'shiftForm.schedEnd': 'Sched. end',
+    'shiftForm.preview': 'Current shift ({type}): {hours} h · {money}',
+    'shiftForm.full24': ' · full 24h (start = end)',
+    'shiftForm.received': 'Salary received',
+    'shiftForm.receivedTitle':
+      'Payday has arrived — click to mark as received',
+    'shiftForm.adding': 'Adding…',
+    'shiftForm.addShift': 'Add shift',
+    'shiftForm.pickDate': 'Please pick a date.',
+    'shiftForm.schedOverErr':
+      'Scheduled time cannot exceed {n} hours (currently {h}h).',
+    'shiftForm.shiftOverErr': 'A shift cannot exceed {n} hours (currently {h}h).',
+    'shiftForm.schedOver': 'Scheduled max {n} hours — currently {h}h.',
+    'shiftForm.shiftOver': 'Shift max {n} hours — currently {h}h.',
+    'time.checkinReal': 'Check-in (actual time)',
+    'time.checkoutReal': 'Check-out (actual time)',
+    'time.schedInMark': 'Scheduled check-in (late reference)',
+    'time.schedOutMark': 'Scheduled check-out (late reference)',
+
+    // month stats
+    'monthStats.salaryLabel': 'Salary this month:',
+    'monthStats.expected': 'Expected',
+    'monthStats.penalty': 'Penalty',
+    'monthStats.deduction': 'Compensation',
+    'monthStats.totalHours': 'Total Hours',
+    'monthStats.dayHours': 'Day Hours',
+    'monthStats.nightHours': 'Night Hours',
+    'monthStats.dayShifts': 'Day Shifts',
+    'monthStats.nightShifts': 'Night Shifts',
+    'monthStats.lateHours': 'Late Hours',
+    'fx.updatedAt': '{sym}1 = {rate} VND · updated {time}',
+
+    // timesheet / shift card
+    'timesheet.empty': 'No shifts yet. Add your first one above.',
+    'timesheet.day': 'Day',
+    'timesheet.night': 'Night',
+    'timesheet.late': 'Late',
+    'filter.all': 'All',
+    'filter.day': 'Day shifts',
+    'filter.night': 'Night shifts',
+    'filter.none': 'No matching shifts.',
+    'shiftCard.notCheckedIn': '(not checked in)',
+    'shiftCard.lateIn': ' · late in {h}h',
+    'shiftCard.earlyOut': ' · left early {h}h',
+    'shiftCard.in': 'In',
+    'shiftCard.out': 'Out',
+    'shiftCard.schedIn': 'Sched in',
+    'shiftCard.schedOut': 'Sched out',
+    'shiftCard.editAria': 'Edit shift',
+    'shiftCard.deleteAria': 'Delete shift',
+
+    // deductions card
+    'ded.title': 'Compensation',
+    'ded.amount': 'Amount',
+    'ded.reason': 'Reason (required)',
+    'ded.date': 'Deduction date',
+    'ded.add': '+ Add',
+    'ded.net': 'Net after deductions',
+    'ded.amountErr': 'Enter a deduction amount (> 0).',
+    'ded.reasonErr': 'A reason is required.',
+    'ded.dateErr': 'Pick the deduction date.',
+    'ded.empty': 'No deductions in this period yet.',
+    'ded.delAria': 'Delete deduction',
+
+    // pay period page
+    'pp.scopeHint': 'Tap a period to see detailed charts.',
+    'pp.allPeriods': 'All periods',
+    'pp.lostDueLate': 'Lost to late −{money}',
+    'pp.noData': 'No shifts to summarize yet.',
+    'pp.receivedPeriods': 'Received periods',
+    'pp.donut.salary': 'Salary',
+    'pp.donut.salaryCenter': 'net',
+    'pp.donut.ded': 'Compensation',
+    'pp.donut.dedCenter': 'total',
+    'pp.donut.noDed': 'No deductions.',
+    'pp.donut.hours': 'Day / night hours',
+    'pp.donut.hoursCenter': 'total hours',
+    'pp.donut.shifts': 'Day / night shifts',
+    'pp.donut.shiftsCenter': 'total shifts',
+    'pp.seg.net': 'Net',
+    'pp.seg.ded': 'Compensation',
+    'pp.seg.lost': 'Lost to late',
+    'pp.seg.dayHours': 'Day hours',
+    'pp.seg.nightHours': 'Night hours',
+    'pp.seg.lateHours': 'Late hours',
+    'pp.seg.dayShifts': 'Day shifts',
+    'pp.seg.nightShifts': 'Night shifts',
+    'pp.seg.noReason': '(no reason)',
+    'pp.unit.h': '{n} h',
+    'pp.unit.shift': '{n} shifts',
+    'pp.tooltip': '{label}: {display} ({pct}%)',
+
+    // pay period panel
+    'ppl.grandNet': 'Total net received (after deductions)',
+    'ppl.grandSub': 'Before deductions {gross} · deducted −{ded}',
+    'ppl.empty': 'No period marked as received yet.',
+    'ppl.receivedBadge': '✓ Received',
+    'ppl.dedNet': 'Deducted −{ded} · Net {net}',
+    'ppl.receivedOn': 'Received on {date}',
+
+    // pay period modal
+    'ppm.totalHours': 'Total hours',
+    'ppm.dayHours': 'Day hours',
+    'ppm.nightHours': 'Night hours',
+    'ppm.dayPay': 'Day-shift pay',
+    'ppm.nightPay': 'Night-shift pay',
+    'ppm.totalPay': 'Total pay',
+    'ppm.netPay': 'Net (after deductions)',
+    'ppm.shiftCount': 'Shifts',
+    'ppm.workDays': 'Work days',
+    'ppm.avgHours': 'Avg hours/day',
+    'ppm.lostHours': 'Lost hours',
+    'ppm.payWindow': 'Pay date: 01–10/{m}/{y}',
+    'ppm.receivedBadge': '✓ Salary received',
+    'ppm.unmark': 'Unmark',
+    'ppm.receiveDay': 'Receive day',
+    'ppm.markReceived': 'Salary received',
+
+    // profile
+    'profile.title': 'Account info',
+    'profile.empCode': 'Employee code',
+    'profile.payday': 'Payday',
+    'profile.dayN': 'Day {n}',
+    'profile.signOut': 'Sign out',
+
+    // payday prompt
+    'payday.title': 'Payday',
+    'payday.prompt':
+      'Salaries are paid on the 1st–10th each month. Which day do you usually get paid? (Optional — you can set it later in Account.)',
+    'payday.receiveDay': 'Receive day',
+    'payday.skip': 'Skip',
+
+    // salary reminder
+    'reminder.title': 'Receive salary',
+    'reminder.question': '{name}, has your {period} salary arrived yet?',
+    'reminder.notYet': 'Not yet',
+    'reminder.received': 'Received',
+
+    // welcome guide
+    'welcome.title': 'Welcome to Salary Working 👋',
+    'welcome.subtitle': 'A few quick steps to get started:',
+    'welcome.start': 'Get started',
+    'welcome.step1.title': 'Add a shift',
+    'welcome.step1.desc':
+      'Pick a date, enter Check-in / Check-out (and a schedule if any) then press "Add shift".',
+    'welcome.step2.title': 'Planned schedule',
+    'welcome.step2.desc':
+      'Press "Import weekly schedule" to read a schedule from an image, or enter it manually. The app compares actual time with the schedule to compute lateness.',
+    'welcome.step3.title': 'Automatic salary',
+    'welcome.step3.desc':
+      'Day hours (06–22h) and night hours (22–06h) use different rates. See the monthly total in the stats block.',
+    'welcome.step4.title': 'Compensation',
+    'welcome.step4.desc':
+      'Press "Compensation" to add a period deduction (with a reason).',
+    'welcome.step5.title': 'Pay period',
+    'welcome.step5.desc':
+      'Press "Pay period" to view monthly charts and mark salary as received.',
+    'welcome.step6.title': 'Account',
+    'welcome.step6.desc':
+      'Open "Account" to set your employee code (used for reading schedules) and payday.',
+
+    // schedule import
+    'import.title': 'Import weekly schedule from image',
+    'import.image': 'Schedule image',
+    'import.weekStart': 'Week start (Monday)',
+    'import.empcodeFrom': 'Employee code (from profile): ',
+    'import.none': '— none —',
+    'import.previewAlt': 'Schedule image preview',
+    'import.reading': 'Reading…',
+    'import.readAI': 'Read schedule with AI',
+    'import.thWeekday': 'Day',
+    'import.thDate': 'Date',
+    'import.thIn': 'In',
+    'import.thOut': 'Out',
+    'import.thOff': 'Off',
+    'import.creating': 'Creating…',
+    'import.createAll': 'Create whole week',
+    'import.errPickImage': 'Please choose a schedule image.',
+    'import.errNoCode':
+      'Your account has no 9-digit employee code. Update it in your profile and try again.',
+    'import.errNotFound':
+      'Code "{code}" not found in the image. Check the code or the image.',
+    'import.infoRead':
+      'Read schedule for code "{code}". Review/edit then press Create.',
+    'import.errNoShift': 'No shift to create.',
+    'import.errTooLong':
+      'Scheduled shift cannot exceed {n} hours/shift. Fix: {list}',
+    'import.errSome': 'Some shifts could not be created:\n{errs}',
+    'import.errReadImage': 'Could not read the image',
+    'wd.Mon': 'Mon',
+    'wd.Tue': 'Tue',
+    'wd.Wed': 'Wed',
+    'wd.Thu': 'Thu',
+    'wd.Fri': 'Fri',
+    'wd.Sat': 'Sat',
+    'wd.Sun': 'Sun',
+
+    // employee info form
+    'emp.title': 'Employee information',
+    'emp.subtitle': 'Fill in your details to start using the app.',
+    'emp.lastName': 'Last name',
+    'emp.firstName': 'First name',
+    'emp.hourlyRate': 'Hourly wage (VND)',
+    'emp.nightPct': 'Night allowance (%)',
+    'emp.holidayDayPct': 'Holiday allowance — day shift (%)',
+    'emp.holidayNightPct': 'Holiday allowance — night shift (%)',
+    'emp.save': 'Save & continue',
+    'emp.errRequired': 'Please enter last name and first name.',
+    'emp.errRate': 'Enter an hourly wage greater than 0.',
+
+    // profile extra
+    'profile.hourlyRate': 'Hourly wage',
+    'profile.nightPct': 'Night allowance',
+    'profile.holidayDayPct': 'Holiday — day shift',
+    'profile.holidayNightPct': 'Holiday — night shift',
+    'profile.editInfo': 'Edit info',
+
+    // shift form holiday
+    'shiftForm.holiday': 'Holiday',
+
+    // lib: period label + lost breakdown
+    'period.label': 'Salary month {m} ({start} – {end})',
+    'lost.full': 'Lost {total}h — {segs}',
+    'lost.lateIn': 'late in {part}',
+    'lost.earlyOut': 'left early {part}',
+    'lost.part': '{h}h (day {day} / night {night})',
+  },
+
+  vi: {
+    // common
+    'common.close': 'Đóng',
+    'common.save': 'Lưu',
+    'common.cancel': 'Hủy',
+    'common.edit': 'Chỉnh',
+    'common.day': 'ngày',
+    'common.night': 'đêm',
+    'common.you': 'Bạn',
+    'common.show': 'Hiện',
+    'common.hide': 'Ẩn',
+    'common.notSet': 'Chưa đặt',
+
+    // nav / app
+    'nav.importWeek': 'Nhập lịch tuần',
+    'nav.payPeriod': 'Kỳ lương',
+    'nav.account': 'Tài khoản',
+    'nav.guide': 'Hướng dẫn',
+    'nav.deductions': 'Tiền bồi thường',
+    'nav.openMenu': 'Mở menu',
+    'nav.closeMenu': 'Đóng menu',
+    'lang.toggle': 'English',
+    'lang.label': 'VI',
+
+    // auth
+    'auth.signInSubtitle': 'Đăng nhập vào bảng công',
+    'auth.signUpSubtitle': 'Tạo tài khoản',
+    'auth.email': 'Email',
+    'auth.password': 'Mật khẩu',
+    'auth.signIn': 'Đăng nhập',
+    'auth.signUp': 'Đăng ký',
+    'auth.forgot': 'Quên mật khẩu?',
+    'auth.fullName': 'Họ và tên',
+    'auth.employeeCode': 'Mã nhân viên (9 chữ số)',
+    'auth.phone': 'Số điện thoại',
+    'auth.confirmPassword': 'Xác nhận mật khẩu',
+    'auth.noAccount': 'Chưa có tài khoản? Đăng ký',
+    'auth.haveAccount': 'Đã có tài khoản? Đăng nhập',
+    'auth.invalidCreds': 'Sai email hoặc mật khẩu.',
+    'auth.enterEmailFirst': 'Nhập email phía trên trước đã.',
+    'auth.resetSent':
+      'Đã gửi link đặt lại mật khẩu tới {email}. Mở email và bấm vào link.',
+    'auth.empCodeInvalid': 'Mã nhân viên phải gồm đúng 9 chữ số (vd: 000000000).',
+    'auth.phoneInvalid':
+      'Số điện thoại không hợp lệ (7–15 chữ số, có thể kèm mã quốc gia, vd: +84901234567).',
+    'auth.pwMismatch': 'Mật khẩu nhập lại không khớp.',
+    'auth.accountCreatedSignedIn':
+      'Đã tạo tài khoản và đăng nhập. (Xác nhận email đang tắt trên máy chủ nên không có thư nào được gửi.)',
+    'auth.accountCreatedConfirm':
+      'Đã tạo tài khoản. Đã gửi link xác nhận tới {email}. Mở link để kích hoạt tài khoản.',
+
+    // reset password
+    'reset.title': 'Đặt lại mật khẩu',
+    'reset.subtitle': 'Nhập mật khẩu mới cho tài khoản của bạn.',
+    'reset.newPassword': 'Mật khẩu mới',
+    'reset.confirmNew': 'Nhập lại mật khẩu mới',
+    'reset.submit': 'Đổi mật khẩu',
+    'reset.done': 'Đã đổi mật khẩu. Đang vào app…',
+
+    // change password
+    'changePw.title': 'Đổi mật khẩu',
+    'changePw.current': 'Mật khẩu hiện tại',
+    'changePw.new': 'Mật khẩu mới',
+    'changePw.confirm': 'Xác nhận mật khẩu mới',
+    'changePw.save': 'Lưu mật khẩu',
+    'changePw.mustDiffer': 'Mật khẩu mới phải khác mật khẩu hiện tại.',
+    'changePw.currentWrong': 'Mật khẩu hiện tại không đúng.',
+    'changePw.success': 'Đã đổi mật khẩu thành công.',
+
+    // shift form
+    'shiftForm.title': 'Nhập ca làm việc',
+    'shiftForm.date': 'Ngày',
+    'shiftForm.checkin': 'Giờ vào',
+    'shiftForm.checkout': 'Giờ ra',
+    'shiftForm.schedStart': 'Lịch vào',
+    'shiftForm.schedEnd': 'Lịch ra',
+    'shiftForm.preview': 'Ca đang nhập ({type}): {hours} h · {money}',
+    'shiftForm.full24': ' · full 24h (giờ vào = giờ ra)',
+    'shiftForm.received': 'Đã nhận lương',
+    'shiftForm.receivedTitle':
+      'Đã tới ngày nhận lương — bấm để đánh dấu đã nhận',
+    'shiftForm.adding': 'Đang thêm…',
+    'shiftForm.addShift': 'Thêm ca',
+    'shiftForm.pickDate': 'Hãy chọn ngày.',
+    'shiftForm.schedOverErr':
+      'Lịch dự kiến không được quá {n} giờ (đang {h}h).',
+    'shiftForm.shiftOverErr': 'Một ca không được quá {n} giờ (đang {h}h).',
+    'shiftForm.schedOver': 'Lịch dự kiến tối đa {n} giờ — đang {h}h.',
+    'shiftForm.shiftOver': 'Một ca tối đa {n} giờ — đang {h}h.',
+    'time.checkinReal': 'Check-in (giờ thực tế)',
+    'time.checkoutReal': 'Check-out (giờ thực tế)',
+    'time.schedInMark': 'Lịch dự kiến vào (mốc tính trễ)',
+    'time.schedOutMark': 'Lịch dự kiến ra (mốc tính trễ)',
+
+    // month stats
+    'monthStats.salaryLabel': 'Lương tháng này:',
+    'monthStats.expected': 'Dự kiến',
+    'monthStats.penalty': 'Phạt',
+    'monthStats.deduction': 'Bồi thường',
+    'monthStats.totalHours': 'Tổng Giờ Tháng',
+    'monthStats.dayHours': 'Giờ Ngày',
+    'monthStats.nightHours': 'Giờ Đêm',
+    'monthStats.dayShifts': 'Ca Ngày',
+    'monthStats.nightShifts': 'Ca Đêm',
+    'monthStats.lateHours': 'Tổng Giờ Trễ',
+    'fx.updatedAt': '{sym}1 = {rate} VND · cập nhật {time}',
+
+    // timesheet / shift card
+    'timesheet.empty': 'Chưa có ca nào. Thêm ca đầu tiên ở trên.',
+    'timesheet.day': 'Ngày',
+    'timesheet.night': 'Đêm',
+    'timesheet.late': 'Trễ',
+    'filter.all': 'Tất cả',
+    'filter.day': 'Ca ngày',
+    'filter.night': 'Ca đêm',
+    'filter.none': 'Không có ca phù hợp.',
+    'shiftCard.notCheckedIn': '(chưa check-in)',
+    'shiftCard.lateIn': ' · vào trễ {h}h',
+    'shiftCard.earlyOut': ' · ra sớm {h}h',
+    'shiftCard.in': 'Vào',
+    'shiftCard.out': 'Ra',
+    'shiftCard.schedIn': 'Lịch vào',
+    'shiftCard.schedOut': 'Lịch ra',
+    'shiftCard.editAria': 'Sửa ca',
+    'shiftCard.deleteAria': 'Xóa ca',
+
+    // deductions card
+    'ded.title': 'Tiền bồi thường',
+    'ded.amount': 'Số tiền',
+    'ded.reason': 'Lý do (bắt buộc)',
+    'ded.date': 'Ngày bị trừ',
+    'ded.add': '+ Thêm',
+    'ded.net': 'Thực nhận sau trừ',
+    'ded.amountErr': 'Nhập số tiền bị trừ (> 0).',
+    'ded.reasonErr': 'Phải ghi lý do bị trừ.',
+    'ded.dateErr': 'Chọn ngày bị trừ.',
+    'ded.empty': 'Chưa có khoản trừ nào trong kỳ này.',
+    'ded.delAria': 'Xóa khoản trừ',
+
+    // pay period page
+    'pp.scopeHint': 'Bấm vào một kỳ để xem biểu đồ chi tiết.',
+    'pp.allPeriods': 'Tất cả các kỳ',
+    'pp.lostDueLate': 'Mất do trễ −{money}',
+    'pp.noData': 'Chưa có ca làm nào để thống kê.',
+    'pp.receivedPeriods': 'Các kỳ đã nhận',
+    'pp.donut.salary': 'Lương',
+    'pp.donut.salaryCenter': 'thực nhận',
+    'pp.donut.ded': 'Tiền bồi thường',
+    'pp.donut.dedCenter': 'tổng',
+    'pp.donut.noDed': 'Không có khoản trừ.',
+    'pp.donut.hours': 'Giờ ngày / đêm',
+    'pp.donut.hoursCenter': 'tổng giờ',
+    'pp.donut.shifts': 'Số ca ngày / đêm',
+    'pp.donut.shiftsCenter': 'tổng ca',
+    'pp.seg.net': 'Thực nhận',
+    'pp.seg.ded': 'Tiền bồi thường',
+    'pp.seg.lost': 'Mất do trễ',
+    'pp.seg.dayHours': 'Giờ ngày',
+    'pp.seg.nightHours': 'Giờ đêm',
+    'pp.seg.lateHours': 'Giờ trễ',
+    'pp.seg.dayShifts': 'Ca ngày',
+    'pp.seg.nightShifts': 'Ca đêm',
+    'pp.seg.noReason': '(không lý do)',
+    'pp.unit.h': '{n} h',
+    'pp.unit.shift': '{n} ca',
+    'pp.tooltip': '{label}: {display} ({pct}%)',
+
+    // pay period panel
+    'ppl.grandNet': 'Tổng thực nhận (sau trừ)',
+    'ppl.grandSub': 'Trước trừ {gross} · đã trừ −{ded}',
+    'ppl.empty': 'Chưa có kỳ nào được đánh dấu đã nhận.',
+    'ppl.receivedBadge': '✓ Đã nhận',
+    'ppl.dedNet': 'Bị trừ −{ded} · Thực nhận {net}',
+    'ppl.receivedOn': 'Nhận ngày {date}',
+
+    // pay period modal
+    'ppm.totalHours': 'Tổng giờ',
+    'ppm.dayHours': 'Giờ ngày',
+    'ppm.nightHours': 'Giờ đêm',
+    'ppm.dayPay': 'Lương ca ngày',
+    'ppm.nightPay': 'Lương ca đêm',
+    'ppm.totalPay': 'Tổng lương',
+    'ppm.netPay': 'Thực nhận (sau trừ)',
+    'ppm.shiftCount': 'Số ca',
+    'ppm.workDays': 'Số ngày công',
+    'ppm.avgHours': 'TB giờ/ngày',
+    'ppm.lostHours': 'Giờ bị mất',
+    'ppm.payWindow': 'Trả lương: 01–10/{m}/{y}',
+    'ppm.receivedBadge': '✓ Đã nhận lương',
+    'ppm.unmark': 'Bỏ đánh dấu',
+    'ppm.receiveDay': 'Ngày nhận',
+    'ppm.markReceived': 'Đã nhận lương',
+
+    // profile
+    'profile.title': 'Thông tin tài khoản',
+    'profile.empCode': 'Mã nhân viên',
+    'profile.payday': 'Ngày nhận lương',
+    'profile.dayN': 'Ngày {n}',
+    'profile.signOut': 'Đăng xuất',
+
+    // payday prompt
+    'payday.title': 'Ngày nhận lương',
+    'payday.prompt':
+      'Lương được trả vào ngày 1–10 hằng tháng. Bạn thường nhận vào ngày nào? (Không bắt buộc — có thể đặt sau trong Tài khoản.)',
+    'payday.receiveDay': 'Ngày nhận',
+    'payday.skip': 'Bỏ qua',
+
+    // salary reminder
+    'reminder.title': 'Nhận lương',
+    'reminder.question': '{name}, lương kỳ {period} đã về tài khoản chưa?',
+    'reminder.notYet': 'Chưa nhận',
+    'reminder.received': 'Đã nhận',
+
+    // welcome guide
+    'welcome.title': 'Chào mừng đến Salary Working 👋',
+    'welcome.subtitle': 'Vài bước nhanh để bắt đầu:',
+    'welcome.start': 'Bắt đầu',
+    'welcome.step1.title': 'Nhập ca làm việc',
+    'welcome.step1.desc':
+      'Chọn ngày, nhập Check-in / Check-out (và lịch dự kiến nếu có) rồi bấm "Thêm ca".',
+    'welcome.step2.title': 'Lịch dự kiến',
+    'welcome.step2.desc':
+      'Bấm "Nhập lịch tuần" để đọc lịch từ ảnh, hoặc nhập tay. Hệ thống so giờ thực tế với lịch để tính đi trễ.',
+    'welcome.step3.title': 'Lương tự động',
+    'welcome.step3.desc':
+      'Giờ ngày (06–22h) và giờ đêm (22–06h) tính theo đơn giá riêng. Xem tổng tháng ở khối thống kê.',
+    'welcome.step4.title': 'Tiền bồi thường',
+    'welcome.step4.desc':
+      'Bấm "Tiền bồi thường" để thêm khoản bị trừ của kỳ (kèm lý do).',
+    'welcome.step5.title': 'Kỳ lương',
+    'welcome.step5.desc':
+      'Bấm "Kỳ lương" để xem biểu đồ thống kê từng tháng và đánh dấu đã nhận lương.',
+    'welcome.step6.title': 'Tài khoản',
+    'welcome.step6.desc':
+      'Vào "Tài khoản" để đặt mã nhân viên (dùng đọc lịch) và ngày nhận lương.',
+
+    // schedule import
+    'import.title': 'Nhập lịch tuần từ ảnh',
+    'import.image': 'Ảnh lịch',
+    'import.weekStart': 'Tuần bắt đầu (Thứ 2)',
+    'import.empcodeFrom': 'Mã nhân viên (từ hồ sơ): ',
+    'import.none': '— chưa có —',
+    'import.previewAlt': 'Xem trước ảnh lịch',
+    'import.reading': 'Đang đọc…',
+    'import.readAI': 'Đọc lịch bằng AI',
+    'import.thWeekday': 'Thứ',
+    'import.thDate': 'Ngày',
+    'import.thIn': 'Vào',
+    'import.thOut': 'Ra',
+    'import.thOff': 'Nghỉ',
+    'import.creating': 'Đang tạo…',
+    'import.createAll': 'Tạo ca cả tuần',
+    'import.errPickImage': 'Hãy chọn ảnh lịch.',
+    'import.errNoCode':
+      'Tài khoản chưa có mã nhân viên 9 số. Hãy cập nhật mã trong hồ sơ rồi thử lại.',
+    'import.errNotFound':
+      'Không tìm thấy mã "{code}" trong ảnh. Kiểm tra lại mã hoặc ảnh.',
+    'import.infoRead':
+      'Đã đọc lịch cho mã "{code}". Kiểm tra/sửa rồi bấm Tạo ca.',
+    'import.errNoShift': 'Không có ca nào để tạo.',
+    'import.errTooLong':
+      'Lịch dự kiến không được quá {n} giờ/ca. Sửa lại: {list}',
+    'import.errSome': 'Một số ca không tạo được:\n{errs}',
+    'import.errReadImage': 'Không đọc được ảnh',
+    'wd.Mon': 'T2',
+    'wd.Tue': 'T3',
+    'wd.Wed': 'T4',
+    'wd.Thu': 'T5',
+    'wd.Fri': 'T6',
+    'wd.Sat': 'T7',
+    'wd.Sun': 'CN',
+
+    // employee info form
+    'emp.title': 'Thông tin nhân viên',
+    'emp.subtitle': 'Điền thông tin để bắt đầu sử dụng ứng dụng.',
+    'emp.lastName': 'Họ',
+    'emp.firstName': 'Tên',
+    'emp.hourlyRate': 'Lương 1 giờ (VND)',
+    'emp.nightPct': 'Phụ cấp ca đêm (%)',
+    'emp.holidayDayPct': 'Phụ cấp ngày lễ — ca ngày (%)',
+    'emp.holidayNightPct': 'Phụ cấp ngày lễ — ca đêm (%)',
+    'emp.save': 'Lưu & tiếp tục',
+    'emp.errRequired': 'Vui lòng nhập họ và tên.',
+    'emp.errRate': 'Nhập lương 1 giờ lớn hơn 0.',
+
+    // profile extra
+    'profile.hourlyRate': 'Lương 1 giờ',
+    'profile.nightPct': 'Phụ cấp ca đêm',
+    'profile.holidayDayPct': 'Lễ — ca ngày',
+    'profile.holidayNightPct': 'Lễ — ca đêm',
+    'profile.editInfo': 'Chỉnh thông tin',
+
+    // shift form holiday
+    'shiftForm.holiday': 'Ngày lễ',
+
+    // lib: period label + lost breakdown
+    'period.label': 'Lương tháng {m} ({start} – {end})',
+    'lost.full': 'Mất {total}h — {segs}',
+    'lost.lateIn': 'vào trễ {part}',
+    'lost.earlyOut': 'ra sớm {part}',
+    'lost.part': '{h}h (ngày {day} / đêm {night})',
+  },
+}
+
+// English-US / English-AU dùng chung chữ với English-UK; chỉ khác cờ + ký hiệu tiền.
+translations.us = translations.en
+translations.au = translations.en
