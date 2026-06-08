@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
+import { useI18n } from '../lib/i18n.jsx'
 
 // Popup riêng để đổi mật khẩu: mật khẩu hiện tại + mật khẩu mới + xác nhận.
 export default function ChangePasswordModal({ user, onClose }) {
+  const { t } = useI18n()
   const [current, setCurrent] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -14,14 +16,11 @@ export default function ChangePasswordModal({ user, onClose }) {
     e.preventDefault()
     setMessage(null)
     if (password !== confirm) {
-      setMessage({ type: 'error', text: 'Mật khẩu nhập lại không khớp.' })
+      setMessage({ type: 'error', text: t('auth.pwMismatch') })
       return
     }
     if (password === current) {
-      setMessage({
-        type: 'error',
-        text: 'Mật khẩu mới phải khác mật khẩu hiện tại.',
-      })
+      setMessage({ type: 'error', text: t('changePw.mustDiffer') })
       return
     }
     setBusy(true)
@@ -33,7 +32,7 @@ export default function ChangePasswordModal({ user, onClose }) {
     })
     if (verifyError) {
       setBusy(false)
-      setMessage({ type: 'error', text: 'Mật khẩu hiện tại không đúng.' })
+      setMessage({ type: 'error', text: t('changePw.currentWrong') })
       return
     }
 
@@ -42,7 +41,7 @@ export default function ChangePasswordModal({ user, onClose }) {
     if (error) {
       setMessage({ type: 'error', text: error.message })
     } else {
-      setMessage({ type: 'info', text: 'Đã đổi mật khẩu thành công.' })
+      setMessage({ type: 'info', text: t('changePw.success') })
       setCurrent('')
       setPassword('')
       setConfirm('')
@@ -54,9 +53,9 @@ export default function ChangePasswordModal({ user, onClose }) {
       type="button"
       className="pw-toggle"
       onClick={() => setShowPw((v) => !v)}
-      aria-label={showPw ? 'Hide password' : 'Show password'}
+      aria-label={showPw ? t('common.hide') : t('common.show')}
     >
-      {showPw ? 'Hide' : 'Show'}
+      {showPw ? t('common.hide') : t('common.show')}
     </button>
   )
 
@@ -69,12 +68,12 @@ export default function ChangePasswordModal({ user, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
-          <h2>Đổi mật khẩu</h2>
+          <h2>{t('changePw.title')}</h2>
           <button
             type="button"
             className="modal-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t('common.close')}
           >
             ×
           </button>
@@ -82,7 +81,7 @@ export default function ChangePasswordModal({ user, onClose }) {
 
         <form className="change-pw" onSubmit={handleSubmit}>
           <label>
-            Mật khẩu hiện tại
+            {t('changePw.current')}
             <div className="pw-wrap">
               <input
                 type={showPw ? 'text' : 'password'}
@@ -95,7 +94,7 @@ export default function ChangePasswordModal({ user, onClose }) {
             </div>
           </label>
           <label>
-            Mật khẩu mới
+            {t('changePw.new')}
             <div className="pw-wrap">
               <input
                 type={showPw ? 'text' : 'password'}
@@ -109,7 +108,7 @@ export default function ChangePasswordModal({ user, onClose }) {
             </div>
           </label>
           <label>
-            Xác nhận mật khẩu mới
+            {t('changePw.confirm')}
             <div className="pw-wrap">
               <input
                 type={showPw ? 'text' : 'password'}
@@ -125,10 +124,10 @@ export default function ChangePasswordModal({ user, onClose }) {
 
           <div className="change-pw-actions">
             <button type="submit" disabled={busy}>
-              {busy ? '…' : 'Lưu mật khẩu'}
+              {busy ? '…' : t('changePw.save')}
             </button>
             <button type="button" className="link" onClick={onClose}>
-              Hủy
+              {t('common.cancel')}
             </button>
           </div>
         </form>

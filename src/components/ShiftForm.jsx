@@ -9,6 +9,7 @@ import {
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
+import { useI18n } from '../lib/i18n.jsx'
 
 // ShiftForm = KHỐI NHẬP CA (cột phải). Tự quản lý state các ô nhập; khi bấm
 // "Add shift" gọi callback onAdd(shiftData) để truyền dữ liệu lên component cha (App).
@@ -21,12 +22,14 @@ export default function ShiftForm({
   receiveDisabled = true,
   receiveDue = false,
 }) {
+  const { t } = useI18n()
   // --- STATE các trường nhập ---
   const [workDate, setWorkDate] = useState(localTodayStr())
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
   const [schedStart, setSchedStart] = useState('09:00')
   const [schedEnd, setSchedEnd] = useState('17:00')
+  const [isHoliday, setIsHoliday] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -37,7 +40,13 @@ export default function ShiftForm({
   const effSchedEnd = hasSched ? daySched.end : schedEnd
 
   // --- TÍNH TOÁN xem trước (preview) cho dòng trạng thái/cảnh báo ---
-  const preview = computeEffective(effSchedStart, effSchedEnd, startTime, endTime)
+  const preview = computeEffective(
+    effSchedStart,
+    effSchedEnd,
+    startTime,
+    endTime,
+    isHoliday
+  )
   const lostText = formatLost(preview)
   const equalTimes = startTime === endTime
   const overLimit = preview.decimalHours > MAX_HOURS_PER_DAY + 1e-9
@@ -48,22 +57,24 @@ export default function ShiftForm({
     e.preventDefault()
     setError(null)
     if (!workDate) {
-      setError('Please pick a date.')
+      setError(t('shiftForm.pickDate'))
       return
     }
     if (schedOverLimit) {
       setError(
-        `Lịch dự kiến không được quá ${MAX_HOURS_PER_DAY} giờ (đang ${formatHours(
-          schedDur
-        )}h).`
+        t('shiftForm.schedOverErr', {
+          n: MAX_HOURS_PER_DAY,
+          h: formatHours(schedDur),
+        })
       )
       return
     }
     if (overLimit) {
       setError(
-        `Một ca không được quá ${MAX_HOURS_PER_DAY} giờ (đang ${formatHours(
-          preview.decimalHours
-        )}h).`
+        t('shiftForm.shiftOverErr', {
+          n: MAX_HOURS_PER_DAY,
+          h: formatHours(preview.decimalHours),
+        })
       )
       return
     }
@@ -75,6 +86,7 @@ export default function ShiftForm({
       end_time: endTime,
       scheduled_start: effSchedStart,
       scheduled_end: effSchedEnd,
+      is_holiday: isHoliday,
     })
     setBusy(false)
     if (err) setError(err)
@@ -82,12 +94,12 @@ export default function ShiftForm({
 
   return (
     <form className="shift-form" onSubmit={handleSubmit}>
-      <h2 className="form-title">Nhập ca làm việc</h2>
+      <h2 className="form-title">{t('shiftForm.title')}</h2>
 
       {/* Ngày làm */}
       <div className="fields date-row">
         <label>
-          Date
+          {t('shiftForm.date')}
           <input
             type="date"
             value={workDate}
@@ -98,26 +110,34 @@ export default function ShiftForm({
         </label>
       </div>
 
-      {/* Giờ check-in / check-out */}
+      {/* Giờ check-in / check-out + Ngày lễ (cùng hàng) */}
       <div className="fields check-row">
         <label className="checkin">
-          Check-in
+          {t('shiftForm.checkin')}
           <TimeInput value={startTime} onChange={setStartTime} required />
         </label>
         <label className="checkout">
-          Check-out
+          {t('shiftForm.checkout')}
           <TimeInput value={endTime} onChange={setEndTime} required />
+        </label>
+        <label className="holiday-check">
+          <input
+            type="checkbox"
+            checked={isHoliday}
+            onChange={(e) => setIsHoliday(e.target.checked)}
+          />
+          {t('shiftForm.holiday')}
         </label>
       </div>
 
       {!hasSched && (
         <div className="fields scheduled">
           <label>
-            Sched. start
+            {t('shiftForm.schedStart')}
             <TimeInput value={schedStart} onChange={setSchedStart} />
           </label>
           <label>
-            Sched. end
+            {t('shiftForm.schedEnd')}
             <TimeInput value={schedEnd} onChange={setSchedEnd} />
           </label>
         </div>
@@ -125,9 +145,15 @@ export default function ShiftForm({
 
       {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập */}
       <p className="preview-line">
-        Ca đang nhập ({preview.nightHours > preview.dayHours ? 'đêm' : 'ngày'}):{' '}
-        {formatHours(preview.decimalHours)} h · {formatMoney(preview.pay)}
-        {equalTimes && ' · full 24h (giờ vào = giờ ra)'}
+        {t('shiftForm.preview', {
+          type:
+            preview.nightHours > preview.dayHours
+              ? t('common.night')
+              : t('common.day'),
+          hours: formatHours(preview.decimalHours),
+          money: formatMoney(preview.pay),
+        })}
+        {equalTimes && t('shiftForm.full24')}
       </p>
       {lostText && (
         <p className="lost">
@@ -136,13 +162,18 @@ export default function ShiftForm({
       )}
       {schedOverLimit && (
         <p className="lost">
-          Lịch dự kiến tối đa {MAX_HOURS_PER_DAY} giờ — đang {formatHours(schedDur)}h.
+          {t('shiftForm.schedOver', {
+            n: MAX_HOURS_PER_DAY,
+            h: formatHours(schedDur),
+          })}
         </p>
       )}
       {overLimit && (
         <p className="lost">
-          Một ca tối đa {MAX_HOURS_PER_DAY} giờ — đang{' '}
-          {formatHours(preview.decimalHours)}h.
+          {t('shiftForm.shiftOver', {
+            n: MAX_HOURS_PER_DAY,
+            h: formatHours(preview.decimalHours),
+          })}
         </p>
       )}
 
@@ -153,9 +184,9 @@ export default function ShiftForm({
             type="button"
             className="btn-received"
             onClick={onReceiveSalary}
-            title="Đã tới ngày nhận lương — bấm để đánh dấu đã nhận"
+            title={t('shiftForm.receivedTitle')}
           >
-            Đã nhận lương
+            {t('shiftForm.received')}
           </button>
         )}
         <button
@@ -163,7 +194,7 @@ export default function ShiftForm({
           className="btn-addshift"
           disabled={busy || overLimit || schedOverLimit}
         >
-          {busy ? 'Adding…' : 'Add shift'}
+          {busy ? t('shiftForm.adding') : t('shiftForm.addShift')}
         </button>
       </div>
       {error && <p className="msg error">{error}</p>}

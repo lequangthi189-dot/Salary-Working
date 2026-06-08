@@ -40,6 +40,11 @@
 .stats-panel .salary-hero__sep {
   opacity: 0.5;
 }
+.stats-panel .salary-hero__fx {
+  margin-top: 0.2rem;
+  color: #6e7681;
+  font-size: 0.68rem;
+}
 /* Phần "Phạt" — màu đỏ */
 .stats-panel .salary-hero__penalty {
   color: #f85149;
@@ -57,6 +62,9 @@
 }
 .stats-panel .stat-row--2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.stats-panel .stat-row--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 /* ---- Mỗi ô: LABEL trên, GIÁ TRỊ dưới, căn giữa ---- */
@@ -105,6 +113,9 @@
 .stats-panel .tone-blue {
   color: #539bf5;
 }
+.stats-panel .tone-red {
+  color: #f85149;
+}
 
 /* ===== Responsive: thiết bị nhỏ 320–560px =====
    Giữ NGUYÊN 3 cột cho hàng 3 ô (tránh bố cục 2+1 lệch khi ép xuống 2 cột),
@@ -132,6 +143,10 @@
   /* Hàng ô thống kê: thu gọn gap + padding, nhãn/giá trị nhỏ lại */
   .stats-panel .stat-row {
     gap: 0.4rem;
+  }
+  /* 4 ô quá chật trên màn nhỏ → xuống 2 cột (2×2) */
+  .stats-panel .stat-row--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .stats-panel .info-card {
     padding: 0.7rem 0.3rem;

@@ -2,17 +2,9 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { durationHours, formatHours, MAX_HOURS_PER_DAY } from '../lib/shiftMath.js'
+import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const WD_VI = {
-  Mon: 'T2',
-  Tue: 'T3',
-  Wed: 'T4',
-  Thu: 'T5',
-  Fri: 'T6',
-  Sat: 'T7',
-  Sun: 'CN',
-}
 
 function pad2(n) {
   return String(n).padStart(2, '0')
@@ -44,7 +36,8 @@ function readImage(file) {
       const dataUrl = String(reader.result)
       resolve({ base64: dataUrl.split(',')[1], mediaType: file.type })
     }
-    reader.onerror = () => reject(new Error('Không đọc được ảnh'))
+    reader.onerror = () =>
+      reject(new Error(translate(getLang(), 'import.errReadImage')))
     reader.readAsDataURL(file)
   })
 }
@@ -56,6 +49,7 @@ export default function ScheduleImportModal({
   onImport,
   onClose,
 }) {
+  const { t } = useI18n()
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [weekStart, setWeekStart] = useState(mondayOfThisWeek())
@@ -78,17 +72,22 @@ export default function ScheduleImportModal({
   async function readSchedule() {
     setError(null)
     setInfo(null)
-    if (!file) return setError('Hãy chọn ảnh lịch.')
+    if (!file) return setError(t('import.errPickImage'))
     if (!/^\d{9}$/.test(String(employeeCode).trim()))
-      return setError(
-        'Tài khoản chưa có mã nhân viên 9 số. Hãy cập nhật mã trong hồ sơ rồi thử lại.'
-      )
+      return setError(t('import.errNoCode'))
     setLoading(true)
     try {
       const { base64, mediaType } = await readImage(file)
       const { data, error: fnErr } = await supabase.functions.invoke(
         'extract-schedule',
-        { body: { image: base64, mediaType, employeeCode: employeeCode.trim() } }
+        {
+          body: {
+            image: base64,
+            mediaType,
+            employeeCode: employeeCode.trim(),
+            weekStart,
+          },
+        }
       )
       if (fnErr) {
         // Lỗi non-2xx: thông điệp thật nằm trong error.context (Response).
@@ -106,19 +105,20 @@ export default function ScheduleImportModal({
       }
       if (data?.error) throw new Error(data.error)
       if (!data?.found) {
-        setError(
-          `Không tìm thấy mã "${employeeCode}" trong ảnh. Kiểm tra lại mã hoặc ảnh.`
-        )
+        setError(t('import.errNotFound', { code: employeeCode }))
         setRows(null)
         return
       }
       // Map theo thứ -> ngày dựa trên tuần bắt đầu (Thứ 2).
       const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
+      const isoRe = /^\d{4}-\d{2}-\d{2}$/
       const mapped = WEEKDAYS.map((wd, i) => {
         const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
+        // Ưu tiên NGÀY đọc từ ảnh; nếu ảnh không có ngày thì mới tính theo tuần.
+        const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
         return {
           weekday: wd,
-          date: addDays(weekStart, i),
+          date,
           start: d.off ? '' : d.start || '',
           end: d.off ? '' : d.end || '',
           off: !!d.off || !d.start || !d.end,
@@ -126,7 +126,7 @@ export default function ScheduleImportModal({
       })
       setRows(mapped)
       setInfo(
-        `Đã đọc lịch cho mã "${data.matched_code || employeeCode}". Kiểm tra/sửa rồi bấm Tạo ca.`
+        t('import.infoRead', { code: data.matched_code || employeeCode })
       )
     } catch (e) {
       setError(String(e.message || e))
@@ -141,21 +141,22 @@ export default function ScheduleImportModal({
 
   async function createShifts() {
     const picked = rows.filter((r) => !r.off && r.start && r.end)
-    if (picked.length === 0) return setError('Không có ca nào để tạo.')
+    if (picked.length === 0) return setError(t('import.errNoShift'))
     // Lịch dự kiến: mỗi ca không được quá 8 giờ.
     const tooLong = picked.filter(
       (r) => durationHours(r.start, r.end) > MAX_HOURS_PER_DAY + 1e-9
     )
     if (tooLong.length) {
+      const list = tooLong
+        .map(
+          (r) =>
+            `${t(`wd.${r.weekday}`)} ${r.start}-${r.end} (${formatHours(
+              durationHours(r.start, r.end)
+            )}h)`
+        )
+        .join(', ')
       return setError(
-        `Lịch dự kiến không được quá ${MAX_HOURS_PER_DAY} giờ/ca. Sửa lại: ${tooLong
-          .map(
-            (r) =>
-              `${WD_VI[r.weekday]} ${r.start}-${r.end} (${formatHours(
-                durationHours(r.start, r.end)
-              )}h)`
-          )
-          .join(', ')}`
+        t('import.errTooLong', { n: MAX_HOURS_PER_DAY, list })
       )
     }
     setSaving(true)
@@ -163,7 +164,7 @@ export default function ScheduleImportModal({
     const errs = await onImport(picked)
     setSaving(false)
     if (errs && errs.length) {
-      setError(`Một số ca không tạo được:\n${errs.join('\n')}`)
+      setError(t('import.errSome', { errs: errs.join('\n') }))
     } else {
       onClose()
     }
@@ -178,12 +179,12 @@ export default function ScheduleImportModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
-          <h2>Nhập lịch tuần từ ảnh</h2>
+          <h2>{t('import.title')}</h2>
           <button
             type="button"
             className="modal-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t('common.close')}
           >
             ×
           </button>
@@ -191,11 +192,11 @@ export default function ScheduleImportModal({
 
         <div className="import-fields">
           <label className="import-file">
-            <span>Ảnh lịch</span>
+            <span>{t('import.image')}</span>
             <input type="file" accept="image/*" onChange={pickFile} />
           </label>
           <label className="import-week">
-            <span>Tuần bắt đầu (Thứ 2)</span>
+            <span>{t('import.weekStart')}</span>
             <input
               type="date"
               value={weekStart}
@@ -204,12 +205,16 @@ export default function ScheduleImportModal({
           </label>
         </div>
         <p className="import-empcode">
-          Mã nhân viên (từ hồ sơ):{' '}
-          <strong>{employeeCode || '— chưa có —'}</strong>
+          {t('import.empcodeFrom')}
+          <strong>{employeeCode || t('import.none')}</strong>
         </p>
 
         {previewUrl && (
-          <img className="import-preview" src={previewUrl} alt="Xem trước ảnh lịch" />
+          <img
+            className="import-preview"
+            src={previewUrl}
+            alt={t('import.previewAlt')}
+          />
         )}
 
         <div className="import-actions">
@@ -219,7 +224,7 @@ export default function ScheduleImportModal({
             onClick={readSchedule}
             disabled={loading}
           >
-            {loading ? 'Đang đọc…' : 'Đọc lịch bằng AI'}
+            {loading ? t('import.reading') : t('import.readAI')}
           </button>
         </div>
 
@@ -232,17 +237,17 @@ export default function ScheduleImportModal({
             <table className="import-table">
               <thead>
                 <tr>
-                  <th>Thứ</th>
-                  <th>Ngày</th>
-                  <th>Vào</th>
-                  <th>Ra</th>
-                  <th>Nghỉ</th>
+                  <th>{t('import.thWeekday')}</th>
+                  <th>{t('import.thDate')}</th>
+                  <th>{t('import.thIn')}</th>
+                  <th>{t('import.thOut')}</th>
+                  <th>{t('import.thOff')}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={r.weekday} className={r.off ? 'off' : ''}>
-                    <td>{WD_VI[r.weekday]}</td>
+                    <td>{t(`wd.${r.weekday}`)}</td>
                     <td className="muted">{r.date}</td>
                     <td>
                       <input
@@ -280,7 +285,7 @@ export default function ScheduleImportModal({
                 onClick={createShifts}
                 disabled={saving}
               >
-                {saving ? 'Đang tạo…' : 'Tạo ca cả tuần'}
+                {saving ? t('import.creating') : t('import.createAll')}
               </button>
             </div>
           </>

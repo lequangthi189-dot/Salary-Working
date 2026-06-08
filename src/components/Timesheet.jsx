@@ -1,9 +1,42 @@
+import { useState } from 'react'
 import ShiftCard from './ShiftCard.jsx'
-import { formatHours, formatMoney, shiftTotals } from '../lib/shiftMath.js'
+import {
+  formatHours,
+  formatMoney,
+  shiftTotals,
+  computeEffective,
+  computeShift,
+  hhmm,
+} from '../lib/shiftMath.js'
+import { useI18n } from '../lib/i18n.jsx'
+
+// Phân loại ca là 'day' hay 'night': ưu tiên giờ thực tế, nếu chưa check-in thì
+// theo lịch dự kiến. Ca đêm = giờ đêm > giờ ngày.
+function shiftKind(s) {
+  const eff = computeEffective(
+    hhmm(s.scheduled_start),
+    hhmm(s.scheduled_end),
+    hhmm(s.start_time),
+    hhmm(s.end_time),
+    !!s.is_holiday
+  )
+  let day = eff.dayHours
+  let night = eff.nightHours
+  if (day === 0 && night === 0 && s.scheduled_start && s.scheduled_end) {
+    const sc = computeShift(hhmm(s.scheduled_start), hhmm(s.scheduled_end))
+    day = sc.dayHours
+    night = sc.nightHours
+  }
+  // Ca đêm = có giờ làm trong khung 22:00–06:00.
+  return night > 0 ? 'night' : 'day'
+}
 
 export default function Timesheet({ shifts, onDelete, onUpdate }) {
+  const { t: tr } = useI18n()
+  const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
+
   if (shifts.length === 0) {
-    return <p className="empty">No shifts yet. Add your first one above.</p>
+    return <p className="empty">{tr('timesheet.empty')}</p>
   }
 
   // Ngày đã có chấm công thật (có check-in). Với những ngày đó, ẩn thẻ ca chỉ-là-
@@ -11,8 +44,25 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
   const actualDates = new Set(
     shifts.filter((s) => s.start_time).map((s) => s.work_date)
   )
-  const visibleShifts = shifts.filter(
-    (s) => !(s.scheduled_start && !s.start_time && actualDates.has(s.work_date))
+  const visibleShifts = shifts
+    .filter(
+      (s) => !(s.scheduled_start && !s.start_time && actualDates.has(s.work_date))
+    )
+    .filter((s) => filter === 'all' || shiftKind(s) === filter)
+
+  const filterBar = (
+    <div className="shift-filter">
+      {['all', 'day', 'night'].map((f) => (
+        <button
+          key={f}
+          type="button"
+          className={`shift-filter-btn${filter === f ? ' active' : ''}`}
+          onClick={() => setFilter(f)}
+        >
+          {tr(`filter.${f}`)}
+        </button>
+      ))}
+    </div>
   )
 
   // Group by work_date, preserving the incoming (date-desc) order.
@@ -29,6 +79,8 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
 
   return (
     <div className="timesheet">
+      {filterBar}
+      {groups.length === 0 && <p className="empty">{tr('filter.none')}</p>}
       {groups.map((g) => {
         const t = shiftTotals(g.items)
         return (
@@ -39,16 +91,18 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
                 {formatHours(t.hours)} h
                 {t.dayHours > 0 && (
                   <span className="hours-detail">
-                    {' '}· Day {formatHours(t.dayHours)}h
+                    {' '}· {tr('timesheet.day')} {formatHours(t.dayHours)}h
                   </span>
                 )}
                 {t.nightHours > 0 && (
                   <span className="hours-detail">
-                    {' '}· Night {formatHours(t.nightHours)}h
+                    {' '}· {tr('timesheet.night')} {formatHours(t.nightHours)}h
                   </span>
                 )}
                 {t.lostHours > 0 && (
-                  <span className="lost"> · Trễ {formatHours(t.lostHours)}h</span>
+                  <span className="lost">
+                    {' '}· {tr('timesheet.late')} {formatHours(t.lostHours)}h
+                  </span>
                 )}
               </span>
               <span className="pay">{formatMoney(t.pay)}</span>

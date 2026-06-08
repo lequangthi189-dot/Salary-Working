@@ -24,6 +24,8 @@ create table if not exists public.shifts (
 
 alter table public.shifts add column if not exists scheduled_start time;
 alter table public.shifts add column if not exists scheduled_end time;
+-- Ca rơi vào ngày lễ → tính theo đơn giá lễ (phụ cấp lễ trong hồ sơ).
+alter table public.shifts add column if not exists is_holiday boolean not null default false;
 
 -- Đổi tên cột cũ auto_delete_at -> hide_at (mốc ẨN, không còn tự xoá). An toàn chạy
 -- lại nhiều lần: chỉ rename khi cột cũ còn tồn tại và cột mới chưa có.
@@ -79,10 +81,17 @@ create policy "delete own shifts"
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
+  first_name text,
+  last_name text,
   employee_code text,
   phone text,
   email text,
   payday smallint,
+  -- Đơn giá theo từng người: lương 1 giờ + phụ cấp (%) đêm/lễ.
+  hourly_rate integer,
+  night_pct integer,
+  holiday_day_pct integer,
+  holiday_night_pct integer,
   email_confirmed boolean not null default false,
   phone_confirmed boolean not null default false,
   created_at timestamptz not null default now()
@@ -91,6 +100,12 @@ create table if not exists public.profiles (
 -- Cho database tạo từ trước (idempotent):
 alter table public.profiles add column if not exists employee_code text;
 alter table public.profiles add column if not exists payday smallint;
+alter table public.profiles add column if not exists first_name text;
+alter table public.profiles add column if not exists last_name text;
+alter table public.profiles add column if not exists hourly_rate integer;
+alter table public.profiles add column if not exists night_pct integer;
+alter table public.profiles add column if not exists holiday_day_pct integer;
+alter table public.profiles add column if not exists holiday_night_pct integer;
 alter table public.profiles add column if not exists email_confirmed boolean not null default false;
 alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
 

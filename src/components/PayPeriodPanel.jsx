@@ -6,6 +6,7 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 import PayPeriodModal from './PayPeriodModal.jsx'
+import { useI18n } from '../lib/i18n.jsx'
 
 // "2025-06-05" -> "05/06/2025"
 function fmtDate(d) {
@@ -25,6 +26,7 @@ export default function PayPeriodPanel({
   onAddDeduction,
   onDeleteDeduction,
 }) {
+  const { t: tr } = useI18n()
   const [openKey, setOpenKey] = useState(null)
 
   // Gom shifts theo kỳ.
@@ -65,15 +67,18 @@ export default function PayPeriodPanel({
     <div className="period-list">
       {keys.length > 0 && (
         <div className="period-total">
-          <span className="period-total-label">Tổng thực nhận (sau trừ)</span>
+          <span className="period-total-label">{tr('ppl.grandNet')}</span>
           <span className="period-total-value">{formatMoney(grandNet)}</span>
           <span className="period-total-sub">
-            Trước trừ {formatMoney(grandGross)} · đã trừ −{formatMoney(grandDed)}
+            {tr('ppl.grandSub', {
+              gross: formatMoney(grandGross),
+              ded: formatMoney(grandDed),
+            })}
           </span>
         </div>
       )}
       {keys.length === 0 ? (
-        <p className="muted sm">Chưa có kỳ nào được đánh dấu đã nhận.</p>
+        <p className="muted sm">{tr('ppl.empty')}</p>
       ) : (
         keys.map((key) => {
           const items = byPeriod.get(key)
@@ -94,15 +99,17 @@ export default function PayPeriodPanel({
             >
               <span className="period-card-head">
                 <span className="period-card-label">{payPeriodLabel(key)}</span>
-                <span className="received-badge sm">✓ Đã nhận</span>
+                <span className="received-badge sm">{tr('ppl.receivedBadge')}</span>
               </span>
               <span className="period-card-meta">
                 {formatHours(t.hours)} h · {formatMoney(t.pay)}
               </span>
               {dedTotal > 0 && (
                 <span className="period-card-net">
-                  Bị trừ −{formatMoney(dedTotal)} · Thực nhận{' '}
-                  {formatMoney(t.pay - dedTotal)}
+                  {tr('ppl.dedNet', {
+                    ded: formatMoney(dedTotal),
+                    net: formatMoney(t.pay - dedTotal),
+                  })}
                 </span>
               )}
               {dedsSorted.length > 0 && (
@@ -122,7 +129,7 @@ export default function PayPeriodPanel({
               )}
               {pr?.received_on && (
                 <span className="period-card-date">
-                  Nhận ngày {fmtDate(pr.received_on)}
+                  {tr('ppl.receivedOn', { date: fmtDate(pr.received_on) })}
                 </span>
               )}
             </button>

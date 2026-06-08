@@ -12,6 +12,10 @@ import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import WelcomeGuide from './components/WelcomeGuide.jsx'
+import LangToggle from './components/LangToggle.jsx'
+import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
+import { useI18n } from './lib/i18n.jsx'
+import { useCurrency } from './lib/currency.jsx'
 import { useShifts } from './controllers/useShifts.js'
 import { usePayrolls } from './controllers/usePayrolls.js'
 import { useDeductions } from './controllers/useDeductions.js'
@@ -32,6 +36,8 @@ import {
 } from './lib/payPeriod.js'
 
 export default function App() {
+  const { t } = useI18n()
+  const { updatedAt: fxUpdatedAt } = useCurrency()
   const { session, loading, signOut, recovery, endRecovery } = useAuth()
   const [showProfile, setShowProfile] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -83,7 +89,10 @@ export default function App() {
   )
   const {
     profile,
+    profileComplete,
     savePayday,
+    saveEmployeeInfo,
+    saveProfileFields,
     showPaydayPrompt,
     setShowPaydayPrompt,
     skipPayday,
@@ -107,6 +116,17 @@ export default function App() {
     return (
       <div className="center">
         <LoginForm />
+      </div>
+    )
+
+  // Bắt buộc điền thông tin nhân viên (họ/tên, mã NV, lương) trước khi vào app.
+  if (profile && !profileComplete)
+    return (
+      <div className="center">
+        <EmployeeInfoForm
+          initial={profile}
+          onSave={(info) => saveEmployeeInfo(info)}
+        />
       </div>
     )
 
@@ -138,7 +158,7 @@ export default function App() {
             type="button"
             className="menu-toggle"
             onClick={() => setShowSidebar(true)}
-            aria-label="Mở menu"
+            aria-label={t('nav.openMenu')}
           >
             <img className="app-logo" src="/logo.svg" alt="Salary Working logo" />
           </button>
@@ -164,7 +184,7 @@ export default function App() {
                     type="button"
                     onClick={() => openFromTitle(setShowDeductions)}
                   >
-                    Tiền bồi thường
+                    {t('nav.deductions')}
                   </button>
                 </div>
               </>
@@ -176,7 +196,7 @@ export default function App() {
           className="account-btn header-import"
           onClick={() => setShowImport(true)}
         >
-          Nhập lịch tuần
+          {t('nav.importWeek')}
         </button>
       </header>
 
@@ -184,12 +204,12 @@ export default function App() {
         <div className="sidebar-overlay" onClick={() => setShowSidebar(false)}>
           <aside className="sidebar" onClick={(e) => e.stopPropagation()}>
             <div className="sidebar-head">
-              <span className="sidebar-title">Kỳ lương</span>
+              <span className="sidebar-title">{t('nav.payPeriod')}</span>
               <button
                 type="button"
                 className="sidebar-close"
                 onClick={() => setShowSidebar(false)}
-                aria-label="Đóng menu"
+                aria-label={t('nav.closeMenu')}
               >
                 ×
               </button>
@@ -208,11 +228,12 @@ export default function App() {
             </div>
             <div className="sidebar-footer">
               <button type="button" onClick={() => openFromSidebar(setShowProfile)}>
-                Tài khoản
+                {t('nav.account')}
               </button>
               <button type="button" onClick={() => openFromSidebar(setShowWelcome)}>
-                Hướng dẫn
+                {t('nav.guide')}
               </button>
+              <LangToggle up />
             </div>
           </aside>
         </div>
@@ -229,7 +250,11 @@ export default function App() {
             receiveDisabled={!pendingKey}
             receiveDue={salaryDue}
           />
-          <MonthStats stats={monthStats} deductionTotal={currentDeductionTotal} />
+          <MonthStats
+            stats={monthStats}
+            deductionTotal={currentDeductionTotal}
+            fxUpdatedAt={fxUpdatedAt}
+          />
         </div>
         {loadError && <p className="msg error">{loadError}</p>}
         <Timesheet
@@ -248,12 +273,12 @@ export default function App() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-head">
-              <h2>Tiền bồi thường</h2>
+              <h2>{t('nav.deductions')}</h2>
               <button
                 type="button"
                 className="modal-close"
                 onClick={() => setShowDeductions(false)}
-                aria-label="Đóng"
+                aria-label={t('common.close')}
               >
                 ×
               </button>
@@ -281,9 +306,11 @@ export default function App() {
       {showProfile && (
         <ProfileModal
           user={session.user}
+          profile={profile}
           payday={profile?.payday}
           employeeCode={employeeCode}
           onSavePayday={savePayday}
+          onSaveField={saveProfileFields}
           onClose={() => setShowProfile(false)}
           onSignOut={signOut}
         />

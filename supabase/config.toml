@@ -3,3 +3,7 @@
 # được làm thủ công bằng supabase.auth.getUser() bên trong hàm.
 [functions.extract-schedule]
 verify_jwt = false
+
+# Tỉ giá Wise: hàm công khai (không cần đăng nhập) — chỉ trả tỉ giá, không lộ token.
+[functions.fx-rate]
+verify_jwt = false

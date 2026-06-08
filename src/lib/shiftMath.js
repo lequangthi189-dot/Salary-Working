@@ -1,9 +1,20 @@
 import {
-  DAY_RATE,
-  NIGHT_RATE,
+  getDayRate,
+  getNightRate,
+  getHolidayDayRate,
+  getHolidayNightRate,
   NIGHT_START_HOUR,
   NIGHT_END_HOUR,
 } from './rates.js'
+import { getLang, translate } from './i18n.jsx'
+import { getRate } from './currency.jsx'
+
+// Đơn giá ngày/đêm theo ca thường hay ngày lễ (lấy từ cấu hình hồ sơ).
+function ratesFor(isHoliday) {
+  return isHoliday
+    ? { day: getHolidayDayRate(), night: getHolidayNightRate() }
+    : { day: getDayRate(), night: getNightRate() }
+}
 
 // Giới hạn theo spec: mỗi ngày không quá 8 giờ làm việc.
 export const MAX_HOURS_PER_DAY = 8
@@ -29,7 +40,7 @@ function isNightMinute(minuteOfDay) {
  * If end <= start the shift is treated as crossing midnight (ends next day).
  * Hours are split: minutes in the night window pay NIGHT_RATE, the rest DAY_RATE.
  */
-export function computeShift(startTime, endTime) {
+export function computeShift(startTime, endTime, isHoliday = false) {
   const start = parseTime(startTime)
   let end = parseTime(endTime)
   if (end <= start) end += MINUTES_PER_DAY
@@ -45,7 +56,8 @@ export function computeShift(startTime, endTime) {
   const decimalHours = totalMin / 60
   const dayHours = dayMin / 60
   const nightHours = nightMin / 60
-  const pay = (dayMin / 60) * DAY_RATE + (nightMin / 60) * NIGHT_RATE
+  const rate = ratesFor(isHoliday)
+  const pay = dayHours * rate.day + nightHours * rate.night
 
   return { decimalHours, dayHours, nightHours, pay }
 }
@@ -102,7 +114,13 @@ function toPart({ dayMin, nightMin }) {
  * Returns { decimalHours, dayHours, nightHours, pay } (effective/paid) plus the
  * lost breakdown { lateIn, earlyOut, lostDayHours, lostNightHours, lostHours, lostPay }.
  */
-export function computeEffective(scheduledStart, scheduledEnd, actualStart, actualEnd) {
+export function computeEffective(
+  scheduledStart,
+  scheduledEnd,
+  actualStart,
+  actualEnd,
+  isHoliday = false
+) {
   const noLost = {
     lateIn: { dayHours: 0, nightHours: 0, hours: 0 },
     earlyOut: { dayHours: 0, nightHours: 0, hours: 0 },
@@ -119,7 +137,7 @@ export function computeEffective(scheduledStart, scheduledEnd, actualStart, actu
   }
 
   if (!scheduledStart || !scheduledEnd) {
-    const r = computeShift(actualStart, actualEnd)
+    const r = computeShift(actualStart, actualEnd, isHoliday)
     return { ...r, ...noLost }
   }
 
@@ -141,7 +159,8 @@ export function computeEffective(scheduledStart, scheduledEnd, actualStart, actu
 
   const dayHours = eff.dayMin / 60
   const nightHours = eff.nightMin / 60
-  const pay = dayHours * DAY_RATE + nightHours * NIGHT_RATE
+  const rate = ratesFor(isHoliday)
+  const pay = dayHours * rate.day + nightHours * rate.night
 
   const lostDayHours = lateIn.dayHours + earlyOut.dayHours
   const lostNightHours = lateIn.nightHours + earlyOut.nightHours
@@ -156,7 +175,7 @@ export function computeEffective(scheduledStart, scheduledEnd, actualStart, actu
     lostDayHours,
     lostNightHours,
     lostHours: lostDayHours + lostNightHours,
-    lostPay: lostDayHours * DAY_RATE + lostNightHours * NIGHT_RATE,
+    lostPay: lostDayHours * rate.day + lostNightHours * rate.night,
   }
 }
 
@@ -173,7 +192,8 @@ export function shiftTotals(list) {
         hhmm(s.scheduled_start),
         hhmm(s.scheduled_end),
         hhmm(s.start_time),
-        hhmm(s.end_time)
+        hhmm(s.end_time),
+        !!s.is_holiday
       )
       acc.hours += r.decimalHours
       acc.dayHours += r.dayHours
@@ -201,17 +221,19 @@ export function periodStats(shifts) {
       hhmm(s.scheduled_start),
       hhmm(s.scheduled_end),
       hhmm(s.start_time),
-      hhmm(s.end_time)
+      hhmm(s.end_time),
+      !!s.is_holiday
     )
     if (r.dayHours > 0 || r.nightHours > 0) {
-      if (r.nightHours > r.dayHours) nightShiftCount++
+      // Ca đêm = CÓ giờ làm trong khung 22:00–06:00 (dù ít hơn giờ ngày).
+      if (r.nightHours > 0) nightShiftCount++
       else dayShiftCount++
     }
   }
   return {
     ...t,
-    dayPay: t.dayHours * DAY_RATE,
-    nightPay: t.nightHours * NIGHT_RATE,
+    dayPay: t.dayHours * getDayRate(),
+    nightPay: t.nightHours * getNightRate(),
     // Giờ "trước khi trễ" = giờ đáng lẽ làm nếu đúng giờ (= đã làm + bị mất do trễ).
     idealHours: t.hours + t.lostHours,
     // Lương "trước khi trễ" (nếu đi đúng giờ) = lương thực nhận + tiền mất do trễ.
@@ -224,26 +246,48 @@ export function periodStats(shifts) {
   }
 }
 
-const currencyFmt = new Intl.NumberFormat('vi-VN')
+const fmtVi = new Intl.NumberFormat('vi-VN')
+const money2 = (locale) =>
+  new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+const fmtGb = money2('en-GB')
+const fmtUs = money2('en-US')
+const fmtAu = money2('en-AU')
 
+// Định dạng tiền theo ngôn ngữ + QUY ĐỔI theo tỉ giá real-time (lib/currency):
+//   vi → "1.000 VND" · en (UK) → "£…" · us → "$…" · au → "A$…".
 export function formatMoney(n) {
-  return `${currencyFmt.format(Math.round(n))} VND`
+  const lang = getLang()
+  if (lang === 'en') return `£${fmtGb.format(n * getRate('GBP'))}`
+  if (lang === 'us') return `$${fmtUs.format(n * getRate('USD'))}`
+  if (lang === 'au') return `A$${fmtAu.format(n * getRate('AUD'))}`
+  return `${fmtVi.format(Math.round(n))} VND`
 }
 
 export function formatHours(h) {
   return Number(h.toFixed(2)).toString()
 }
 
-// Human-readable lost-hours breakdown (Vietnamese), or null when nothing lost.
-// e.g. "Mất 2h — vào trễ 1h (ngày 1 / đêm 0) · ra sớm 1h (ngày 0 / đêm 1)"
+// Human-readable lost-hours breakdown (theo ngôn ngữ hiện tại), null nếu không mất.
+// vd "Mất 2h — vào trễ 1h (ngày 1 / đêm 0) · ra sớm 1h (ngày 0 / đêm 1)"
 export function formatLost(lost) {
   if (!lost || lost.lostHours <= 0) return null
+  const lang = getLang()
   const part = (p) =>
-    `${formatHours(p.hours)}h (ngày ${formatHours(p.dayHours)} / đêm ${formatHours(
-      p.nightHours
-    )})`
+    translate(lang, 'lost.part', {
+      h: formatHours(p.hours),
+      day: formatHours(p.dayHours),
+      night: formatHours(p.nightHours),
+    })
   const segs = []
-  if (lost.lateIn.hours > 0) segs.push(`vào trễ ${part(lost.lateIn)}`)
-  if (lost.earlyOut.hours > 0) segs.push(`ra sớm ${part(lost.earlyOut)}`)
-  return `Mất ${formatHours(lost.lostHours)}h — ${segs.join(' · ')}`
+  if (lost.lateIn.hours > 0)
+    segs.push(translate(lang, 'lost.lateIn', { part: part(lost.lateIn) }))
+  if (lost.earlyOut.hours > 0)
+    segs.push(translate(lang, 'lost.earlyOut', { part: part(lost.earlyOut) }))
+  return translate(lang, 'lost.full', {
+    total: formatHours(lost.lostHours),
+    segs: segs.join(' · '),
+  })
 }

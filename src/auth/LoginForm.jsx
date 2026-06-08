@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase.js";
+import { useI18n } from "../lib/i18n.jsx";
+import LangToggle from "../components/LangToggle.jsx";
 
 const emptySignup = {
-  fullName: "",
-  employeeCode: "",
   phone: "",
   email: "",
   password: "",
@@ -11,6 +11,7 @@ const emptySignup = {
 };
 
 export default function LoginForm() {
+  const { t } = useI18n();
   const [mode, setMode] = useState("signin"); // 'signin' | 'signup'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +35,7 @@ export default function LoginForm() {
     });
     if (error) {
       const hint = /invalid login credentials/i.test(error.message)
-        ? "Sai email hoặc mật khẩu." // Thay thế thông báo lỗi chung chung bằng gợi ý thân thiện hơn.
+        ? t("auth.invalidCreds") // Thay thế thông báo lỗi chung chung bằng gợi ý thân thiện hơn.
         : error.message;
       setMessage({ type: "error", text: hint });
     }
@@ -44,7 +45,7 @@ export default function LoginForm() {
   async function handleForgot() {
     const target = email.trim();
     if (!target) {
-      setMessage({ type: "error", text: "Nhập email phía trên trước đã." });
+      setMessage({ type: "error", text: t("auth.enterEmailFirst") });
       return;
     }
     setBusy(true);
@@ -57,7 +58,7 @@ export default function LoginForm() {
         ? { type: "error", text: error.message }
         : {
             type: "info",
-            text: `Đã gửi link đặt lại mật khẩu tới ${target}. Mở email và bấm vào link.`,
+            text: t("auth.resetSent", { email: target }),
           },
     );
     setBusy(false);
@@ -67,16 +68,16 @@ export default function LoginForm() {
     e.preventDefault();
     setMessage(null);
 
-    if (!/^\d{9}$/.test(signup.employeeCode.trim())) {
-      setMessage({
-        type: "error",
-        text: "Mã nhân viên phải gồm đúng 9 chữ số (vd: 000000000).",
-      });
+    // Số điện thoại quốc tế: bỏ khoảng trắng/dấu phân cách, cho phép '+' đầu,
+    // còn lại 7–15 chữ số (theo chuẩn E.164 — dùng được cho mọi quốc gia).
+    const normalizedPhone = signup.phone.replace(/[\s().-]/g, "");
+    if (!/^\+?\d{7,15}$/.test(normalizedPhone)) {
+      setMessage({ type: "error", text: t("auth.phoneInvalid") });
       return;
     }
 
     if (signup.password !== signup.confirm) {
-      setMessage({ type: "error", text: "Passwords do not match." });
+      setMessage({ type: "error", text: t("auth.pwMismatch") });
       return;
     }
 
@@ -85,11 +86,9 @@ export default function LoginForm() {
       email: signup.email.trim(),
       password: signup.password,
       options: {
-        // Lưu họ tên + mã nhân viên + số điện thoại vào user_metadata.
+        // Họ tên + mã NV sẽ nhập ở form thông tin nhân viên sau đăng ký.
         data: {
-          full_name: signup.fullName,
-          employee_code: signup.employeeCode.trim(),
-          phone: signup.phone,
+          phone: normalizedPhone,
         },
         // Link xác nhận trong email sẽ quay về app sau khi bấm.
         emailRedirectTo: window.location.origin,
@@ -101,15 +100,12 @@ export default function LoginForm() {
     } else if (data.session) {
       // Email confirmation đang TẮT trên Supabase → user đăng nhập luôn,
       // không có thư xác nhận nào được gửi.
-      setMessage({
-        type: "info",
-        text: "Account created and signed in. (Email confirmation is disabled on the server, so no email was sent.)",
-      });
+      setMessage({ type: "info", text: t("auth.accountCreatedSignedIn") });
     } else {
       // Email confirmation đang BẬT → thư xác nhận đã được gửi.
       setMessage({
         type: "info",
-        text: `Account created. We sent a confirmation link to ${signup.email}. Open it to activate your account.`,
+        text: t("auth.accountCreatedConfirm", { email: signup.email }),
       });
     }
     setBusy(false);
@@ -117,15 +113,20 @@ export default function LoginForm() {
 
   return (
     <div className="auth-card">
+      <div className="auth-lang">
+        <LangToggle />
+      </div>
       <h1>Salary Working</h1>
       <p className="subtitle">
-        {mode === "signin" ? "Sign in to your timesheet" : "Create an account"}
+        {mode === "signin"
+          ? t("auth.signInSubtitle")
+          : t("auth.signUpSubtitle")}
       </p>
 
       {mode === "signin" ? (
         <form onSubmit={handleSignin}>
           <label>
-            Email
+            {t("auth.email")}
             <input
               type="email"
               value={email}
@@ -135,7 +136,7 @@ export default function LoginForm() {
             />
           </label>
           <label>
-            Password
+            {t("auth.password")}
             <div className="pw-wrap">
               <input
                 type={showPw ? "text" : "password"}
@@ -148,15 +149,15 @@ export default function LoginForm() {
                 type="button"
                 className="pw-toggle"
                 onClick={() => setShowPw((v) => !v)}
-                aria-label={showPw ? "Hide password" : "Show password"}
+                aria-label={showPw ? t("common.hide") : t("common.show")}
               >
-                {showPw ? "Hide" : "Show"}
+                {showPw ? t("common.hide") : t("common.show")}
               </button>
             </div>
           </label>
 
           <button type="submit" disabled={busy}>
-            {busy ? "…" : "Sign in"}
+            {busy ? "…" : t("auth.signIn")}
           </button>
           <button
             type="button"
@@ -164,51 +165,13 @@ export default function LoginForm() {
             onClick={handleForgot}
             disabled={busy}
           >
-            Quên mật khẩu?
+            {t("auth.forgot")}
           </button>
         </form>
       ) : (
         <form onSubmit={handleSignup}>
           <label>
-            Full name
-            <input
-              type="text"
-              value={signup.fullName}
-              onChange={(e) => updateSignup("fullName", e.target.value)}
-              required
-              autoComplete="name"
-            />
-          </label>
-          <label>
-            Mã nhân viên (9 chữ số)
-            <input
-              type="text"
-              value={signup.employeeCode}
-              onChange={(e) =>
-                updateSignup(
-                  "employeeCode",
-                  e.target.value.replace(/\D/g, "").slice(0, 9)
-                )
-              }
-              required
-              inputMode="numeric"
-              pattern="\d{9}"
-              maxLength={9}
-              placeholder="000000000"
-            />
-          </label>
-          <label>
-            Phone number
-            <input
-              type="tel"
-              value={signup.phone}
-              onChange={(e) => updateSignup("phone", e.target.value)}
-              required
-              autoComplete="tel"
-            />
-          </label>
-          <label>
-            Email
+            {t("auth.email")}
             <input
               type="email"
               value={signup.email}
@@ -218,7 +181,25 @@ export default function LoginForm() {
             />
           </label>
           <label>
-            Password
+            {t("auth.phone")}
+            <input
+              type="tel"
+              value={signup.phone}
+              onChange={(e) =>
+                updateSignup(
+                  "phone",
+                  e.target.value.replace(/[^\d+\s().-]/g, "")
+                )
+              }
+              required
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={20}
+              placeholder="+84 901 234 567"
+            />
+          </label>
+          <label>
+            {t("auth.password")}
             <div className="pw-wrap">
               <input
                 type={showPw ? "text" : "password"}
@@ -232,14 +213,14 @@ export default function LoginForm() {
                 type="button"
                 className="pw-toggle"
                 onClick={() => setShowPw((v) => !v)}
-                aria-label={showPw ? "Hide password" : "Show password"}
+                aria-label={showPw ? t("common.hide") : t("common.show")}
               >
-                {showPw ? "Hide" : "Show"}
+                {showPw ? t("common.hide") : t("common.show")}
               </button>
             </div>
           </label>
           <label>
-            Confirm password
+            {t("auth.confirmPassword")}
             <div className="pw-wrap">
               <input
                 type={showPw ? "text" : "password"}
@@ -253,15 +234,15 @@ export default function LoginForm() {
                 type="button"
                 className="pw-toggle"
                 onClick={() => setShowPw((v) => !v)}
-                aria-label={showPw ? "Hide password" : "Show password"}
+                aria-label={showPw ? t("common.hide") : t("common.show")}
               >
-                {showPw ? "Hide" : "Show"}
+                {showPw ? t("common.hide") : t("common.show")}
               </button>
             </div>
           </label>
 
           <button type="submit" disabled={busy}>
-            {busy ? "…" : "Sign up"}
+            {busy ? "…" : t("auth.signUp")}
           </button>
         </form>
       )}
@@ -276,9 +257,7 @@ export default function LoginForm() {
           setMessage(null);
         }}
       >
-        {mode === "signin"
-          ? "Don't have an account? Sign up"
-          : "Already have an account? Sign in"}
+        {mode === "signin" ? t("auth.noAccount") : t("auth.haveAccount")}
       </button>
     </div>
   );

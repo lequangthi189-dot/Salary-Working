@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatMoney } from '../lib/shiftMath.js'
 import { sumDeductions, localTodayStr } from '../lib/payPeriod.js'
+import { useI18n } from '../lib/i18n.jsx'
 
 // "2025-06-05" -> "05/06/2025"
 function fmtDate(d) {
@@ -31,6 +32,7 @@ export default function DeductionsCard({
   // embedded = đặt trong popup: luôn mở, không hiện thanh tiêu đề gập/mở.
   embedded = false,
 }) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(defaultOpen)
   const isOpen = embedded || open
   const [amount, setAmount] = useState('')
@@ -42,19 +44,23 @@ export default function DeductionsCard({
   const total = sumDeductions(deductions)
   const net = grossPay - total
 
+  // Hiển thị số tiền có dấu chấm phân cách nghìn (vi-VN): 1000000 → "1.000.000".
+  // State `amount` luôn giữ CHUỖI CHỮ SỐ thô (không dấu chấm) để dễ tính.
+  const amountDisplay = amount ? Number(amount).toLocaleString('vi-VN') : ''
+
   async function add() {
     setError(null)
     const amt = Math.round(Number(amount))
     if (!Number.isFinite(amt) || amt <= 0) {
-      setError('Nhập số tiền bị trừ (> 0).')
+      setError(t('ded.amountErr'))
       return
     }
     if (!reason.trim()) {
-      setError('Phải ghi lý do bị trừ.')
+      setError(t('ded.reasonErr'))
       return
     }
     if (!date) {
-      setError('Chọn ngày bị trừ.')
+      setError(t('ded.dateErr'))
       return
     }
     setBusy(true)
@@ -79,7 +85,7 @@ export default function DeductionsCard({
           aria-expanded={open}
         >
           <span className="deduction-title">
-            <span className="caret">{open ? '▾' : '▸'}</span> Tiền bồi thường
+            <span className="caret">{open ? '▾' : '▸'}</span> {t('ded.title')}
           </span>
           <strong className="deduction-total">
             {total > 0 ? `−${formatMoney(total)}` : formatMoney(0)}
@@ -92,17 +98,15 @@ export default function DeductionsCard({
           {/* Ô nhập: số tiền + lý do (bắt buộc) + ngày bị trừ */}
           <div className="deduction-add">
             <input
-              type="number"
-              min="0"
-              step="1000"
+              type="text"
               inputMode="numeric"
-              placeholder="Số tiền"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              placeholder={t('ded.amount')}
+              value={amountDisplay}
+              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
             />
             <input
               type="text"
-              placeholder="Lý do (bắt buộc)"
+              placeholder={t('ded.reason')}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               onKeyDown={(e) => {
@@ -114,7 +118,7 @@ export default function DeductionsCard({
               className="deduction-date-in"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              aria-label="Ngày bị trừ"
+              aria-label={t('ded.date')}
             />
             <button
               type="button"
@@ -122,20 +126,20 @@ export default function DeductionsCard({
               onClick={add}
               disabled={busy}
             >
-              {busy ? '…' : '+ Thêm'}
+              {busy ? '…' : t('ded.add')}
             </button>
           </div>
           {error && <p className="msg error sm">{error}</p>}
 
           {/* Thực nhận sau trừ — đặt ngay kế khu nhập để thấy số liền tay */}
           <div className="deduction-net">
-            <span>Thực nhận sau trừ</span>
+            <span>{t('ded.net')}</span>
             <strong className={net < 0 ? 'neg' : ''}>{formatMoney(net)}</strong>
           </div>
 
           {/* Danh sách khoản trừ — hiện DƯỚI ô nhập, mỗi khoản là card bo góc */}
           {deductions.length === 0 ? (
-            <p className="muted sm">Chưa có khoản trừ nào trong kỳ này.</p>
+            <p className="muted sm">{t('ded.empty')}</p>
           ) : (
             <ul className="deduction-list">
               {deductions.map((d) => (
@@ -149,7 +153,7 @@ export default function DeductionsCard({
                     type="button"
                     className="deduction-del"
                     onClick={() => onDelete(d.id)}
-                    aria-label="Xóa khoản trừ"
+                    aria-label={t('ded.delAria')}
                   >
                     ×
                   </button>

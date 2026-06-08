@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useI18n } from '../lib/i18n.jsx'
 
 // Hỏi ngày nhận lương khi tài khoản chưa đặt (không bắt buộc).
 export default function PaydayPrompt({ onSave, onSkip }) {
+  const { t } = useI18n()
   const [day, setDay] = useState(5)
   const [busy, setBusy] = useState(false)
 
@@ -20,24 +22,21 @@ export default function PaydayPrompt({ onSave, onSkip }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
-          <h2>Ngày nhận lương</h2>
+          <h2>{t('payday.title')}</h2>
           <button
             type="button"
             className="modal-close"
             onClick={onSkip}
-            aria-label="Bỏ qua"
+            aria-label={t('payday.skip')}
           >
             ×
           </button>
         </div>
 
-        <p className="muted">
-          Lương được trả vào ngày 1–10 hằng tháng. Bạn thường nhận vào ngày nào?
-          (Không bắt buộc — có thể đặt sau trong Tài khoản.)
-        </p>
+        <p className="muted">{t('payday.prompt')}</p>
 
         <label className="inline-day">
-          Ngày nhận
+          {t('payday.receiveDay')}
           <select value={day} onChange={(e) => setDay(Number(e.target.value))}>
             {Array.from({ length: 10 }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>
@@ -49,7 +48,7 @@ export default function PaydayPrompt({ onSave, onSkip }) {
 
         <div className="profile-actions">
           <button type="button" className="account-btn" onClick={onSkip}>
-            Bỏ qua
+            {t('payday.skip')}
           </button>
           <button
             type="button"
@@ -57,7 +56,7 @@ export default function PaydayPrompt({ onSave, onSkip }) {
             onClick={save}
             disabled={busy}
           >
-            {busy ? '…' : 'Lưu'}
+            {busy ? '…' : t('common.save')}
           </button>
         </div>
       </div>

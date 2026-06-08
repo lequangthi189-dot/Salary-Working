@@ -8,18 +8,21 @@ import {
   MAX_HOURS_PER_DAY,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
+import { useI18n } from '../lib/i18n.jsx'
 
-function hhmm(t) {
-  return t ? String(t).slice(0, 5) : '' // "HH:MM:SS" -> "HH:MM"
+function hhmm(v) {
+  return v ? String(v).slice(0, 5) : '' // "HH:MM:SS" -> "HH:MM"
 }
 
 export default function ShiftCard({ shift, onDelete, onUpdate }) {
+  const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const [workDate, setWorkDate] = useState(shift.work_date)
   const [start, setStart] = useState(hhmm(shift.start_time))
   const [end, setEnd] = useState(hhmm(shift.end_time))
   const [schedStart, setSchedStart] = useState(hhmm(shift.scheduled_start))
   const [schedEnd, setSchedEnd] = useState(hhmm(shift.scheduled_end))
+  const [isHoliday, setIsHoliday] = useState(!!shift.is_holiday)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -29,6 +32,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     setEnd(hhmm(shift.end_time))
     setSchedStart(hhmm(shift.scheduled_start))
     setSchedEnd(hhmm(shift.scheduled_end))
+    setIsHoliday(!!shift.is_holiday)
     setError(null)
     setEditing(false)
   }
@@ -37,9 +41,10 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     const schedDur = durationHours(schedStart, schedEnd)
     if (schedDur > MAX_HOURS_PER_DAY + 1e-9) {
       setError(
-        `Lịch dự kiến không được quá ${MAX_HOURS_PER_DAY} giờ (đang ${formatHours(
-          schedDur
-        )}h).`
+        t('shiftForm.schedOverErr', {
+          n: MAX_HOURS_PER_DAY,
+          h: formatHours(schedDur),
+        })
       )
       return
     }
@@ -51,6 +56,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
       end_time: end || null,
       scheduled_start: schedStart || null,
       scheduled_end: schedEnd || null,
+      is_holiday: isHoliday,
     })
     setBusy(false)
     if (err) setError(err)
@@ -58,7 +64,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   }
 
   if (editing) {
-    const preview = computeEffective(schedStart, schedEnd, start, end)
+    const preview = computeEffective(schedStart, schedEnd, start, end, isHoliday)
     return (
       <div className="shift-card editing">
         <div className="edit-fields">
@@ -68,40 +74,48 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
             onChange={(e) => setWorkDate(e.target.value)}
           />
           <label className="edit-time">
-            <span>Vào</span>
+            <span>{t('shiftCard.in')}</span>
             <TimeInput
               className="t-in"
-              title="Check-in (giờ thực tế)"
+              title={t('time.checkinReal')}
               value={start}
               onChange={setStart}
             />
           </label>
           <label className="edit-time">
-            <span>Ra</span>
+            <span>{t('shiftCard.out')}</span>
             <TimeInput
               className="t-out"
-              title="Check-out (giờ thực tế)"
+              title={t('time.checkoutReal')}
               value={end}
               onChange={setEnd}
             />
           </label>
           <label className="edit-time">
-            <span>Lịch vào</span>
+            <span>{t('shiftCard.schedIn')}</span>
             <TimeInput
               className="t-sched"
-              title="Lịch dự kiến vào (mốc tính trễ)"
+              title={t('time.schedInMark')}
               value={schedStart}
               onChange={setSchedStart}
             />
           </label>
           <label className="edit-time">
-            <span>Lịch ra</span>
+            <span>{t('shiftCard.schedOut')}</span>
             <TimeInput
               className="t-sched"
-              title="Lịch dự kiến ra (mốc tính trễ)"
+              title={t('time.schedOutMark')}
               value={schedEnd}
               onChange={setSchedEnd}
             />
+          </label>
+          <label className="edit-holiday">
+            <input
+              type="checkbox"
+              checked={isHoliday}
+              onChange={(e) => setIsHoliday(e.target.checked)}
+            />
+            {t('shiftForm.holiday')}
           </label>
           <span className="muted">
             {formatHours(preview.decimalHours)}h · {formatMoney(preview.pay)}
@@ -109,10 +123,10 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
         </div>
         <div className="edit-actions">
           <button type="button" className="btn-save" onClick={save} disabled={busy}>
-            {busy ? '…' : 'Save'}
+            {busy ? '…' : t('common.save')}
           </button>
           <button type="button" className="btn-cancel" onClick={cancel}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
         {error && <p className="msg error">{error}</p>}
@@ -126,7 +140,8 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     hhmm(shift.scheduled_start),
     hhmm(shift.scheduled_end),
     s,
-    e
+    e,
+    !!shift.is_holiday
   )
   const { pay } = eff
   const schedS = hhmm(shift.scheduled_start)
@@ -147,7 +162,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
             <span className="t-in muted">{schedS || '—'}</span>
             <span className="dash"> – </span>
             <span className="t-out muted">{schedE || '—'}</span>
-            <span className="next-day"> (chưa check-in)</span>
+            <span className="next-day"> {t('shiftCard.notCheckedIn')}</span>
           </>
         ) : (
           <>
@@ -160,11 +175,13 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
       <div className="shift-breakdown">
         {lostHours > 0 && (
           <span className="lost" title={formatLost(eff) || undefined}>
-            Trễ {formatHours(lostHours)}h
+            {t('timesheet.late')} {formatHours(lostHours)}h
             {(lateInHours > 0 || earlyOutHours > 0) && (
               <span className="lost-detail">
-                {lateInHours > 0 && ` · vào trễ ${formatHours(lateInHours)}h`}
-                {earlyOutHours > 0 && ` · ra sớm ${formatHours(earlyOutHours)}h`}
+                {lateInHours > 0 &&
+                  t('shiftCard.lateIn', { h: formatHours(lateInHours) })}
+                {earlyOutHours > 0 &&
+                  t('shiftCard.earlyOut', { h: formatHours(earlyOutHours) })}
               </span>
             )}
           </span>
@@ -176,7 +193,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
           type="button"
           className="edit"
           onClick={() => setEditing(true)}
-          aria-label="Edit shift"
+          aria-label={t('shiftCard.editAria')}
         >
           ✎
         </button>
@@ -184,7 +201,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
           type="button"
           className="delete"
           onClick={() => onDelete(shift.id)}
-          aria-label="Delete shift"
+          aria-label={t('shiftCard.deleteAria')}
         >
           ×
         </button>

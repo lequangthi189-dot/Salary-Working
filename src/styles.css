@@ -35,8 +35,10 @@ input {
 .center {
   min-height: 100vh;
   display: grid;
-  place-items: center;
+  /* safe: khi nội dung cao hơn màn hình thì căn từ trên, không cắt mất đầu form */
+  place-items: safe center;
   padding: 1rem;
+  overflow-y: auto;
 }
 
 /* ---- Auth ---- */
@@ -261,14 +263,48 @@ button[type='submit']:disabled {
   max-width: 480px;
 }
 .payday-view,
-.payday-edit {
+.payday-edit,
+.field-view,
+.field-edit {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.6rem;
 }
 .payday-view .link,
-.payday-edit .link {
+.payday-edit .link,
+.field-view .link,
+.field-edit .link {
   margin-top: 0;
+}
+/* Ô input khi chỉnh inline trong hồ sơ: gọn, không tràn cột */
+.field-edit input {
+  width: 9rem;
+  max-width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  color: var(--text);
+}
+.field-view {
+  justify-content: space-between;
+  width: 100%;
+}
+/* Nút chỉnh dạng biểu tượng bút chì */
+.edit-icon {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0.15rem 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.edit-icon:hover {
+  background: var(--panel-2);
 }
 .app-header {
   display: flex;
@@ -324,6 +360,119 @@ button[type='submit']:disabled {
   line-height: 1;
   display: inline-flex;
   align-items: center;
+}
+
+/* ---- Ô tick "Ngày lễ" + form thông tin nhân viên ---- */
+.holiday-check,
+.edit-holiday {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.holiday-check input,
+.edit-holiday input {
+  width: auto;
+  margin: 0;
+}
+.emp-card {
+  text-align: left;
+}
+.emp-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+.emp-actions button[type='submit'] {
+  flex: 1;
+}
+.emp-actions .link {
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+
+/* ---- Nút chuyển ngôn ngữ ---- */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lang-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lang-wrap {
+  position: relative;
+  display: inline-block;
+}
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 41;
+  min-width: 140px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+/* Mở lên trên (dùng ở đáy sidebar) */
+.lang-menu.up {
+  top: auto;
+  bottom: calc(100% + 0.4rem);
+}
+.lang-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lang-menu .flag {
+  width: 17px;
+  height: 12px;
+}
+.lang-menu button:hover {
+  background: var(--panel-2);
+}
+.lang-menu button.active {
+  color: var(--accent);
+}
+.lang-toggle .flag {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+  display: block;
+}
+/* Nút ngôn ngữ ở góc phải trang đăng nhập / đặt lại mật khẩu */
+.auth-lang {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
 }
 
 /* ---- Header trái: nút mở menu + tiêu đề ---- */
@@ -514,8 +663,10 @@ button[type='submit']:disabled {
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   display: grid;
-  place-items: center;
+  /* safe + cuộn: popup cao hơn màn hình vẫn xem/cuộn được, không bị cắt */
+  place-items: safe center;
   padding: 1rem;
+  overflow-y: auto;
   z-index: 50;
 }
 .modal-card {
@@ -596,8 +747,19 @@ button[type='submit']:disabled {
 }
 .profile-info dd {
   margin: 0;
+  min-width: 0;
   font-weight: 600;
-  word-break: break-word;
+  overflow-wrap: anywhere; /* email/chuỗi dài tự xuống dòng, không tràn */
+}
+/* Mobile: xếp dọc nhãn trên, giá trị dưới — tránh cột bị bể vì email dài */
+@media (max-width: 420px) {
+  .profile-info {
+    grid-template-columns: 1fr;
+    gap: 0.1rem 0;
+  }
+  .profile-info dt {
+    margin-top: 0.5rem;
+  }
 }
 .danger-link {
   color: var(--danger);
@@ -678,7 +840,11 @@ button[type='submit']:disabled {
   grid-template-columns: 1fr;
 }
 .shift-form .fields.check-row {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end; /* ô tick Ngày lễ thẳng hàng đáy với giờ vào/ra */
+}
+.shift-form .fields.check-row .holiday-check {
+  padding-bottom: 0.6rem;
 }
 .shift-form .fields.scheduled {
   grid-template-columns: 1fr 1fr;
@@ -1196,6 +1362,31 @@ input.t-out {
 }
 .timesheet {
   margin-top: 1.25rem; /* tách bảng công khỏi khối Nhập ca + Thống kê phía trên */
+}
+/* Bộ lọc ca ngày / đêm trên bảng công */
+.shift-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+.shift-filter-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.shift-filter-btn:hover {
+  border-color: var(--accent);
+}
+.shift-filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 .shift-list {
   display: flex;
