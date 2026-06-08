@@ -140,10 +140,11 @@ export default function ReconcileModal({
         return
       }
       const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
+      const isoRe = /^\d{4}-\d{2}-\d{2}$/
       const compared = WEEKDAYS.map((wd, i) => {
         const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
-        // Ngày = theo TUẦN BẮT ĐẦU người dùng chọn (Thứ 2 + offset).
-        const date = addDays(weekStart, i)
+        // Ngày: ưu tiên NGÀY ĐỌC TỪ ẢNH; ảnh không có ngày thì mới theo Tuần bắt đầu.
+        const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
 
         // Giờ công theo ẢNH: nếu có giờ vào–ra thì lấy thời lượng, nếu ảnh ghi giờ
         // thô (vd "7.55") thì đọc trực tiếp. Ngày nghỉ → 0.
