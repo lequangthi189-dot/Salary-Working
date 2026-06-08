@@ -166,6 +166,27 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
     else clearEmpDraft() // lưu xong thì bỏ nháp
   }
 
+  // Ô lương: hiển thị có dấu phân cách nghìn (VND dùng "." như tiền bồi thường;
+  // ngoại tệ dùng "," + giữ phần thập phân). State `hourlyRate` luôn là số thô.
+  const isVndRate = lang === 'vi' || !CUR_CODE[lang]
+  const groupSep = isVndRate ? '.' : ','
+  const rateDisplay = (() => {
+    if (hourlyRate === '') return ''
+    const [ip, dp] = String(hourlyRate).split('.')
+    const grouped = (ip || '').replace(/\B(?=(\d{3})+(?!\d))/g, groupSep)
+    return dp !== undefined ? `${grouped}.${dp}` : grouped
+  })()
+  function onChangeRate(input) {
+    if (isVndRate) {
+      setHourlyRate(input.replace(/\D/g, '')) // VND: chỉ số nguyên
+    } else {
+      let s = input.replace(/[^\d.]/g, '') // ngoại tệ: số + 1 dấu chấm thập phân
+      const i = s.indexOf('.')
+      if (i !== -1) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '')
+      setHourlyRate(s)
+    }
+  }
+
   return (
     <div className="auth-card emp-card">
       <div className="auth-lang">
@@ -214,14 +235,12 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
         <label>
           {t('emp.hourlyRate', { cur })}
           <input
-            type="number"
-            min="0"
-            step={lang === 'vi' || !CUR_CODE[lang] ? '500' : '0.01'}
+            type="text"
             inputMode="decimal"
-            value={hourlyRate}
-            onChange={(e) => setHourlyRate(e.target.value)}
+            value={rateDisplay}
+            onChange={(e) => onChangeRate(e.target.value)}
             required
-            placeholder={lang === 'vi' || !CUR_CODE[lang] ? '25500' : ''}
+            placeholder={isVndRate ? '25.500' : ''}
           />
         </label>
         {hasNightShift && (
