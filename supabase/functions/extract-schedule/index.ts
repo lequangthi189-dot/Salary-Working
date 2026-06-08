@@ -44,12 +44,13 @@ const SCHEMA = {
         type: 'OBJECT',
         properties: {
           weekday: { type: 'STRING', enum: WEEKDAYS },
+          date: { type: 'STRING' },
           start: { type: 'STRING' },
           end: { type: 'STRING' },
           off: { type: 'BOOLEAN' },
           raw: { type: 'STRING' },
         },
-        required: ['weekday', 'start', 'end', 'off', 'raw'],
+        required: ['weekday', 'date', 'start', 'end', 'off', 'raw'],
       },
     },
   },
@@ -63,7 +64,10 @@ Người dùng cung cấp MÃ NHÂN VIÊN. Nhiệm vụ:
    - Chuẩn hoá về "HH:MM" 24 giờ (vd "9h"->"09:00", "5pm"->"17:00", "9-17"-> start 09:00 end 17:00).
    - Nếu ô ghi nghỉ/trống/"OFF"/"X" thì off=true, start="" , end="".
    - Nếu ảnh không có thứ nào đó, vẫn trả về thứ đó với off=true.
-3. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
+3. Đọc NGÀY THÁNG ghi cho từng thứ trong ảnh (nếu có) và trả về field "date" dạng
+   "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra
+   dựa trên "Tuần bắt đầu" được cung cấp. Nếu ảnh KHÔNG ghi ngày thì để date="".
+4. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
 Chỉ trả JSON đúng schema, không thêm chữ.`
 
 Deno.serve(async (req: Request) => {
@@ -85,13 +89,18 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) return json({ error: 'Server chưa cấu hình GEMINI_API_KEY' }, 500)
 
-  let body: { image?: string; mediaType?: string; employeeCode?: string }
+  let body: {
+    image?: string
+    mediaType?: string
+    employeeCode?: string
+    weekStart?: string
+  }
   try {
     body = await req.json()
   } catch {
     return json({ error: 'Body JSON không hợp lệ' }, 400)
   }
-  const { image, mediaType, employeeCode } = body
+  const { image, mediaType, employeeCode, weekStart } = body
   if (!image || !mediaType || !employeeCode) {
     return json({ error: 'Thiếu image / mediaType / employeeCode' }, 400)
   }
@@ -105,7 +114,9 @@ Deno.serve(async (req: Request) => {
           parts: [
             { inline_data: { mime_type: mediaType, data: image } },
             {
-              text: `Mã nhân viên cần lấy lịch: "${employeeCode}". Trả về ca từng thứ Mon..Sun.`,
+              text:
+                `Mã nhân viên cần lấy lịch: "${employeeCode}". Trả về ca từng thứ Mon..Sun.` +
+                (weekStart ? ` Tuần bắt đầu (Thứ 2) khoảng: ${weekStart}.` : ''),
             },
           ],
         },

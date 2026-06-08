@@ -4,7 +4,6 @@ import {
   periodClosedError,
   dayLimitError,
   shiftHours,
-  hideDeadlineIso,
 } from '../lib/shiftRules.js'
 
 // CONTROLLER: state + thao tác cho ca làm việc. View gọi các hàm này, không đụng
@@ -56,9 +55,6 @@ export function useShifts(session) {
   // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI. Trả về mảng lỗi (rỗng nếu OK).
   async function importWeekShifts(rows) {
     const errors = []
-    // Cả tuần dùng chung một mốc ẩn, tính theo ngày sớm nhất trong các ca.
-    const minDate = rows.map((r) => r.date).sort()[0]
-    const hideAt = minDate ? hideDeadlineIso(minDate) : null
     for (const r of rows) {
       const shift = {
         work_date: r.date,
@@ -67,7 +63,6 @@ export function useShifts(session) {
         end_time: null,
         scheduled_start: r.start,
         scheduled_end: r.end,
-        hide_at: hideAt,
       }
       const closedErr = periodClosedError(r.date)
       if (closedErr) {

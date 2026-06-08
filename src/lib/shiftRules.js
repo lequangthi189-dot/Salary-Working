@@ -13,19 +13,6 @@ import {
   localTodayStr,
 } from './payPeriod.js'
 
-// Mốc ẩn một tuần đã nhập khỏi bảng công: 12:00 trưa Thứ 2 của TUẦN KẾ TIẾP (giờ
-// địa phương). Ca KHÔNG bị xoá — chỉ ẩn khỏi danh sách ngày, dữ liệu vẫn được giữ
-// để kỳ lương tổng hợp. dateStr là một ngày bất kỳ trong tuần đó ("YYYY-MM-DD").
-export function hideDeadlineIso(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const dt = new Date(y, m - 1, d) // 00:00 giờ địa phương
-  const dow = dt.getDay() // 0=CN..6=T7
-  const toMonday = dow === 0 ? -6 : 1 - dow // về Thứ 2 của tuần hiện tại
-  dt.setDate(dt.getDate() + toMonday + 7) // Thứ 2 tuần kế tiếp
-  dt.setHours(12, 0, 0, 0) // 12:00 trưa
-  return dt.toISOString()
-}
-
 // Tổng giờ hiệu dụng của một ca từ thời gian thô (chưa lưu).
 export function shiftHours(s) {
   return computeEffective(
@@ -72,15 +59,12 @@ export function pendingPeriodKey(shifts, payrolls) {
   )
 }
 
-// Ca hiển thị dưới board: bỏ ca thuộc kỳ ĐÃ NHẬN lương và ca nhập từ lịch tuần đã
-// qua MỐC ẨN (hide_at <= now). Dữ liệu gốc vẫn giữ để kỳ lương tổng hợp.
+// Ca hiển thị dưới board: chỉ bỏ ca thuộc kỳ ĐÃ NHẬN lương.
+// (Không còn ẩn theo tuần/hide_at nữa — ca nhập từ ảnh luôn hiển thị.)
 export function visibleBoardShifts(shifts, payrolls) {
   const receivedKeys = new Set((payrolls || []).map((p) => p.period_key))
-  const nowIso = new Date().toISOString()
   return shifts.filter(
-    (s) =>
-      !receivedKeys.has(payPeriodKeyOf(s.work_date)) &&
-      !(s.hide_at && s.hide_at <= nowIso)
+    (s) => !receivedKeys.has(payPeriodKeyOf(s.work_date))
   )
 }
 
