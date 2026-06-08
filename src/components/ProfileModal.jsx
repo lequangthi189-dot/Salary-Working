@@ -17,8 +17,12 @@ function EditableRow({ label, display, initial, type = 'text', onSave }) {
       setErr(t('emp.errRate'))
       return
     }
+    let out = val
+    if (type === 'number') out = Math.round(Number(val))
+    else if (type === 'bool') out = val === true || val === '1'
+    else out = String(val).trim()
     setBusy(true)
-    const e = await onSave(type === 'number' ? Math.round(Number(val)) : val.trim())
+    const e = await onSave(out)
     setBusy(false)
     if (e) setErr(e)
     else setEditing(false)
@@ -36,11 +40,21 @@ function EditableRow({ label, display, initial, type = 'text', onSave }) {
       <dd>
         {editing ? (
           <span className="field-edit">
-            <input
-              type={type}
-              value={val}
-              onChange={(e) => setVal(e.target.value)}
-            />
+            {type === 'bool' ? (
+              <select
+                value={val === true || val === '1' ? '1' : '0'}
+                onChange={(e) => setVal(e.target.value === '1')}
+              >
+                <option value="1">{t('common.yes')}</option>
+                <option value="0">{t('common.no')}</option>
+              </select>
+            ) : (
+              <input
+                type={type}
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+              />
+            )}
             <button type="button" className="link" onClick={save} disabled={busy}>
               {busy ? '…' : t('common.save')}
             </button>
@@ -232,6 +246,13 @@ export default function ProfileModal({
               initial={profile?.holiday_night_pct ?? ''}
               type="number"
               onSave={(v) => onSaveField({ holiday_night_pct: v })}
+            />
+            <EditableRow
+              label={t('profile.hasNightShift')}
+              display={profile?.has_night_shift ? t('common.yes') : t('common.no')}
+              initial={!!profile?.has_night_shift}
+              type="bool"
+              onSave={(v) => onSaveField({ has_night_shift: v })}
             />
           </dl>
 

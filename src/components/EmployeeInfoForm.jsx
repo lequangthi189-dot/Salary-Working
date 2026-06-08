@@ -23,6 +23,9 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
   const [holidayNightPct, setHolidayNightPct] = useState(
     initial.holiday_night_pct != null ? String(initial.holiday_night_pct) : '300'
   )
+  const [hasNightShift, setHasNightShift] = useState(
+    initial.has_night_shift != null ? initial.has_night_shift : true
+  )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -55,6 +58,7 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
       nightPct: pct(nightPct),
       holidayDayPct: pct(holidayDayPct),
       holidayNightPct: pct(holidayNightPct),
+      hasNightShift,
     })
     setBusy(false)
     if (err) setError(err)
@@ -95,6 +99,16 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
             onChange={(e) => setEmployeeCode(e.target.value)}
             required
           />
+        </label>
+        <label>
+          {t('emp.hasNightShift')}
+          <select
+            value={hasNightShift ? '1' : '0'}
+            onChange={(e) => setHasNightShift(e.target.value === '1')}
+          >
+            <option value="1">{t('common.yes')}</option>
+            <option value="0">{t('common.no')}</option>
+          </select>
         </label>
         <label>
           {t('emp.hourlyRate')}

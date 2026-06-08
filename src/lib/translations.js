@@ -14,6 +14,8 @@ export const translations = {
     'common.show': 'Show',
     'common.hide': 'Hide',
     'common.notSet': 'Not set',
+    'common.yes': 'Yes',
+    'common.no': 'No',
 
     // nav / app
     'nav.importWeek': 'Import weekly schedule',
@@ -284,6 +286,7 @@ export const translations = {
     'emp.nightPct': 'Night allowance (%)',
     'emp.holidayDayPct': 'Holiday allowance — day shift (%)',
     'emp.holidayNightPct': 'Holiday allowance — night shift (%)',
+    'emp.hasNightShift': 'Does your store have night shifts?',
     'emp.save': 'Save & continue',
     'emp.errRequired': 'Please enter last name and first name.',
     'emp.errRate': 'Enter an hourly wage greater than 0.',
@@ -294,6 +297,7 @@ export const translations = {
     'profile.holidayDayPct': 'Holiday — day shift',
     'profile.holidayNightPct': 'Holiday — night shift',
     'profile.editInfo': 'Edit info',
+    'profile.hasNightShift': 'Store has night shifts',
 
     // shift form holiday
     'shiftForm.holiday': 'Holiday',
@@ -318,6 +322,8 @@ export const translations = {
     'common.show': 'Hiện',
     'common.hide': 'Ẩn',
     'common.notSet': 'Chưa đặt',
+    'common.yes': 'Có',
+    'common.no': 'Không',
 
     // nav / app
     'nav.importWeek': 'Nhập lịch tuần',
@@ -587,6 +593,7 @@ export const translations = {
     'emp.nightPct': 'Phụ cấp ca đêm (%)',
     'emp.holidayDayPct': 'Phụ cấp ngày lễ — ca ngày (%)',
     'emp.holidayNightPct': 'Phụ cấp ngày lễ — ca đêm (%)',
+    'emp.hasNightShift': 'Cửa hàng bạn đang làm có ca đêm không?',
     'emp.save': 'Lưu & tiếp tục',
     'emp.errRequired': 'Vui lòng nhập họ và tên.',
     'emp.errRate': 'Nhập lương 1 giờ lớn hơn 0.',
@@ -597,6 +604,7 @@ export const translations = {
     'profile.holidayDayPct': 'Lễ — ca ngày',
     'profile.holidayNightPct': 'Lễ — ca đêm',
     'profile.editInfo': 'Chỉnh thông tin',
+    'profile.hasNightShift': 'Cửa hàng có ca đêm',
 
     // shift form holiday
     'shiftForm.holiday': 'Ngày lễ',
