@@ -114,6 +114,11 @@ export default function ScheduleImportModal({
         setRows(null)
         return
       }
+      // Nhầm loại: ảnh là bảng công nhưng đang ở Nhập lịch tuần → hỏi xác nhận.
+      if (data?.doc_type === 'timesheet' && !window.confirm(t('import.warnTimesheet'))) {
+        setRows(null)
+        return
+      }
       if (!data?.found) {
         setError(t('import.errNotFound', { code: employeeCode }))
         setRows(null)

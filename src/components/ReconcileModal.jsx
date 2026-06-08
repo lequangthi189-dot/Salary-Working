@@ -140,6 +140,11 @@ export default function ReconcileModal({
         setRows(null)
         return
       }
+      // Nhầm loại: ảnh là lịch dự kiến nhưng đang Đối chiếu công → hỏi xác nhận.
+      if (data?.doc_type === 'schedule' && !window.confirm(t('reconcile.warnSchedule'))) {
+        setRows(null)
+        return
+      }
       if (!data?.found) {
         setError(t('import.errNotFound', { code: employeeCode }))
         setRows(null)
