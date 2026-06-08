@@ -10,9 +10,22 @@ const emptySignup = {
   confirm: "",
 };
 
+// Chế độ mở đầu: 'signup' nếu vừa bấm "Quay lại đăng ký" từ form thông tin.
+function initialMode() {
+  try {
+    if (localStorage.getItem("auth-mode") === "signup") {
+      localStorage.removeItem("auth-mode");
+      return "signup";
+    }
+  } catch {
+    /* ignore */
+  }
+  return "signin";
+}
+
 export default function LoginForm() {
   const { t } = useI18n();
-  const [mode, setMode] = useState("signin"); // 'signin' | 'signup'
+  const [mode, setMode] = useState(initialMode); // 'signin' | 'signup'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [signup, setSignup] = useState(emptySignup);

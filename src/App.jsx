@@ -147,7 +147,11 @@ export default function App() {
         <EmployeeInfoForm
           initial={profile}
           onSave={(info) => saveEmployeeInfo(info)}
-          onBack={signOut}
+          onBack={() => {
+            // Quay lại đăng ký: đăng xuất + mở sẵn chế độ Đăng ký ở màn auth.
+            localStorage.setItem('auth-mode', 'signup')
+            signOut()
+          }}
         />
       </div>
     )
