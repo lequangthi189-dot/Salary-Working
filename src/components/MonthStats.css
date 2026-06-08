@@ -60,6 +60,9 @@
 .stats-panel .stat-row--3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.stats-panel .stat-row--1 {
+  grid-template-columns: 1fr;
+}
 .stats-panel .stat-row--2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

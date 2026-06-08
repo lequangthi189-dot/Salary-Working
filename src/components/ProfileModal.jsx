@@ -105,6 +105,7 @@ export default function ProfileModal({
     profile?.full_name ||
     `${profile?.last_name || ''} ${profile?.first_name || ''}`.trim()
   const pct = (v) => (v != null ? `${v}%` : '—')
+  const hasNight = profile?.has_night_shift !== false
 
   const [showChangePw, setShowChangePw] = useState(false)
   const [editPayday, setEditPayday] = useState(false)
@@ -226,13 +227,15 @@ export default function ProfileModal({
               type="number"
               onSave={(v) => onSaveField({ hourly_rate: v })}
             />
-            <EditableRow
-              label={t('profile.nightPct')}
-              display={pct(profile?.night_pct)}
-              initial={profile?.night_pct ?? ''}
-              type="number"
-              onSave={(v) => onSaveField({ night_pct: v })}
-            />
+            {hasNight && (
+              <EditableRow
+                label={t('profile.nightPct')}
+                display={pct(profile?.night_pct)}
+                initial={profile?.night_pct ?? ''}
+                type="number"
+                onSave={(v) => onSaveField({ night_pct: v })}
+              />
+            )}
             <EditableRow
               label={t('profile.holidayDayPct')}
               display={pct(profile?.holiday_day_pct)}
@@ -240,13 +243,15 @@ export default function ProfileModal({
               type="number"
               onSave={(v) => onSaveField({ holiday_day_pct: v })}
             />
-            <EditableRow
-              label={t('profile.holidayNightPct')}
-              display={pct(profile?.holiday_night_pct)}
-              initial={profile?.holiday_night_pct ?? ''}
-              type="number"
-              onSave={(v) => onSaveField({ holiday_night_pct: v })}
-            />
+            {hasNight && (
+              <EditableRow
+                label={t('profile.holidayNightPct')}
+                display={pct(profile?.holiday_night_pct)}
+                initial={profile?.holiday_night_pct ?? ''}
+                type="number"
+                onSave={(v) => onSaveField({ holiday_night_pct: v })}
+              />
+            )}
             <EditableRow
               label={t('profile.hasNightShift')}
               display={profile?.has_night_shift ? t('common.yes') : t('common.no')}

@@ -141,6 +141,8 @@ export default function App() {
   )
   const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
   const currentDeductionTotal = sumDeductions(currentDeductions)
+  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
+  const hasNightShift = profile?.has_night_shift !== false
   const schedByDate = buildSchedByDate(shifts)
   const salaryDue = isSalaryDue(pendingKey, profile?.payday, paymentWindow)
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt
@@ -254,6 +256,7 @@ export default function App() {
             stats={monthStats}
             deductionTotal={currentDeductionTotal}
             fxUpdatedAt={fxUpdatedAt}
+            hasNightShift={hasNightShift}
           />
         </div>
         {loadError && <p className="msg error">{loadError}</p>}
@@ -261,6 +264,7 @@ export default function App() {
           shifts={visibleShifts}
           onDelete={deleteShift}
           onUpdate={updateShift}
+          hasNightShift={hasNightShift}
         />
       </main>
 
