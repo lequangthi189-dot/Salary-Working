@@ -240,26 +240,28 @@ function StatsCharts({ st, deductions = [], hasNightShift = true }) {
           />
         </>
       ) : (
-        // Không có ca đêm → 1 donut Tổng giờ (giờ làm + giờ trễ).
-        <DonutBlock
-          title={t('pp.donut.totalHours')}
-          segments={[
-            {
-              label: t('pp.seg.workedHours'),
-              value: st.hours,
-              color: C.good,
-              display: `${formatHours(st.hours)} h`,
-            },
-            st.lostHours > 0 && {
-              label: t('pp.seg.lateHours'),
-              value: st.lostHours,
-              color: C.lost,
-              display: `${formatHours(st.lostHours)} h`,
-            },
-          ].filter(Boolean)}
-          centerValue={`${formatHours(st.hours)}h`}
-          centerLabel={t('pp.donut.hoursCenter')}
-        />
+        // Không có ca đêm → 1 donut Tổng giờ (giờ làm + giờ trễ), đẩy ra giữa.
+        <div className="donut-span">
+          <DonutBlock
+            title={t('pp.donut.totalHours')}
+            segments={[
+              {
+                label: t('pp.seg.workedHours'),
+                value: st.hours,
+                color: C.good,
+                display: `${formatHours(st.hours)} h`,
+              },
+              st.lostHours > 0 && {
+                label: t('pp.seg.lateHours'),
+                value: st.lostHours,
+                color: C.lost,
+                display: `${formatHours(st.lostHours)} h`,
+              },
+            ].filter(Boolean)}
+            centerValue={`${formatHours(st.hours)}h`}
+            centerLabel={t('pp.donut.hoursCenter')}
+          />
+        </div>
       )}
     </div>
   )
