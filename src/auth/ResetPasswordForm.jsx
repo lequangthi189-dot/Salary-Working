@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
+import { useI18n } from '../lib/i18n.jsx'
+import LangToggle from '../components/LangToggle.jsx'
 
 // Hiện sau khi người dùng mở link đặt lại mật khẩu từ email (PASSWORD_RECOVERY).
 // Lúc này đã có một session tạm; chỉ cần đặt mật khẩu mới.
 export default function ResetPasswordForm({ onDone }) {
+  const { t } = useI18n()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -14,7 +17,7 @@ export default function ResetPasswordForm({ onDone }) {
     e.preventDefault()
     setMessage(null)
     if (password !== confirm) {
-      setMessage({ type: 'error', text: 'Mật khẩu nhập lại không khớp.' })
+      setMessage({ type: 'error', text: t('auth.pwMismatch') })
       return
     }
     setBusy(true)
@@ -23,19 +26,22 @@ export default function ResetPasswordForm({ onDone }) {
     if (error) {
       setMessage({ type: 'error', text: error.message })
     } else {
-      setMessage({ type: 'info', text: 'Đã đổi mật khẩu. Đang vào app…' })
+      setMessage({ type: 'info', text: t('reset.done') })
       onDone()
     }
   }
 
   return (
     <div className="auth-card">
-      <h1>Đặt lại mật khẩu</h1>
-      <p className="subtitle">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+      <div className="auth-lang">
+        <LangToggle />
+      </div>
+      <h1>{t('reset.title')}</h1>
+      <p className="subtitle">{t('reset.subtitle')}</p>
 
       <form onSubmit={handleSubmit}>
         <label>
-          Mật khẩu mới
+          {t('reset.newPassword')}
           <div className="pw-wrap">
             <input
               type={showPw ? 'text' : 'password'}
@@ -49,14 +55,14 @@ export default function ResetPasswordForm({ onDone }) {
               type="button"
               className="pw-toggle"
               onClick={() => setShowPw((v) => !v)}
-              aria-label={showPw ? 'Hide password' : 'Show password'}
+              aria-label={showPw ? t('common.hide') : t('common.show')}
             >
-              {showPw ? 'Hide' : 'Show'}
+              {showPw ? t('common.hide') : t('common.show')}
             </button>
           </div>
         </label>
         <label>
-          Nhập lại mật khẩu mới
+          {t('reset.confirmNew')}
           <div className="pw-wrap">
             <input
               type={showPw ? 'text' : 'password'}
@@ -70,15 +76,15 @@ export default function ResetPasswordForm({ onDone }) {
               type="button"
               className="pw-toggle"
               onClick={() => setShowPw((v) => !v)}
-              aria-label={showPw ? 'Hide password' : 'Show password'}
+              aria-label={showPw ? t('common.hide') : t('common.show')}
             >
-              {showPw ? 'Hide' : 'Show'}
+              {showPw ? t('common.hide') : t('common.show')}
             </button>
           </div>
         </label>
 
         <button type="submit" disabled={busy}>
-          {busy ? '…' : 'Đổi mật khẩu'}
+          {busy ? '…' : t('reset.submit')}
         </button>
       </form>
 
