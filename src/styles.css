@@ -386,6 +386,14 @@ button[type='submit']:disabled {
 .emp-card {
   text-align: left;
 }
+/* Tiêu đề form thông tin NV: cỡ vừa, không tràn/bể trên thẻ hẹp */
+.emp-card h1 {
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+.emp-card .subtitle {
+  margin-bottom: 1rem;
+}
 .emp-actions {
   display: flex;
   align-items: center;
