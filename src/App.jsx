@@ -226,6 +226,7 @@ export default function App() {
                 onUnmark={unmarkReceived}
                 onAddDeduction={addDeduction}
                 onDeleteDeduction={deleteDeduction}
+                hasNightShift={hasNightShift}
               />
             </div>
             <div className="sidebar-footer">
@@ -251,6 +252,7 @@ export default function App() {
             onReceiveSalary={receiveSalary}
             receiveDisabled={!pendingKey}
             receiveDue={salaryDue}
+            hasNightShift={hasNightShift}
           />
           <MonthStats
             stats={monthStats}

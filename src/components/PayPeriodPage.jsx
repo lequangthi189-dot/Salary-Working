@@ -135,7 +135,7 @@ function pct(a, b) {
 const DED_COLORS = ['#ff9f43', '#c084fc', '#22d3ee', '#f472b6', '#facc15', '#fb923c']
 
 // Biểu đồ thống kê gọn (4 donut, lưới 2×2) của một kỳ — vừa trong popup.
-function StatsCharts({ st, deductions = [] }) {
+function StatsCharts({ st, deductions = [], hasNightShift = true }) {
   const { t } = useI18n()
   const dedTotal = sumDeductions(deductions)
   const dedsSorted = [...deductions]
@@ -201,7 +201,7 @@ function StatsCharts({ st, deductions = [] }) {
             color: C.day,
             display: `${formatHours(st.dayHours)} h`,
           },
-          {
+          hasNightShift && {
             label: t('pp.seg.nightHours'),
             value: st.nightHours,
             color: C.night,
@@ -226,13 +226,13 @@ function StatsCharts({ st, deductions = [] }) {
             color: C.day,
             display: t('pp.unit.shift', { n: st.dayShiftCount }),
           },
-          {
+          hasNightShift && {
             label: t('pp.seg.nightShifts'),
             value: st.nightShiftCount,
             color: C.night,
             display: t('pp.unit.shift', { n: st.nightShiftCount }),
           },
-        ]}
+        ].filter(Boolean)}
         centerValue={`${st.dayShiftCount + st.nightShiftCount}`}
         centerLabel={t('pp.donut.shiftsCenter')}
       />
@@ -241,7 +241,7 @@ function StatsCharts({ st, deductions = [] }) {
 }
 
 // Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng).
-function StatsModal({ title, st, deductions, onClose }) {
+function StatsModal({ title, st, deductions, hasNightShift = true, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -261,7 +261,7 @@ function StatsModal({ title, st, deductions, onClose }) {
             ×
           </button>
         </div>
-        <StatsCharts st={st} deductions={deductions} />
+        <StatsCharts st={st} deductions={deductions} hasNightShift={hasNightShift} />
       </div>
     </div>
   )
@@ -278,6 +278,7 @@ export default function PayPeriodPage({
   onUnmark,
   onAddDeduction,
   onDeleteDeduction,
+  hasNightShift = true,
 }) {
   const { t } = useI18n()
   const periodKeys = [...new Set(shifts.map((s) => payPeriodKeyOf(s.work_date)))]
@@ -362,6 +363,7 @@ export default function PayPeriodPage({
         onUnmark={onUnmark}
         onAddDeduction={onAddDeduction}
         onDeleteDeduction={onDeleteDeduction}
+        hasNightShift={hasNightShift}
       />
     </>
   )
@@ -375,6 +377,7 @@ export default function PayPeriodPage({
           ? deductions
           : deductions.filter((d) => d.period_key === openScope)
       }
+      hasNightShift={hasNightShift}
       onClose={() => setOpenScope(null)}
     />
   )
