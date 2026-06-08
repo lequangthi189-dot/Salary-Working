@@ -31,7 +31,12 @@ function shiftKind(s) {
   return night > 0 ? 'night' : 'day'
 }
 
-export default function Timesheet({ shifts, onDelete, onUpdate }) {
+export default function Timesheet({
+  shifts,
+  onDelete,
+  onUpdate,
+  hasNightShift = true,
+}) {
   const { t: tr } = useI18n()
   const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
 
@@ -79,7 +84,7 @@ export default function Timesheet({ shifts, onDelete, onUpdate }) {
 
   return (
     <div className="timesheet">
-      {filterBar}
+      {hasNightShift && filterBar}
       {groups.length === 0 && <p className="empty">{tr('filter.none')}</p>}
       {groups.map((g) => {
         const t = shiftTotals(g.items)

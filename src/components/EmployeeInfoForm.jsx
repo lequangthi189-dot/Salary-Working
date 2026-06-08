@@ -23,6 +23,9 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
   const [holidayNightPct, setHolidayNightPct] = useState(
     initial.holiday_night_pct != null ? String(initial.holiday_night_pct) : '300'
   )
+  const [hasNightShift, setHasNightShift] = useState(
+    initial.has_night_shift != null ? initial.has_night_shift : true
+  )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -55,6 +58,7 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
       nightPct: pct(nightPct),
       holidayDayPct: pct(holidayDayPct),
       holidayNightPct: pct(holidayNightPct),
+      hasNightShift,
     })
     setBusy(false)
     if (err) setError(err)
@@ -97,6 +101,16 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
           />
         </label>
         <label>
+          {t('emp.hasNightShift')}
+          <select
+            value={hasNightShift ? '1' : '0'}
+            onChange={(e) => setHasNightShift(e.target.value === '1')}
+          >
+            <option value="1">{t('common.yes')}</option>
+            <option value="0">{t('common.no')}</option>
+          </select>
+        </label>
+        <label>
           {t('emp.hourlyRate')}
           <input
             type="number"
@@ -109,18 +123,20 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
             placeholder="25500"
           />
         </label>
-        <label>
-          {t('emp.nightPct')}
-          <input
-            type="number"
-            min="0"
-            step="1"
-            inputMode="numeric"
-            value={nightPct}
-            onChange={(e) => setNightPct(e.target.value)}
-            required
-          />
-        </label>
+        {hasNightShift && (
+          <label>
+            {t('emp.nightPct')}
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="numeric"
+              value={nightPct}
+              onChange={(e) => setNightPct(e.target.value)}
+              required
+            />
+          </label>
+        )}
         <label>
           {t('emp.holidayDayPct')}
           <input
@@ -133,18 +149,20 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
             required
           />
         </label>
-        <label>
-          {t('emp.holidayNightPct')}
-          <input
-            type="number"
-            min="0"
-            step="1"
-            inputMode="numeric"
-            value={holidayNightPct}
-            onChange={(e) => setHolidayNightPct(e.target.value)}
-            required
-          />
-        </label>
+        {hasNightShift && (
+          <label>
+            {t('emp.holidayNightPct')}
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="numeric"
+              value={holidayNightPct}
+              onChange={(e) => setHolidayNightPct(e.target.value)}
+              required
+            />
+          </label>
+        )}
 
         <div className="emp-actions">
           <button type="submit" disabled={busy}>

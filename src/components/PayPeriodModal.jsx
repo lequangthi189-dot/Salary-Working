@@ -26,6 +26,7 @@ export default function PayPeriodModal({
   onUnmark,
   onAddDeduction,
   onDeleteDeduction,
+  hasNightShift = true,
   onClose,
 }) {
   const { t } = useI18n()
@@ -80,10 +81,12 @@ export default function PayPeriodModal({
             <span className="stat-value">{formatHours(stats.dayHours)}</span>
             <span className="stat-label">{t('ppm.dayHours')}</span>
           </div>
-          <div className="stat">
-            <span className="stat-value">{formatHours(stats.nightHours)}</span>
-            <span className="stat-label">{t('ppm.nightHours')}</span>
-          </div>
+          {hasNightShift && (
+            <div className="stat">
+              <span className="stat-value">{formatHours(stats.nightHours)}</span>
+              <span className="stat-label">{t('ppm.nightHours')}</span>
+            </div>
+          )}
           <div className="stat stat-pay stat-grand">
             <span className="stat-value">{formatMoney(stats.pay)}</span>
             <span className="stat-label">{t('ppm.totalPay')}</span>

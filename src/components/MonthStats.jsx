@@ -7,7 +7,12 @@ import './MonthStats.css'
 // KHỐI THỐNG KÊ & LƯƠNG. Presentational — nhận `stats` (đã tính ở App) qua props.
 // Bố cục: ô lương lớn (trên) + hàng 3 ô + hàng 2 ô. Toàn bộ bọc trong .stats-panel.
 // formatMoney dùng Intl.NumberFormat('vi-VN') → phân cách nghìn bằng dấu chấm.
-export default function MonthStats({ stats, deductionTotal = 0, fxUpdatedAt }) {
+export default function MonthStats({
+  stats,
+  deductionTotal = 0,
+  fxUpdatedAt,
+  hasNightShift = true,
+}) {
   const { t, lang } = useI18n()
   // Dòng tỉ giá chỉ hiện khi đang quy đổi sang ngoại tệ (en/us/au).
   const FX = {
@@ -55,8 +60,8 @@ export default function MonthStats({ stats, deductionTotal = 0, fxUpdatedAt }) {
         )}
       </div>
 
-      {/* Hàng 4 ô: Tổng Giờ / Giờ Ngày / Giờ Đêm / Tổng Giờ Trễ */}
-      <div className="stat-row stat-row--4">
+      {/* Hàng giờ: Tổng / Ngày / (Đêm) / Trễ — ẩn Giờ Đêm nếu cửa hàng không có ca đêm */}
+      <div className={`stat-row stat-row--${hasNightShift ? 4 : 3}`}>
         <StatCard
           tone="orange"
           title={t('monthStats.totalHours')}
@@ -67,11 +72,13 @@ export default function MonthStats({ stats, deductionTotal = 0, fxUpdatedAt }) {
           title={t('monthStats.dayHours')}
           value={`${formatHours(stats.dayHours)} (h)`}
         />
-        <StatCard
-          tone="blue"
-          title={t('monthStats.nightHours')}
-          value={`${formatHours(stats.nightHours)} (h)`}
-        />
+        {hasNightShift && (
+          <StatCard
+            tone="blue"
+            title={t('monthStats.nightHours')}
+            value={`${formatHours(stats.nightHours)} (h)`}
+          />
+        )}
         <StatCard
           tone="red"
           title={t('monthStats.lateHours')}
@@ -79,18 +86,20 @@ export default function MonthStats({ stats, deductionTotal = 0, fxUpdatedAt }) {
         />
       </div>
 
-      {/* Hàng 2 ô: Ca Ngày / Ca Đêm */}
-      <div className="stat-row stat-row--2">
+      {/* Hàng số ca: Ca Ngày / (Ca Đêm) */}
+      <div className={`stat-row stat-row--${hasNightShift ? 2 : 1}`}>
         <StatCard
           tone="orange"
           title={t('monthStats.dayShifts')}
           value={stats.dayShiftCount}
         />
-        <StatCard
-          tone="blue"
-          title={t('monthStats.nightShifts')}
-          value={stats.nightShiftCount}
-        />
+        {hasNightShift && (
+          <StatCard
+            tone="blue"
+            title={t('monthStats.nightShifts')}
+            value={stats.nightShiftCount}
+          />
+        )}
       </div>
     </section>
   )

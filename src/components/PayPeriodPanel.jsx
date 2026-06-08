@@ -25,6 +25,7 @@ export default function PayPeriodPanel({
   onUnmark,
   onAddDeduction,
   onDeleteDeduction,
+  hasNightShift = true,
 }) {
   const { t: tr } = useI18n()
   const [openKey, setOpenKey] = useState(null)
@@ -148,6 +149,7 @@ export default function PayPeriodPanel({
           onUnmark={onUnmark}
           onAddDeduction={onAddDeduction}
           onDeleteDeduction={onDeleteDeduction}
+          hasNightShift={hasNightShift}
           onClose={() => setOpenKey(null)}
         />
       )}

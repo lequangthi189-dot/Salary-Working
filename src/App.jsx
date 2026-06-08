@@ -141,6 +141,8 @@ export default function App() {
   )
   const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
   const currentDeductionTotal = sumDeductions(currentDeductions)
+  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
+  const hasNightShift = profile?.has_night_shift !== false
   const schedByDate = buildSchedByDate(shifts)
   const salaryDue = isSalaryDue(pendingKey, profile?.payday, paymentWindow)
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt
@@ -224,6 +226,7 @@ export default function App() {
                 onUnmark={unmarkReceived}
                 onAddDeduction={addDeduction}
                 onDeleteDeduction={deleteDeduction}
+                hasNightShift={hasNightShift}
               />
             </div>
             <div className="sidebar-footer">
@@ -249,11 +252,13 @@ export default function App() {
             onReceiveSalary={receiveSalary}
             receiveDisabled={!pendingKey}
             receiveDue={salaryDue}
+            hasNightShift={hasNightShift}
           />
           <MonthStats
             stats={monthStats}
             deductionTotal={currentDeductionTotal}
             fxUpdatedAt={fxUpdatedAt}
+            hasNightShift={hasNightShift}
           />
         </div>
         {loadError && <p className="msg error">{loadError}</p>}
@@ -261,6 +266,7 @@ export default function App() {
           shifts={visibleShifts}
           onDelete={deleteShift}
           onUpdate={updateShift}
+          hasNightShift={hasNightShift}
         />
       </main>
 

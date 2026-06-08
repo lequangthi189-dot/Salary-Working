@@ -21,6 +21,7 @@ export default function ShiftForm({
   onReceiveSalary,
   receiveDisabled = true,
   receiveDue = false,
+  hasNightShift = true,
 }) {
   const { t } = useI18n()
   // --- STATE các trường nhập ---
@@ -147,7 +148,7 @@ export default function ShiftForm({
       <p className="preview-line">
         {t('shiftForm.preview', {
           type:
-            preview.nightHours > preview.dayHours
+            hasNightShift && preview.nightHours > preview.dayHours
               ? t('common.night')
               : t('common.day'),
           hours: formatHours(preview.decimalHours),

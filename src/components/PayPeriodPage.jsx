@@ -135,7 +135,7 @@ function pct(a, b) {
 const DED_COLORS = ['#ff9f43', '#c084fc', '#22d3ee', '#f472b6', '#facc15', '#fb923c']
 
 // Biểu đồ thống kê gọn (4 donut, lưới 2×2) của một kỳ — vừa trong popup.
-function StatsCharts({ st, deductions = [] }) {
+function StatsCharts({ st, deductions = [], hasNightShift = true }) {
   const { t } = useI18n()
   const dedTotal = sumDeductions(deductions)
   const dedsSorted = [...deductions]
@@ -192,56 +192,83 @@ function StatsCharts({ st, deductions = [] }) {
           <p className="muted">{t('pp.donut.noDed')}</p>
         </div>
       )}
-      <DonutBlock
-        title={t('pp.donut.hours')}
-        segments={[
-          {
-            label: t('pp.seg.dayHours'),
-            value: st.dayHours,
-            color: C.day,
-            display: `${formatHours(st.dayHours)} h`,
-          },
-          {
-            label: t('pp.seg.nightHours'),
-            value: st.nightHours,
-            color: C.night,
-            display: `${formatHours(st.nightHours)} h`,
-          },
-          st.lostHours > 0 && {
-            label: t('pp.seg.lateHours'),
-            value: st.lostHours,
-            color: C.lost,
-            display: `${formatHours(st.lostHours)} h`,
-          },
-        ].filter(Boolean)}
-        centerValue={`${formatHours(st.hours)}h`}
-        centerLabel={t('pp.donut.hoursCenter')}
-      />
-      <DonutBlock
-        title={t('pp.donut.shifts')}
-        segments={[
-          {
-            label: t('pp.seg.dayShifts'),
-            value: st.dayShiftCount,
-            color: C.day,
-            display: t('pp.unit.shift', { n: st.dayShiftCount }),
-          },
-          {
-            label: t('pp.seg.nightShifts'),
-            value: st.nightShiftCount,
-            color: C.night,
-            display: t('pp.unit.shift', { n: st.nightShiftCount }),
-          },
-        ]}
-        centerValue={`${st.dayShiftCount + st.nightShiftCount}`}
-        centerLabel={t('pp.donut.shiftsCenter')}
-      />
+      {hasNightShift ? (
+        <>
+          <DonutBlock
+            title={t('pp.donut.hours')}
+            segments={[
+              {
+                label: t('pp.seg.dayHours'),
+                value: st.dayHours,
+                color: C.day,
+                display: `${formatHours(st.dayHours)} h`,
+              },
+              {
+                label: t('pp.seg.nightHours'),
+                value: st.nightHours,
+                color: C.night,
+                display: `${formatHours(st.nightHours)} h`,
+              },
+              st.lostHours > 0 && {
+                label: t('pp.seg.lateHours'),
+                value: st.lostHours,
+                color: C.lost,
+                display: `${formatHours(st.lostHours)} h`,
+              },
+            ].filter(Boolean)}
+            centerValue={`${formatHours(st.hours)}h`}
+            centerLabel={t('pp.donut.hoursCenter')}
+          />
+          <DonutBlock
+            title={t('pp.donut.shifts')}
+            segments={[
+              {
+                label: t('pp.seg.dayShifts'),
+                value: st.dayShiftCount,
+                color: C.day,
+                display: t('pp.unit.shift', { n: st.dayShiftCount }),
+              },
+              {
+                label: t('pp.seg.nightShifts'),
+                value: st.nightShiftCount,
+                color: C.night,
+                display: t('pp.unit.shift', { n: st.nightShiftCount }),
+              },
+            ]}
+            centerValue={`${st.dayShiftCount + st.nightShiftCount}`}
+            centerLabel={t('pp.donut.shiftsCenter')}
+          />
+        </>
+      ) : (
+        // Không có ca đêm → 1 donut Tổng giờ (giờ làm + giờ trễ), đẩy ra giữa.
+        <div className="donut-span">
+          <DonutBlock
+            title={t('pp.donut.totalHours')}
+            segments={[
+              {
+                label: t('pp.seg.workedHours'),
+                value: st.hours,
+                color: C.good,
+                display: `${formatHours(st.hours)} h`,
+              },
+              st.lostHours > 0 && {
+                label: t('pp.seg.lateHours'),
+                value: st.lostHours,
+                color: C.lost,
+                display: `${formatHours(st.lostHours)} h`,
+              },
+            ].filter(Boolean)}
+            centerValue={`${formatHours(st.hours)}h`}
+            centerLabel={t('pp.donut.hoursCenter')}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
 // Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng).
-function StatsModal({ title, st, deductions, onClose }) {
+function StatsModal({ title, st, deductions, hasNightShift = true, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -261,7 +288,7 @@ function StatsModal({ title, st, deductions, onClose }) {
             ×
           </button>
         </div>
-        <StatsCharts st={st} deductions={deductions} />
+        <StatsCharts st={st} deductions={deductions} hasNightShift={hasNightShift} />
       </div>
     </div>
   )
@@ -278,6 +305,7 @@ export default function PayPeriodPage({
   onUnmark,
   onAddDeduction,
   onDeleteDeduction,
+  hasNightShift = true,
 }) {
   const { t } = useI18n()
   const periodKeys = [...new Set(shifts.map((s) => payPeriodKeyOf(s.work_date)))]
@@ -362,6 +390,7 @@ export default function PayPeriodPage({
         onUnmark={onUnmark}
         onAddDeduction={onAddDeduction}
         onDeleteDeduction={onDeleteDeduction}
+        hasNightShift={hasNightShift}
       />
     </>
   )
@@ -375,6 +404,7 @@ export default function PayPeriodPage({
           ? deductions
           : deductions.filter((d) => d.period_key === openScope)
       }
+      hasNightShift={hasNightShift}
       onClose={() => setOpenScope(null)}
     />
   )

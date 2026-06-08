@@ -92,6 +92,7 @@ create table if not exists public.profiles (
   night_pct integer,
   holiday_day_pct integer,
   holiday_night_pct integer,
+  has_night_shift boolean not null default true,
   email_confirmed boolean not null default false,
   phone_confirmed boolean not null default false,
   created_at timestamptz not null default now()
@@ -106,6 +107,7 @@ alter table public.profiles add column if not exists hourly_rate integer;
 alter table public.profiles add column if not exists night_pct integer;
 alter table public.profiles add column if not exists holiday_day_pct integer;
 alter table public.profiles add column if not exists holiday_night_pct integer;
+alter table public.profiles add column if not exists has_night_shift boolean not null default true;
 alter table public.profiles add column if not exists email_confirmed boolean not null default false;
 alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
 

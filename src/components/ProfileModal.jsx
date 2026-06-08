@@ -17,8 +17,12 @@ function EditableRow({ label, display, initial, type = 'text', onSave }) {
       setErr(t('emp.errRate'))
       return
     }
+    let out = val
+    if (type === 'number') out = Math.round(Number(val))
+    else if (type === 'bool') out = val === true || val === '1'
+    else out = String(val).trim()
     setBusy(true)
-    const e = await onSave(type === 'number' ? Math.round(Number(val)) : val.trim())
+    const e = await onSave(out)
     setBusy(false)
     if (e) setErr(e)
     else setEditing(false)
@@ -36,11 +40,21 @@ function EditableRow({ label, display, initial, type = 'text', onSave }) {
       <dd>
         {editing ? (
           <span className="field-edit">
-            <input
-              type={type}
-              value={val}
-              onChange={(e) => setVal(e.target.value)}
-            />
+            {type === 'bool' ? (
+              <select
+                value={val === true || val === '1' ? '1' : '0'}
+                onChange={(e) => setVal(e.target.value === '1')}
+              >
+                <option value="1">{t('common.yes')}</option>
+                <option value="0">{t('common.no')}</option>
+              </select>
+            ) : (
+              <input
+                type={type}
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+              />
+            )}
             <button type="button" className="link" onClick={save} disabled={busy}>
               {busy ? '…' : t('common.save')}
             </button>
@@ -91,6 +105,7 @@ export default function ProfileModal({
     profile?.full_name ||
     `${profile?.last_name || ''} ${profile?.first_name || ''}`.trim()
   const pct = (v) => (v != null ? `${v}%` : '—')
+  const hasNight = profile?.has_night_shift !== false
 
   const [showChangePw, setShowChangePw] = useState(false)
   const [editPayday, setEditPayday] = useState(false)
@@ -212,13 +227,15 @@ export default function ProfileModal({
               type="number"
               onSave={(v) => onSaveField({ hourly_rate: v })}
             />
-            <EditableRow
-              label={t('profile.nightPct')}
-              display={pct(profile?.night_pct)}
-              initial={profile?.night_pct ?? ''}
-              type="number"
-              onSave={(v) => onSaveField({ night_pct: v })}
-            />
+            {hasNight && (
+              <EditableRow
+                label={t('profile.nightPct')}
+                display={pct(profile?.night_pct)}
+                initial={profile?.night_pct ?? ''}
+                type="number"
+                onSave={(v) => onSaveField({ night_pct: v })}
+              />
+            )}
             <EditableRow
               label={t('profile.holidayDayPct')}
               display={pct(profile?.holiday_day_pct)}
@@ -226,12 +243,21 @@ export default function ProfileModal({
               type="number"
               onSave={(v) => onSaveField({ holiday_day_pct: v })}
             />
+            {hasNight && (
+              <EditableRow
+                label={t('profile.holidayNightPct')}
+                display={pct(profile?.holiday_night_pct)}
+                initial={profile?.holiday_night_pct ?? ''}
+                type="number"
+                onSave={(v) => onSaveField({ holiday_night_pct: v })}
+              />
+            )}
             <EditableRow
-              label={t('profile.holidayNightPct')}
-              display={pct(profile?.holiday_night_pct)}
-              initial={profile?.holiday_night_pct ?? ''}
-              type="number"
-              onSave={(v) => onSaveField({ holiday_night_pct: v })}
+              label={t('profile.hasNightShift')}
+              display={profile?.has_night_shift ? t('common.yes') : t('common.no')}
+              initial={!!profile?.has_night_shift}
+              type="bool"
+              onSave={(v) => onSaveField({ has_night_shift: v })}
             />
           </dl>
 

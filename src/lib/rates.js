@@ -20,6 +20,8 @@ let _nightPct = DEFAULT_NIGHT_PCT
 // Mặc định 100% (×1 = như ngày thường) để không trả 0 khi chưa cấu hình.
 let _holidayDayPct = 100
 let _holidayNightPct = 100
+// Cửa hàng có ca đêm không. false → KHÔNG có phụ cấp đêm: mọi giờ tính lương thường.
+let _hasNightShift = true
 
 const toNum = (v, fallback) =>
   Number.isFinite(Number(v)) ? Number(v) : fallback
@@ -29,6 +31,7 @@ export function setRates(cfg = {}) {
   _nightPct = toNum(cfg.nightPct, _nightPct)
   _holidayDayPct = toNum(cfg.holidayDayPct, _holidayDayPct)
   _holidayNightPct = toNum(cfg.holidayNightPct, _holidayNightPct)
+  if (cfg.hasNightShift !== undefined) _hasNightShift = !!cfg.hasNightShift
 }
 
 // Làm tròn để tránh sai số dấu phẩy động (vd 25500×1.3).
@@ -36,6 +39,8 @@ export function getDayRate() {
   return Math.round(_dayRate)
 }
 export function getNightRate() {
+  // Không có ca đêm → không phụ cấp: giờ đêm tính bằng lương thường (ngày).
+  if (!_hasNightShift) return getDayRate()
   return Math.round(_dayRate * (1 + _nightPct / 100))
 }
 // Ca NGÀY lễ = lương ngày × (phụ cấp lễ ngày%). VD 25000 × 300% = 75000/giờ.
@@ -44,7 +49,9 @@ export function getHolidayDayRate() {
 }
 // Ca ĐÊM lễ = lương ca đêm × (phụ cấp lễ đêm%) — có cộng dồn phụ cấp đêm thường.
 // VD (25000 × 1.3) × 300% = 97500/giờ.
+// Không có ca đêm → dùng đơn giá lễ ca ngày (không phụ cấp đêm).
 export function getHolidayNightRate() {
+  if (!_hasNightShift) return getHolidayDayRate()
   const nightRate = _dayRate * (1 + _nightPct / 100)
   return Math.round(nightRate * (_holidayNightPct / 100))
 }
