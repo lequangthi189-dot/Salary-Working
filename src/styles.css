@@ -408,6 +408,72 @@ button[type='submit']:disabled {
   flex: 0 0 auto;
 }
 
+/* ---- Chuyển tài khoản trong Hồ sơ ---- */
+.acct-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+.acct-switch-title {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.acct-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+.acct-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.acct-pick:hover {
+  border-color: var(--accent);
+}
+.acct-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.acct-email {
+  font-size: 0.74rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.acct-forget {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 0.6rem;
+  cursor: pointer;
+}
+.acct-forget:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.acct-add {
+  align-self: flex-start;
+}
+
 /* ---- Nút chuyển ngôn ngữ ---- */
 .lang-toggle {
   display: inline-flex;

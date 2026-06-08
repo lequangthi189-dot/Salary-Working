@@ -41,7 +41,9 @@ import {
 export default function App() {
   const { t } = useI18n()
   const { updatedAt: fxUpdatedAt } = useCurrency()
-  const { session, loading, signOut, recovery, endRecovery } = useAuth()
+  const { session, loading, signOut, recovery, endRecovery, switchAccount } =
+    useAuth()
+  const [addingAccount, setAddingAccount] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showReconcile, setShowReconcile] = useState(false)
@@ -68,6 +70,11 @@ export default function App() {
       if (entries.length) setWhatsNew(entries)
     }
   }, [session])
+
+  // Đăng nhập xong tài khoản mới (đổi user) → tắt chế độ "thêm tài khoản".
+  useEffect(() => {
+    setAddingAccount(false)
+  }, [session?.user?.id])
 
   function closeWelcome() {
     if (session) localStorage.setItem(`welcome-seen-${session.user.id}`, '1')
@@ -137,6 +144,15 @@ export default function App() {
     return (
       <div className="center">
         <LoginForm />
+      </div>
+    )
+
+  // Đang THÊM tài khoản: hiện màn đăng nhập dù vẫn còn phiên cũ (không đăng xuất,
+  // để tài khoản cũ vẫn chuyển lại được). Đăng nhập xong → useEffect tắt cờ này.
+  if (addingAccount)
+    return (
+      <div className="center">
+        <LoginForm onCancel={() => setAddingAccount(false)} />
       </div>
     )
 
@@ -366,6 +382,15 @@ export default function App() {
           onSaveField={saveProfileFields}
           onClose={() => setShowProfile(false)}
           onSignOut={signOut}
+          onSwitchAccount={async (refreshToken) => {
+            const err = await switchAccount(refreshToken)
+            if (!err) setShowProfile(false)
+            return err
+          }}
+          onAddAccount={() => {
+            setShowProfile(false)
+            setAddingAccount(true)
+          }}
         />
       )}
 
