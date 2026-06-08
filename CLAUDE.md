@@ -46,7 +46,7 @@ Chi tiết, ví dụ biên và các quy tắc chưa được code (lương lễ 
 
 Tuyệt đối KHÔNG được thay đổi hoặc tự ý giả định những điều sau nếu không có yêu cầu rõ ràng:
 
-- **Đơn giá**: `DAY_RATE = 25500`, `NIGHT_RATE = 33150`. Không hard-code số khác; luôn import từ `rates.js`.
+- **Đơn giá**: theo TỪNG NGƯỜI DÙNG, nạp từ hồ sơ qua `setRates()` trong `rates.js` (lương 1 giờ + phụ cấp % đêm/lễ). `DAY_RATE = 25500`, `NIGHT_RATE = 33150` chỉ còn là MẶC ĐỊNH/fallback. Không hard-code số khác; luôn lấy qua `getDayRate()/getNightRate()/getHolidayDayRate()/getHolidayNightRate()`.
 - **Cửa sổ đêm**: `22:00–06:00` (`NIGHT_START_HOUR = 22`, `NIGHT_END_HOUR = 6`). Biên `22:00–06:00` tính 100% là đêm.
 - **Quy ước qua nửa đêm**: `end <= start` nghĩa là ca kết thúc hôm sau. Đừng đổi sang yêu cầu ngày kết thúc riêng.
 - **Đơn vị tiền**: số nguyên VND, không dùng số thập phân tiền tệ; định dạng qua `formatMoney` (locale `vi-VN`).
