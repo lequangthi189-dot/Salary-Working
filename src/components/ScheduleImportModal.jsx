@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { durationHours, formatHours, MAX_HOURS_PER_DAY } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
+import ConfirmModal from './ConfirmModal.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -61,6 +62,12 @@ export default function ScheduleImportModal({
   const [info, setInfo] = useState(null)
   const [rows, setRows] = useState(null) // [{weekday,date,start,end,off}]
   const [saving, setSaving] = useState(false)
+  const [confirmState, setConfirmState] = useState(null) // { message, resolve }
+
+  // Hỏi xác nhận bằng popup cảnh báo riêng (thay window.confirm).
+  function askConfirm(message) {
+    return new Promise((resolve) => setConfirmState({ message, resolve }))
+  }
 
   function pickFile(e) {
     const f = e.target.files?.[0]
@@ -115,9 +122,12 @@ export default function ScheduleImportModal({
         return
       }
       // Nhầm loại: ảnh là bảng công nhưng đang ở Nhập lịch tuần → hỏi xác nhận.
-      if (data?.doc_type === 'timesheet' && !window.confirm(t('import.warnTimesheet'))) {
-        setRows(null)
-        return
+      if (data?.doc_type === 'timesheet') {
+        const ok = await askConfirm(t('import.warnTimesheet'))
+        if (!ok) {
+          setRows(null)
+          return
+        }
       }
       if (!data?.found) {
         setError(t('import.errNotFound', { code: employeeCode }))
@@ -298,6 +308,16 @@ export default function ScheduleImportModal({
           </>
         )}
       </div>
+
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onResult={(ok) => {
+            confirmState.resolve(ok)
+            setConfirmState(null)
+          }}
+        />
+      )}
     </div>
   )
 }

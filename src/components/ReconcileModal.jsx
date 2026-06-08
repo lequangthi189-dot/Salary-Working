@@ -8,6 +8,7 @@ import {
   computeEffective,
 } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
+import ConfirmModal from './ConfirmModal.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -69,6 +70,11 @@ export default function ReconcileModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [rows, setRows] = useState(null)
+  const [confirmState, setConfirmState] = useState(null) // { message, resolve }
+
+  function askConfirm(message) {
+    return new Promise((resolve) => setConfirmState({ message, resolve }))
+  }
 
   // Map ngày -> giờ THỰC TẾ (đã check-in) và giờ DỰ KIẾN (lịch) trong bảng công.
   // Hai loại có thể nằm ở hai dòng ca khác nhau cùng ngày.
@@ -141,9 +147,12 @@ export default function ReconcileModal({
         return
       }
       // Nhầm loại: ảnh là lịch dự kiến nhưng đang Đối chiếu công → hỏi xác nhận.
-      if (data?.doc_type === 'schedule' && !window.confirm(t('reconcile.warnSchedule'))) {
-        setRows(null)
-        return
+      if (data?.doc_type === 'schedule') {
+        const ok = await askConfirm(t('reconcile.warnSchedule'))
+        if (!ok) {
+          setRows(null)
+          return
+        }
       }
       if (!data?.found) {
         setError(t('import.errNotFound', { code: employeeCode }))
@@ -324,6 +333,16 @@ export default function ReconcileModal({
           </>
         )}
       </div>
+
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onResult={(ok) => {
+            confirmState.resolve(ok)
+            setConfirmState(null)
+          }}
+        />
+      )}
     </div>
   )
 }

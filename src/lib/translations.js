@@ -16,6 +16,8 @@ export const translations = {
     'common.notSet': 'Not set',
     'common.yes': 'Yes',
     'common.no': 'No',
+    'common.warning': 'Warning',
+    'common.continue': 'Continue',
 
     // nav / app
     'nav.importWeek': 'Import weekly schedule',
@@ -353,6 +355,8 @@ export const translations = {
     'common.notSet': 'Chưa đặt',
     'common.yes': 'Có',
     'common.no': 'Không',
+    'common.warning': 'Cảnh báo',
+    'common.continue': 'Tiếp tục',
 
     // nav / app
     'nav.importWeek': 'Nhập lịch tuần',
