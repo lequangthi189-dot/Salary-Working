@@ -36,10 +36,6 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
       setError(t('emp.errRequired'))
       return
     }
-    if (!employeeCode.trim()) {
-      setError(t('emp.errRequired'))
-      return
-    }
     const rate = Math.round(Number(hourlyRate))
     if (!Number.isFinite(rate) || rate <= 0) {
       setError(t('emp.errRate'))
@@ -97,7 +93,6 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
             type="text"
             value={employeeCode}
             onChange={(e) => setEmployeeCode(e.target.value)}
-            required
           />
         </label>
         <label>
