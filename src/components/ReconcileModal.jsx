@@ -127,11 +127,12 @@ export default function ReconcileModal({
         setRows(null)
         return
       }
-      const isoRe = /^\d{4}-\d{2}-\d{2}$/
       const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
       const compared = WEEKDAYS.map((wd, i) => {
         const d = byDay.get(wd) || { off: true, start: '', end: '', date: '' }
-        const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
+        // Ngày = theo TUẦN BẮT ĐẦU người dùng chọn (Thứ 2 + offset). Đối chiếu là
+        // chọn đúng tuần cần kiểm tra, không phụ thuộc ngày AI đọc trong ảnh.
+        const date = addDays(weekStart, i)
         const imgOff = !!d.off || !d.start || !d.end
         const imgStart = imgOff ? '' : d.start
         const imgEnd = imgOff ? '' : d.end
@@ -277,8 +278,16 @@ export default function ReconcileModal({
                       >
                         {r.schedStart ? `${r.schedStart}–${r.schedEnd}` : '—'}
                       </td>
-                      <td className={`rec-${r.statusActual}`}>
-                        {t(`reconcile.v_${r.statusActual}`)}
+                      <td
+                        className={`rec-${
+                          r.statusActual === 'match' ? 'match' : 'diff'
+                        }`}
+                      >
+                        {t(
+                          r.statusActual === 'match'
+                            ? 'reconcile.matchYes'
+                            : 'reconcile.matchNo'
+                        )}
                       </td>
                     </tr>
                   ))}
