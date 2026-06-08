@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ChangePasswordModal from './ChangePasswordModal.jsx'
 import { formatMoney } from '../lib/shiftMath.js'
+import { listAccounts, removeAccount } from '../lib/accounts.js'
 import { useI18n } from '../lib/i18n.jsx'
 
 // Một dòng thông tin có thể chỉnh tại chỗ (Chỉnh → input → Lưu/Hủy).
@@ -98,6 +99,8 @@ export default function ProfileModal({
   onSaveField,
   onClose,
   onSignOut,
+  onSwitchAccount,
+  onAddAccount,
 }) {
   const { t } = useI18n()
   const email = user.email || '—'
@@ -106,6 +109,21 @@ export default function ProfileModal({
     `${profile?.last_name || ''} ${profile?.first_name || ''}`.trim()
   const pct = (v) => (v != null ? `${v}%` : '—')
   const hasNight = profile?.has_night_shift !== false
+
+  const [accounts, setAccounts] = useState(() => listAccounts())
+  const [switching, setSwitching] = useState(false)
+  const otherAccounts = accounts.filter((a) => a.id !== user.id)
+
+  async function switchTo(acc) {
+    setSwitching(true)
+    const err = await onSwitchAccount(acc.refresh_token)
+    setSwitching(false)
+    if (err) alert(err) // token hết hạn → cần đăng nhập lại tài khoản đó
+  }
+  function forget(id) {
+    removeAccount(id)
+    setAccounts(listAccounts())
+  }
 
   const [showChangePw, setShowChangePw] = useState(false)
   const [editPayday, setEditPayday] = useState(false)
@@ -260,6 +278,42 @@ export default function ProfileModal({
               onSave={(v) => onSaveField({ has_night_shift: v })}
             />
           </dl>
+
+          {/* Chuyển tài khoản: danh sách tài khoản đã lưu trên máy + thêm mới */}
+          {onSwitchAccount && (
+            <div className="acct-switch">
+              <span className="acct-switch-title">{t('profile.switchAccount')}</span>
+              {otherAccounts.map((a) => (
+                <div key={a.id} className="acct-row">
+                  <button
+                    type="button"
+                    className="acct-pick"
+                    onClick={() => switchTo(a)}
+                    disabled={switching}
+                  >
+                    <span className="acct-name">{a.name || a.email}</span>
+                    <span className="acct-email">{a.email}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="acct-forget"
+                    onClick={() => forget(a.id)}
+                    title={t('profile.forgetAccount')}
+                    aria-label={t('profile.forgetAccount')}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="account-btn acct-add"
+                onClick={onAddAccount}
+              >
+                {t('profile.addAccount')}
+              </button>
+            </div>
+          )}
 
           <div className="profile-actions">
             <button

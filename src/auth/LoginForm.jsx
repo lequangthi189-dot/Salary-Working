@@ -44,7 +44,7 @@ function initialMode() {
   return "signin";
 }
 
-export default function LoginForm() {
+export default function LoginForm({ onCancel }) {
   const { t } = useI18n();
   const [mode, setMode] = useState(initialMode); // 'signin' | 'signup'
   const [email, setEmail] = useState("");
@@ -300,6 +300,12 @@ export default function LoginForm() {
       >
         {mode === "signin" ? t("auth.noAccount") : t("auth.haveAccount")}
       </button>
+
+      {onCancel && (
+        <button type="button" className="link" onClick={onCancel}>
+          ← {t("common.cancel")}
+        </button>
+      )}
     </div>
   );
 }

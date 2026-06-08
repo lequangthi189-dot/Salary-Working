@@ -315,6 +315,9 @@ export const translations = {
     'profile.holidayNightPct': 'Holiday — night shift',
     'profile.editInfo': 'Edit info',
     'profile.hasNightShift': 'Store has night shifts',
+    'profile.switchAccount': 'Switch account',
+    'profile.addAccount': '+ Add account',
+    'profile.forgetAccount': 'Remove from this device',
 
     // shift form holiday
     'shiftForm.holiday': 'Holiday',
@@ -639,6 +642,9 @@ export const translations = {
     'profile.holidayNightPct': 'Lễ — ca đêm',
     'profile.editInfo': 'Chỉnh thông tin',
     'profile.hasNightShift': 'Cửa hàng có ca đêm',
+    'profile.switchAccount': 'Chuyển tài khoản',
+    'profile.addAccount': '+ Thêm tài khoản',
+    'profile.forgetAccount': 'Xóa khỏi máy này',
 
     // shift form holiday
     'shiftForm.holiday': 'Ngày lễ',
