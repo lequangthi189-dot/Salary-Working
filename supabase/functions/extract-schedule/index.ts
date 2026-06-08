@@ -24,10 +24,10 @@ const cors = {
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 // Danh sách model Gemini thử lần lượt (env GEMINI_MODEL, ngăn cách bằng dấu phẩy).
-// flash = nhanh, rẻ, có free tier. Nếu model đầu hết quota (429) sẽ thử model kế.
-// Mặc định: 3.5-flash (mới nhất) -> 2.5-flash -> 2.0-flash.
+// Hết quota (429) / quá tải (503) / không tồn tại (404) ở model nào → thử model kế.
+// Mặc định gồm cả bản "flash-lite" (quota free cao hơn) để tránh hết hạn mức.
 const GEMINI_MODELS = (Deno.env.get('GEMINI_MODEL') ||
-  'gemini-3.5-flash,gemini-2.5-flash,gemini-2.0-flash')
+  'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash')
   .split(',')
   .map((s: string) => s.trim())
   .filter(Boolean)
@@ -144,32 +144,51 @@ Deno.serve(async (req: Request) => {
       },
     })
 
-    // Thử lần lượt từng model; nếu 429 (hết quota) thì chuyển model kế tiếp.
+    // Thử lần lượt từng model. 429 (hết quota) / 404 (model không tồn tại) → model
+    // kế. 503/500 (quá tải) → thử lại cùng model 1 lần (đợi ~1s) rồi sang model kế.
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
     let resp: Response | null = null
+    let lastStatus = 0
     for (const model of GEMINI_MODELS) {
       const url =
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` +
         encodeURIComponent(apiKey)
-      resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: reqBody,
-      })
-      if (resp.ok) break
-      if (resp.status === 429) continue // hết quota model này, thử model sau
-      // Lỗi khác (4xx/5xx) → báo luôn, không thử tiếp.
-      const errText = await resp.text()
-      return json({ error: `Lỗi gọi Gemini (${resp.status}): ${errText}` }, 502)
+      for (let attempt = 0; attempt < 2; attempt++) {
+        resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: reqBody,
+        })
+        if (resp.ok) break
+        lastStatus = resp.status
+        if (resp.status === 503 || resp.status === 500) {
+          if (attempt === 0) {
+            await sleep(1000)
+            continue // quá tải → thử lại cùng model
+          }
+          break // vẫn quá tải → sang model kế
+        }
+        if (resp.status === 429 || resp.status === 404) break // hết quota / không có model → model kế
+        // Lỗi khác (4xx khác) → báo luôn.
+        const errText = await resp.text()
+        return json({ error: `Lỗi gọi Gemini (${resp.status}): ${errText}` }, 502)
+      }
+      if (resp && resp.ok) break
     }
 
-    // Hết danh sách mà vẫn không OK → tất cả model đều hết quota (429).
+    // Hết danh sách mà vẫn không OK.
     if (!resp || !resp.ok) {
+      if (lastStatus === 503 || lastStatus === 500) {
+        return json(
+          { error: 'Gemini đang quá tải, vui lòng thử lại sau ít phút.' },
+          503
+        )
+      }
       return json(
         {
           error:
-            `Hết hạn mức (quota) Gemini cho các model đã thử (${GEMINI_MODELS.join(', ')}).\n` +
-            `Vui lòng bật thanh toán cho API key tại https://aistudio.google.com/app/apikey ` +
-            `hoặc dùng API key của project khác còn free tier, rồi đặt lại GEMINI_API_KEY.`,
+            `Tất cả model đã thử đều không khả dụng (hết quota / không tồn tại): ${GEMINI_MODELS.join(', ')}.\n` +
+            `Hãy đặt lại GEMINI_MODEL (env) bằng tên model hợp lệ, hoặc bật thanh toán/đổi API key tại https://aistudio.google.com/app/apikey.`,
         },
         429
       )
