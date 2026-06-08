@@ -52,7 +52,8 @@ export default function ReconcileModal({
   const { t } = useI18n()
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
-  const [weekStart, setWeekStart] = useState(mondayOfThisWeek())
+  // Tuần hiện tại làm DỰ PHÒNG khi ảnh không ghi ngày (không hiện trên UI nữa).
+  const weekStart = mondayOfThisWeek()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [rows, setRows] = useState(null)
@@ -196,14 +197,6 @@ export default function ReconcileModal({
           <label className="import-file">
             <span>{t('import.image')}</span>
             <input type="file" accept="image/*" onChange={pickFile} />
-          </label>
-          <label className="import-week">
-            <span>{t('import.weekStart')}</span>
-            <input
-              type="date"
-              value={weekStart}
-              onChange={(e) => setWeekStart(e.target.value)}
-            />
           </label>
         </div>
         <p className="import-empcode">
