@@ -37,6 +37,7 @@ const SCHEMA = {
   type: 'OBJECT',
   properties: {
     is_roster: { type: 'BOOLEAN' },
+    doc_type: { type: 'STRING', enum: ['schedule', 'timesheet', 'other'] },
     found: { type: 'BOOLEAN' },
     matched_code: { type: 'STRING' },
     days: {
@@ -55,12 +56,16 @@ const SCHEMA = {
       },
     },
   },
-  required: ['is_roster', 'found', 'matched_code', 'days'],
+  required: ['is_roster', 'doc_type', 'found', 'matched_code', 'days'],
 }
 
 const SYSTEM = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
 Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
-0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, found=false, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp các bước dưới.
+0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, doc_type="other", found=false, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp.
+0b. Phân loại doc_type:
+   - "schedule" = LỊCH PHÂN CA / LỊCH ĐI LÀM (giờ vào–ra DỰ KIẾN cho tuần, thường là kế hoạch sắp tới; ô ghi khung giờ như "09:00-17:00").
+   - "timesheet" = BẢNG CÔNG / CHẤM CÔNG (ghi nhận công ĐÃ làm; thường có TỔNG GIỜ mỗi ngày như "7.55", "8.0", hoặc giờ check-in/out thực tế, có tiêu đề kiểu "Bảng công"/"Chấm công").
+   Chọn loại khớp nhất.
 1. Tìm trong ảnh DÒNG ứng với nhân viên khớp nhất theo BẤT KỲ thông tin nào ở trên (ưu tiên mã nhân viên; nếu không có/không khớp thì dùng họ tên; rồi tới số điện thoại). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu cách/dấu tiếng Việt. Nếu không có dòng nào khớp hợp lý, đặt found=false.
 2. Với mỗi thứ trong tuần (Mon..Sun) của người đó, đọc giờ bắt đầu và kết thúc ca.
    - Chuẩn hoá về "HH:MM" 24 giờ (vd "9h"->"09:00", "5pm"->"17:00", "9-17"-> start 09:00 end 17:00).

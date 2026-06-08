@@ -266,6 +266,10 @@ export const translations = {
       'Your profile has no identifier (employee code / name / phone). Update it and try again.',
     'import.errNotRoster':
       'This image does not look like a work roster / timesheet. Please upload the correct schedule image.',
+    'import.warnTimesheet':
+      'This image looks like a TIMESHEET (worked hours), not a weekly schedule. Import anyway?',
+    'reconcile.warnSchedule':
+      'This image looks like a SCHEDULE (planned), not a timesheet. Compare anyway?',
     'import.errNotFound':
       'Code "{code}" not found in the image. Check the code or the image.',
     'import.infoRead':
@@ -598,6 +602,10 @@ export const translations = {
       'Hồ sơ chưa có thông tin nhận dạng (mã nhân viên / họ tên / SĐT). Hãy cập nhật rồi thử lại.',
     'import.errNotRoster':
       'Ảnh này không giống bảng phân ca / bảng công. Vui lòng tải đúng ảnh lịch làm việc.',
+    'import.warnTimesheet':
+      'Ảnh này có vẻ là BẢNG CÔNG (đã làm), không phải lịch tuần đi làm. Vẫn nhập?',
+    'reconcile.warnSchedule':
+      'Ảnh này có vẻ là LỊCH TUẦN (dự kiến), không phải bảng công. Vẫn đối chiếu?',
     'import.errNotFound':
       'Không tìm thấy mã "{code}" trong ảnh. Kiểm tra lại mã hoặc ảnh.',
     'import.infoRead':
