@@ -23,6 +23,7 @@ function applyRates(p) {
     nightPct: p.night_pct,
     holidayDayPct: p.holiday_day_pct,
     holidayNightPct: p.holiday_night_pct,
+    hasNightShift: p.has_night_shift !== false,
   })
 }
 
