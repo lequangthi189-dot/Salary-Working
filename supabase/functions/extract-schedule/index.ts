@@ -137,7 +137,10 @@ Deno.serve(async (req: Request) => {
         responseMimeType: 'application/json',
         responseSchema: SCHEMA,
         temperature: 0,
-        maxOutputTokens: 2048,
+        // Đủ rộng để JSON không bị cắt (model flash mới tốn token cho "thinking").
+        maxOutputTokens: 8192,
+        // Tắt thinking để dành toàn bộ token cho phần JSON.
+        thinkingConfig: { thinkingBudget: 0 },
       },
     })
 
@@ -198,6 +201,13 @@ Deno.serve(async (req: Request) => {
     try {
       parsed = JSON.parse(text)
     } catch {
+      // JSON bị cắt (thường do finishReason=MAX_TOKENS) → báo rõ + gợi ý thử lại.
+      if (cand?.finishReason === 'MAX_TOKENS') {
+        return json(
+          { error: 'Ảnh quá nhiều ca nên kết quả bị cắt. Hãy thử lại hoặc dùng ảnh gọn hơn.' },
+          502
+        )
+      }
       return json(
         { error: `Gemini trả không phải JSON: ${text.slice(0, 300)}` },
         502
