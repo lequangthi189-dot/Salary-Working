@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
-import { hhmm, durationHours, formatHours } from '../lib/shiftMath.js'
+import {
+  hhmm,
+  durationHours,
+  formatHours,
+  computeEffective,
+} from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -148,9 +153,17 @@ export default function ReconcileModal({
             ? durationHours(d.start, d.end)
             : parseHours(d.raw)
 
+        // Giờ THỰC TẾ = giờ công hiệu dụng đúng như thẻ workshift hiển thị
+        // (computeEffective: kẹp theo lịch dự kiến nếu có).
         const aS = actualByDate.get(date)
         const actualHours = aS
-          ? durationHours(hhmm(aS.start_time), hhmm(aS.end_time))
+          ? computeEffective(
+              hhmm(aS.scheduled_start),
+              hhmm(aS.scheduled_end),
+              hhmm(aS.start_time),
+              hhmm(aS.end_time),
+              !!aS.is_holiday
+            ).decimalHours
           : 0
         const sS = schedByDate.get(date)
         const schedHours = sS
