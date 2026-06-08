@@ -1,21 +1,96 @@
 import { useState } from 'react'
 import ChangePasswordModal from './ChangePasswordModal.jsx'
+import { formatMoney } from '../lib/shiftMath.js'
+import { useI18n } from '../lib/i18n.jsx'
 
-// Popup thông tin tài khoản: full name, email, số điện thoại, ngày nhận lương
-// + đổi mật khẩu và đăng xuất.
+// Một dòng thông tin có thể chỉnh tại chỗ (Chỉnh → input → Lưu/Hủy).
+function EditableRow({ label, display, initial, type = 'text', onSave }) {
+  const { t } = useI18n()
+  const [editing, setEditing] = useState(false)
+  const [val, setVal] = useState(initial ?? '')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+
+  async function save() {
+    setErr(null)
+    if (type === 'number' && !Number.isFinite(Number(val))) {
+      setErr(t('emp.errRate'))
+      return
+    }
+    setBusy(true)
+    const e = await onSave(type === 'number' ? Math.round(Number(val)) : val.trim())
+    setBusy(false)
+    if (e) setErr(e)
+    else setEditing(false)
+  }
+
+  function start() {
+    setVal(initial ?? '')
+    setErr(null)
+    setEditing(true)
+  }
+
+  return (
+    <>
+      <dt>{label}</dt>
+      <dd>
+        {editing ? (
+          <span className="field-edit">
+            <input
+              type={type}
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+            />
+            <button type="button" className="link" onClick={save} disabled={busy}>
+              {busy ? '…' : t('common.save')}
+            </button>
+            <button
+              type="button"
+              className="link"
+              onClick={() => {
+                setErr(null)
+                setEditing(false)
+              }}
+            >
+              {t('common.cancel')}
+            </button>
+            {err && <span className="msg error sm">{err}</span>}
+          </span>
+        ) : (
+          <span className="field-view">
+            <span>{display}</span>
+            <button
+              type="button"
+              className="edit-icon"
+              onClick={start}
+              title={t('common.edit')}
+              aria-label={t('common.edit')}
+            >
+              ✎
+            </button>
+          </span>
+        )}
+      </dd>
+    </>
+  )
+}
+
+// Popup thông tin tài khoản: chỉnh từng trường tại chỗ + đổi mật khẩu + đăng xuất.
 export default function ProfileModal({
   user,
+  profile,
   payday,
-  employeeCode: employeeCodeProp,
   onSavePayday,
+  onSaveField,
   onClose,
   onSignOut,
 }) {
-  const meta = user.user_metadata || {}
-  const fullName = meta.full_name || '—'
-  const employeeCode = employeeCodeProp || meta.employee_code || '—'
+  const { t } = useI18n()
   const email = user.email || '—'
-  const phone = meta.phone || user.phone || '—'
+  const fullName =
+    profile?.full_name ||
+    `${profile?.last_name || ''} ${profile?.first_name || ''}`.trim()
+  const pct = (v) => (v != null ? `${v}%` : '—')
 
   const [showChangePw, setShowChangePw] = useState(false)
   const [editPayday, setEditPayday] = useState(false)
@@ -41,103 +116,146 @@ export default function ProfileModal({
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
         >
-        <div className="modal-head">
-          <h2>Thông tin tài khoản</h2>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label="Đóng"
-          >
-            ×
-          </button>
-        </div>
+          <div className="modal-head">
+            <h2>{t('profile.title')}</h2>
+            <button
+              type="button"
+              className="modal-close"
+              onClick={onClose}
+              aria-label={t('common.close')}
+            >
+              ×
+            </button>
+          </div>
 
-        <dl className="profile-info">
-          <dt>Full name</dt>
-          <dd>{fullName}</dd>
-          <dt>Mã nhân viên</dt>
-          <dd>{employeeCode}</dd>
-          <dt>Email</dt>
-          <dd>{email}</dd>
-          <dt>Phone number</dt>
-          <dd>{phone}</dd>
-          <dt>Ngày nhận lương</dt>
-          <dd>
-            {editPayday ? (
-              <span className="payday-edit">
-                <select
-                  value={day}
-                  onChange={(e) => setDay(Number(e.target.value))}
-                >
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="link"
-                  onClick={savePayday}
-                  disabled={savingDay}
-                >
-                  {savingDay ? '…' : 'Lưu'}
-                </button>
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => {
-                    setEditPayday(false)
-                    setPaydayErr(null)
-                  }}
-                >
-                  Hủy
-                </button>
-                {paydayErr && <span className="msg error">{paydayErr}</span>}
-              </span>
-            ) : (
-              <span className="payday-view">
-                {payday ? `Ngày ${payday}` : 'Chưa đặt'}
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => {
-                    setDay(payday || 5)
-                    setEditPayday(true)
-                  }}
-                >
-                  Chỉnh
-                </button>
-              </span>
-            )}
-          </dd>
-        </dl>
+          <dl className="profile-info">
+            <EditableRow
+              label={t('auth.fullName')}
+              display={fullName || '—'}
+              initial={fullName}
+              onSave={(v) => onSaveField({ full_name: v })}
+            />
+            <EditableRow
+              label={t('profile.empCode')}
+              display={profile?.employee_code || '—'}
+              initial={profile?.employee_code || ''}
+              onSave={(v) => onSaveField({ employee_code: v })}
+            />
+            <dt>{t('auth.email')}</dt>
+            <dd>{email}</dd>
+            <EditableRow
+              label={t('auth.phone')}
+              display={profile?.phone || '—'}
+              initial={profile?.phone || ''}
+              onSave={(v) => onSaveField({ phone: v })}
+            />
 
-        <div className="profile-actions">
-          <button
-            type="button"
-            className="account-btn signout-btn"
-            onClick={onSignOut}
-          >
-            Sign out
-          </button>
-          <button
-            type="button"
-            className="account-btn change-pw-btn"
-            onClick={() => setShowChangePw(true)}
-          >
-            Đổi mật khẩu
-          </button>
-        </div>
+            <dt>{t('profile.payday')}</dt>
+            <dd>
+              {editPayday ? (
+                <span className="payday-edit">
+                  <select
+                    value={day}
+                    onChange={(e) => setDay(Number(e.target.value))}
+                  >
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={savePayday}
+                    disabled={savingDay}
+                  >
+                    {savingDay ? '…' : t('common.save')}
+                  </button>
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={() => {
+                      setEditPayday(false)
+                      setPaydayErr(null)
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  {paydayErr && <span className="msg error sm">{paydayErr}</span>}
+                </span>
+              ) : (
+                <span className="field-view">
+                  <span>{payday ? t('profile.dayN', { n: payday }) : t('common.notSet')}</span>
+                  <button
+                    type="button"
+                    className="edit-icon"
+                    onClick={() => {
+                      setDay(payday || 5)
+                      setEditPayday(true)
+                    }}
+                    title={t('common.edit')}
+                    aria-label={t('common.edit')}
+                  >
+                    ✎
+                  </button>
+                </span>
+              )}
+            </dd>
+
+            <EditableRow
+              label={t('profile.hourlyRate')}
+              display={
+                profile?.hourly_rate != null ? formatMoney(profile.hourly_rate) : '—'
+              }
+              initial={profile?.hourly_rate ?? ''}
+              type="number"
+              onSave={(v) => onSaveField({ hourly_rate: v })}
+            />
+            <EditableRow
+              label={t('profile.nightPct')}
+              display={pct(profile?.night_pct)}
+              initial={profile?.night_pct ?? ''}
+              type="number"
+              onSave={(v) => onSaveField({ night_pct: v })}
+            />
+            <EditableRow
+              label={t('profile.holidayDayPct')}
+              display={pct(profile?.holiday_day_pct)}
+              initial={profile?.holiday_day_pct ?? ''}
+              type="number"
+              onSave={(v) => onSaveField({ holiday_day_pct: v })}
+            />
+            <EditableRow
+              label={t('profile.holidayNightPct')}
+              display={pct(profile?.holiday_night_pct)}
+              initial={profile?.holiday_night_pct ?? ''}
+              type="number"
+              onSave={(v) => onSaveField({ holiday_night_pct: v })}
+            />
+          </dl>
+
+          <div className="profile-actions">
+            <button
+              type="button"
+              className="account-btn signout-btn"
+              onClick={onSignOut}
+            >
+              {t('profile.signOut')}
+            </button>
+            <button
+              type="button"
+              className="account-btn change-pw-btn"
+              onClick={() => setShowChangePw(true)}
+            >
+              {t('changePw.title')}
+            </button>
+          </div>
         </div>
       </div>
 
       {showChangePw && (
-        <ChangePasswordModal
-          user={user}
-          onClose={() => setShowChangePw(false)}
-        />
+        <ChangePasswordModal user={user} onClose={() => setShowChangePw(false)} />
       )}
     </>
   )
