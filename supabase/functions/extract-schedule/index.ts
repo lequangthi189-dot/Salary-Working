@@ -58,8 +58,8 @@ const SCHEMA = {
 }
 
 const SYSTEM = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
-Người dùng cung cấp MÃ NHÂN VIÊN. Nhiệm vụ:
-1. Tìm trong ảnh DÒNG ứng với nhân viên có MÃ khớp nhất (bỏ qua khác biệt hoa thường/khoảng trắng/dấu cách; mã thường nằm ở cột đầu). Nếu không có mã nào khớp hợp lý, đặt found=false.
+Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
+1. Tìm trong ảnh DÒNG ứng với nhân viên khớp nhất theo BẤT KỲ thông tin nào ở trên (ưu tiên mã nhân viên; nếu không có/không khớp thì dùng họ tên; rồi tới số điện thoại). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu cách/dấu tiếng Việt. Nếu không có dòng nào khớp hợp lý, đặt found=false.
 2. Với mỗi thứ trong tuần (Mon..Sun) của người đó, đọc giờ bắt đầu và kết thúc ca.
    - Chuẩn hoá về "HH:MM" 24 giờ (vd "9h"->"09:00", "5pm"->"17:00", "9-17"-> start 09:00 end 17:00).
    - Nếu ô ghi nghỉ/trống/"OFF"/"X" thì off=true, start="" , end="".
@@ -93,6 +93,8 @@ Deno.serve(async (req: Request) => {
     image?: string
     mediaType?: string
     employeeCode?: string
+    fullName?: string
+    phone?: string
     weekStart?: string
   }
   try {
@@ -100,9 +102,15 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ error: 'Body JSON không hợp lệ' }, 400)
   }
-  const { image, mediaType, employeeCode, weekStart } = body
-  if (!image || !mediaType || !employeeCode) {
-    return json({ error: 'Thiếu image / mediaType / employeeCode' }, 400)
+  const { image, mediaType, employeeCode, fullName, phone, weekStart } = body
+  const hasId = [employeeCode, fullName, phone].some(
+    (v) => v && String(v).trim()
+  )
+  if (!image || !mediaType || !hasId) {
+    return json(
+      { error: 'Thiếu image / mediaType / thông tin nhận dạng (mã, họ tên hoặc SĐT)' },
+      400
+    )
   }
 
   try {
@@ -115,7 +123,11 @@ Deno.serve(async (req: Request) => {
             { inline_data: { mime_type: mediaType, data: image } },
             {
               text:
-                `Mã nhân viên cần lấy lịch: "${employeeCode}". Trả về ca từng thứ Mon..Sun.` +
+                'Thông tin nhận dạng nhân viên cần lấy lịch:' +
+                (employeeCode ? ` Mã: "${employeeCode}".` : '') +
+                (fullName ? ` Họ tên: "${fullName}".` : '') +
+                (phone ? ` SĐT: "${phone}".` : '') +
+                ' Trả về ca từng thứ Mon..Sun.' +
                 (weekStart ? ` Tuần bắt đầu (Thứ 2) khoảng: ${weekStart}.` : ''),
             },
           ],

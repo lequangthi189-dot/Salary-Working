@@ -42,7 +42,13 @@ function dmShort(date) {
 
 // Modal ĐỐI CHIẾU CÔNG: tải ảnh bảng phân ca → AI đọc theo mã NV → so với các ca
 // đang có trong bảng công (workshift cards) để xem có đúng công không.
-export default function ReconcileModal({ employeeCode = '', shifts = [], onClose }) {
+export default function ReconcileModal({
+  employeeCode = '',
+  fullName = '',
+  phone = '',
+  shifts = [],
+  onClose,
+}) {
   const { t } = useI18n()
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
@@ -84,7 +90,7 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
   async function readAndCompare() {
     setError(null)
     if (!file) return setError(t('import.errPickImage'))
-    if (!/^\d{9}$/.test(String(employeeCode).trim()))
+    if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
       return setError(t('import.errNoCode'))
     setLoading(true)
     try {
@@ -96,6 +102,8 @@ export default function ReconcileModal({ employeeCode = '', shifts = [], onClose
             image: base64,
             mediaType,
             employeeCode: employeeCode.trim(),
+            fullName,
+            phone,
             weekStart,
           },
         }

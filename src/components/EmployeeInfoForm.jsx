@@ -6,7 +6,7 @@ import { DEFAULT_NIGHT_PCT } from '../lib/rates.js'
 // Form thông tin nhân viên — BẮT BUỘC điền sau đăng ký mới vào được app.
 // Thứ tự: họ, tên, mã NV, lương 1 giờ, phụ cấp đêm (%), phụ cấp lễ ca ngày/đêm (%).
 // Cũng dùng lại để chỉnh trong Hồ sơ (truyền onCancel để hiện nút Hủy).
-export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
+export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBack }) {
   const { t } = useI18n()
   const [lastName, setLastName] = useState(initial.last_name || '')
   const [firstName, setFirstName] = useState(initial.first_name || '')
@@ -33,10 +33,6 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
     e.preventDefault()
     setError(null)
     if (!lastName.trim() || !firstName.trim()) {
-      setError(t('emp.errRequired'))
-      return
-    }
-    if (!employeeCode.trim()) {
       setError(t('emp.errRequired'))
       return
     }
@@ -97,7 +93,6 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
             type="text"
             value={employeeCode}
             onChange={(e) => setEmployeeCode(e.target.value)}
-            required
           />
         </label>
         <label>
@@ -175,6 +170,12 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel }) {
           )}
         </div>
       </form>
+
+      {onBack && (
+        <button type="button" className="link" onClick={onBack}>
+          ← {t('emp.back')}
+        </button>
+      )}
 
       {error && <p className="msg error">{error}</p>}
     </div>

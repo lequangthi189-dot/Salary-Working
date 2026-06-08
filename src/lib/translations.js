@@ -263,7 +263,7 @@ export const translations = {
     'import.createAll': 'Create whole week',
     'import.errPickImage': 'Please choose a schedule image.',
     'import.errNoCode':
-      'Your account has no 9-digit employee code. Update it in your profile and try again.',
+      'Your profile has no identifier (employee code / name / phone). Update it and try again.',
     'import.errNotFound':
       'Code "{code}" not found in the image. Check the code or the image.',
     'import.infoRead':
@@ -304,6 +304,7 @@ export const translations = {
     'emp.holidayNightPct': 'Holiday allowance — night shift (%)',
     'emp.hasNightShift': 'Does your store have night shifts?',
     'emp.save': 'Save & continue',
+    'emp.back': 'Back to sign up',
     'emp.errRequired': 'Please enter last name and first name.',
     'emp.errRate': 'Enter an hourly wage greater than 0.',
 
@@ -586,7 +587,7 @@ export const translations = {
     'import.createAll': 'Tạo ca cả tuần',
     'import.errPickImage': 'Hãy chọn ảnh lịch.',
     'import.errNoCode':
-      'Tài khoản chưa có mã nhân viên 9 số. Hãy cập nhật mã trong hồ sơ rồi thử lại.',
+      'Hồ sơ chưa có thông tin nhận dạng (mã nhân viên / họ tên / SĐT). Hãy cập nhật rồi thử lại.',
     'import.errNotFound':
       'Không tìm thấy mã "{code}" trong ảnh. Kiểm tra lại mã hoặc ảnh.',
     'import.infoRead':
@@ -627,6 +628,7 @@ export const translations = {
     'emp.holidayNightPct': 'Phụ cấp ngày lễ — ca đêm (%)',
     'emp.hasNightShift': 'Cửa hàng bạn đang làm có ca đêm không?',
     'emp.save': 'Lưu & tiếp tục',
+    'emp.back': 'Quay lại đăng ký',
     'emp.errRequired': 'Vui lòng nhập họ và tên.',
     'emp.errRate': 'Nhập lương 1 giờ lớn hơn 0.',
 

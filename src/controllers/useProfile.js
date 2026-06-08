@@ -9,7 +9,6 @@ export function isProfileComplete(p) {
     p &&
     p.first_name &&
     p.last_name &&
-    p.employee_code &&
     Number.isFinite(Number(p.hourly_rate)) &&
     Number(p.hourly_rate) > 0
   )
