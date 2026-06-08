@@ -1,10 +1,22 @@
 // Nhật ký cập nhật (changelog). Mỗi lần ra bản mới: tăng APP_VERSION và thêm 1 mục
 // vào đầu mảng CHANGELOG (mới nhất ở trên). App sẽ tự hiện popup "Có cập nhật mới"
 // cho người dùng khi APP_VERSION khác phiên bản họ đã xem.
-export const APP_VERSION = '2.3.0'
+export const APP_VERSION = '2.4.0'
 
 // items: { vi: [...], en: [...] } — danh sách thay đổi theo ngôn ngữ.
 export const CHANGELOG = [
+  {
+    version: '2.4.0',
+    date: '2026-06-08',
+    items: {
+      vi: [
+        'Thêm "Đối chiếu công": tải ảnh bảng phân ca để kiểm tra bảng công có đúng không (so cả giờ thực tế lẫn lịch dự kiến).',
+      ],
+      en: [
+        'Added "Verify timesheet": upload a roster image to check your timesheet (compares both actual and scheduled times).',
+      ],
+    },
+  },
   {
     version: '2.3.0',
     date: '2026-06-08',
