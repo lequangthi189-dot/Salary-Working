@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
-import { hhmm } from '../lib/shiftMath.js'
+import { hhmm, durationHours, formatHours } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -40,6 +40,13 @@ function dmShort(date) {
   return `${d}/${m}`
 }
 
+// Đọc số giờ từ chuỗi thô trong ảnh (vd "7.55", "7,55", "8h") → số thập phân.
+function parseHours(raw) {
+  if (!raw) return 0
+  const n = parseFloat(String(raw).replace(',', '.').replace(/[^\d.]/g, ''))
+  return Number.isFinite(n) ? n : 0
+}
+
 // Modal ĐỐI CHIẾU CÔNG: tải ảnh bảng phân ca → AI đọc theo mã NV → so với các ca
 // đang có trong bảng công (workshift cards) để xem có đúng công không.
 export default function ReconcileModal({
@@ -68,13 +75,13 @@ export default function ReconcileModal({
       schedByDate.set(s.work_date, s)
   }
 
-  // Trạng thái khi so một cặp giờ (bảng công) với ảnh.
-  function cmp(imgOff, imgStart, imgEnd, appStart, appEnd) {
-    const appHas = !!(appStart && appEnd)
-    if (!imgOff && appHas)
-      return imgStart === appStart && imgEnd === appEnd ? 'match' : 'diff'
-    if (!imgOff && !appHas) return 'missing'
-    if (imgOff && appHas) return 'extra'
+  // Đối chiếu theo TỔNG GIỜ CÔNG: chỉ cần giờ bằng nhau là khớp.
+  function cmpHours(imgH, appH) {
+    const imgHas = imgH > 0
+    const appHas = appH > 0
+    if (imgHas && appHas) return Math.abs(imgH - appH) < 0.02 ? 'match' : 'diff'
+    if (imgHas && !appHas) return 'missing'
+    if (!imgHas && appHas) return 'extra'
     return 'off'
   }
 
@@ -129,34 +136,35 @@ export default function ReconcileModal({
       }
       const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
       const compared = WEEKDAYS.map((wd, i) => {
-        const d = byDay.get(wd) || { off: true, start: '', end: '', date: '' }
-        // Ngày = theo TUẦN BẮT ĐẦU người dùng chọn (Thứ 2 + offset). Đối chiếu là
-        // chọn đúng tuần cần kiểm tra, không phụ thuộc ngày AI đọc trong ảnh.
+        const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
+        // Ngày = theo TUẦN BẮT ĐẦU người dùng chọn (Thứ 2 + offset).
         const date = addDays(weekStart, i)
-        const imgOff = !!d.off || !d.start || !d.end
-        const imgStart = imgOff ? '' : d.start
-        const imgEnd = imgOff ? '' : d.end
+
+        // Giờ công theo ẢNH: nếu có giờ vào–ra thì lấy thời lượng, nếu ảnh ghi giờ
+        // thô (vd "7.55") thì đọc trực tiếp. Ngày nghỉ → 0.
+        const imgHours = d.off
+          ? 0
+          : d.start && d.end
+            ? durationHours(d.start, d.end)
+            : parseHours(d.raw)
 
         const aS = actualByDate.get(date)
-        const actualStart = aS ? hhmm(aS.start_time) : ''
-        const actualEnd = aS ? hhmm(aS.end_time) : ''
+        const actualHours = aS
+          ? durationHours(hhmm(aS.start_time), hhmm(aS.end_time))
+          : 0
         const sS = schedByDate.get(date)
-        const schedStart = sS ? hhmm(sS.scheduled_start) : ''
-        const schedEnd = sS ? hhmm(sS.scheduled_end) : ''
+        const schedHours = sS
+          ? durationHours(hhmm(sS.scheduled_start), hhmm(sS.scheduled_end))
+          : 0
 
         return {
           weekday: wd,
           date,
-          imgStart,
-          imgEnd,
-          imgOff,
-          imgRaw: (d.raw || '').trim(), // chữ gốc trong ảnh (vd "7.55") khi không có giờ vào/ra
-          actualStart,
-          actualEnd,
-          schedStart,
-          schedEnd,
-          statusActual: cmp(imgOff, imgStart, imgEnd, actualStart, actualEnd),
-          statusSched: cmp(imgOff, imgStart, imgEnd, schedStart, schedEnd),
+          imgHours,
+          actualHours,
+          schedHours,
+          statusActual: cmpHours(imgHours, actualHours),
+          statusSched: cmpHours(imgHours, schedHours),
         }
       })
       setRows(compared)
@@ -167,13 +175,9 @@ export default function ReconcileModal({
     }
   }
 
-  // Chỉ bỏ ngày HOÀN TOÀN trống: ảnh không có gì (kể cả giờ thô) + không có
-  // thực tế + không có dự kiến.
+  // Chỉ bỏ ngày HOÀN TOÀN trống (ảnh, thực tế, dự kiến đều 0 giờ).
   const visibleRows = rows
-    ? rows.filter(
-        (r) =>
-          !r.imgOff || r.imgRaw || r.actualStart || r.schedStart
-      )
+    ? rows.filter((r) => r.imgHours || r.actualHours || r.schedHours)
     : []
   const matchActual = visibleRows.filter((r) => r.statusActual === 'match').length
   const matchSched = visibleRows.filter((r) => r.statusSched === 'match').length
@@ -274,18 +278,14 @@ export default function ReconcileModal({
                         className={`rec-${r.statusActual}`}
                         title={t(`reconcile.${r.statusActual}`)}
                       >
-                        {r.actualStart ? `${r.actualStart}–${r.actualEnd}` : '—'}
+                        {r.actualHours ? `${formatHours(r.actualHours)}h` : '—'}
                       </td>
-                      <td>
-                        {r.imgStart
-                          ? `${r.imgStart}–${r.imgEnd}`
-                          : r.imgRaw || '—'}
-                      </td>
+                      <td>{r.imgHours ? `${formatHours(r.imgHours)}h` : '—'}</td>
                       <td
                         className={`rec-${r.statusSched}`}
                         title={t(`reconcile.${r.statusSched}`)}
                       >
-                        {r.schedStart ? `${r.schedStart}–${r.schedEnd}` : '—'}
+                        {r.schedHours ? `${formatHours(r.schedHours)}h` : '—'}
                       </td>
                       <td
                         className={`rec-${
