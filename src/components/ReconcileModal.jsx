@@ -177,8 +177,8 @@ export default function ReconcileModal({
           imgHours,
           actualHours,
           schedHours,
+          // Kết quả CHỈ dựa trên Thực tế vs Theo ảnh; Dự kiến không ảnh hưởng.
           statusActual: cmpHours(imgHours, actualHours),
-          statusSched: cmpHours(imgHours, schedHours),
         }
       })
       setRows(compared)
@@ -194,7 +194,6 @@ export default function ReconcileModal({
     ? rows.filter((r) => r.imgHours || r.actualHours || r.schedHours)
     : []
   const matchActual = visibleRows.filter((r) => r.statusActual === 'match').length
-  const matchSched = visibleRows.filter((r) => r.statusSched === 'match').length
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -267,9 +266,8 @@ export default function ReconcileModal({
                 matchActual === visibleRows.length ? 'info' : 'error'
               }`}
             >
-              {t('reconcile.summary2', {
-                a: matchActual,
-                s: matchSched,
+              {t('reconcile.summary', {
+                match: matchActual,
                 total: visibleRows.length,
               })}
             </p>
@@ -295,12 +293,7 @@ export default function ReconcileModal({
                         {r.actualHours ? `${formatHours(r.actualHours)}h` : '—'}
                       </td>
                       <td>{r.imgHours ? `${formatHours(r.imgHours)}h` : '—'}</td>
-                      <td
-                        className={`rec-${r.statusSched}`}
-                        title={t(`reconcile.${r.statusSched}`)}
-                      >
-                        {r.schedHours ? `${formatHours(r.schedHours)}h` : '—'}
-                      </td>
+                      <td>{r.schedHours ? `${formatHours(r.schedHours)}h` : '—'}</td>
                       <td
                         className={`rec-${
                           r.statusActual === 'match' ? 'match' : 'diff'
