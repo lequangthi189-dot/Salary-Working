@@ -257,6 +257,7 @@ export default function ReconcileModal({
                     <th>{t('reconcile.colImage')}</th>
                     <th>{t('reconcile.colActual')}</th>
                     <th>{t('reconcile.colSched')}</th>
+                    <th>{t('reconcile.colResult')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -275,6 +276,9 @@ export default function ReconcileModal({
                         title={t(`reconcile.${r.statusSched}`)}
                       >
                         {r.schedStart ? `${r.schedStart}–${r.schedEnd}` : '—'}
+                      </td>
+                      <td className={`rec-${r.statusActual}`}>
+                        {t(`reconcile.v_${r.statusActual}`)}
                       </td>
                     </tr>
                   ))}
