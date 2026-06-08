@@ -16,11 +16,22 @@
   box-sizing: border-box;
 }
 
+/* Giữ chỗ thanh cuộn để khi khoá cuộn (mở popup) layout không bị xê dịch ngang. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
+}
+
+/* Khi có bất kỳ popup/sidebar nào mở → khoá cuộn nền, không tác động layout chính. */
+body:has(.modal-overlay),
+body:has(.sidebar-overlay) {
+  overflow: hidden;
 }
 
 button {
