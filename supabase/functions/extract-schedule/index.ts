@@ -36,6 +36,7 @@ const GEMINI_MODELS = (Deno.env.get('GEMINI_MODEL') ||
 const SCHEMA = {
   type: 'OBJECT',
   properties: {
+    is_roster: { type: 'BOOLEAN' },
     found: { type: 'BOOLEAN' },
     matched_code: { type: 'STRING' },
     days: {
@@ -54,11 +55,12 @@ const SCHEMA = {
       },
     },
   },
-  required: ['found', 'matched_code', 'days'],
+  required: ['is_roster', 'found', 'matched_code', 'days'],
 }
 
 const SYSTEM = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
 Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
+0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, found=false, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp các bước dưới.
 1. Tìm trong ảnh DÒNG ứng với nhân viên khớp nhất theo BẤT KỲ thông tin nào ở trên (ưu tiên mã nhân viên; nếu không có/không khớp thì dùng họ tên; rồi tới số điện thoại). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu cách/dấu tiếng Việt. Nếu không có dòng nào khớp hợp lý, đặt found=false.
 2. Với mỗi thứ trong tuần (Mon..Sun) của người đó, đọc giờ bắt đầu và kết thúc ca.
    - Chuẩn hoá về "HH:MM" 24 giờ (vd "9h"->"09:00", "5pm"->"17:00", "9-17"-> start 09:00 end 17:00).
