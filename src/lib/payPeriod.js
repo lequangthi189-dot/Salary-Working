@@ -1,3 +1,5 @@
+import { getLang, translate } from './i18n.jsx'
+
 // Chu kỳ lương: chốt ngày 25 hằng tháng.
 // Công của "tháng M" = từ 26 của tháng (M-1) đến hết 25 của tháng M.
 // Lương tháng M trả vào ngày 1–10 của tháng (M+1).
@@ -73,11 +75,15 @@ function dmShort(dateStr) {
   return `${pad2(d)}/${pad2(m)}`
 }
 
-// "Lương tháng 5 (26/04 – 25/05)"
+// "Lương tháng 5 (26/04 – 25/05)" / "Salary month 5 (26/04 – 25/05)"
 export function payPeriodLabel(key) {
   const [, m] = key.split('-').map(Number)
   const { start, end } = payPeriodRange(key)
-  return `Lương tháng ${m} (${dmShort(start)} – ${dmShort(end)})`
+  return translate(getLang(), 'period.label', {
+    m,
+    start: dmShort(start),
+    end: dmShort(end),
+  })
 }
 
 // Kỳ đã kết thúc khi đã qua ngày 25 (so sánh chuỗi YYYY-MM-DD là đủ).

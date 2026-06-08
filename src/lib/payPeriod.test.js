@@ -85,7 +85,8 @@ describe('isPeriodEnded', () => {
 })
 
 describe('payPeriodLabel', () => {
+  // Mặc định ngôn ngữ là English (xem i18n.jsx) nên nhãn ra tiếng Anh.
   it('định dạng nhãn', () => {
-    expect(payPeriodLabel('2025-05')).toBe('Lương tháng 5 (26/04 – 25/05)')
+    expect(payPeriodLabel('2025-05')).toBe('Salary month 5 (26/04 – 25/05)')
   })
 })

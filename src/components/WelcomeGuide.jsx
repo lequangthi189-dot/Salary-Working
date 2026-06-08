@@ -1,39 +1,17 @@
+import { useI18n } from '../lib/i18n.jsx'
+
 // Modal hướng dẫn nhanh cho người mới. Tự hiện lần đầu (App lưu trạng thái đã xem
-// trong localStorage) và có thể mở lại bằng nút "Hướng dẫn" trên header.
-const STEPS = [
-  {
-    icon: '📝',
-    title: 'Nhập ca làm việc',
-    desc: 'Chọn ngày, nhập Check-in / Check-out (và lịch dự kiến nếu có) rồi bấm "Add shift".',
-  },
-  {
-    icon: '🗓️',
-    title: 'Lịch dự kiến',
-    desc: 'Bấm "Nhập lịch tuần" để đọc lịch từ ảnh, hoặc nhập tay. Hệ thống so giờ thực tế với lịch để tính đi trễ.',
-  },
-  {
-    icon: '💰',
-    title: 'Lương tự động',
-    desc: 'Giờ ngày (06–22h) và giờ đêm (22–06h) tính theo đơn giá riêng. Xem tổng tháng ở khối thống kê.',
-  },
-  {
-    icon: '➖',
-    title: 'Tiền bồi thường',
-    desc: 'Bấm "Tiền bồi thường" để thêm khoản bị trừ của kỳ (kèm lý do).',
-  },
-  {
-    icon: '📊',
-    title: 'Kỳ lương',
-    desc: 'Bấm "Kỳ lương" để xem biểu đồ thống kê từng tháng và đánh dấu đã nhận lương.',
-  },
-  {
-    icon: '⚙️',
-    title: 'Tài khoản',
-    desc: 'Vào "Tài khoản" để đặt mã nhân viên (dùng đọc lịch) và ngày nhận lương.',
-  },
-]
+// trong localStorage) và có thể mở lại bằng nút "Hướng dẫn" trong sidebar.
+const STEP_ICONS = ['📝', '🗓️', '💰', '➖', '📊', '⚙️']
 
 export default function WelcomeGuide({ onClose }) {
+  const { t } = useI18n()
+  const steps = STEP_ICONS.map((icon, i) => ({
+    icon,
+    title: t(`welcome.step${i + 1}.title`),
+    desc: t(`welcome.step${i + 1}.desc`),
+  }))
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -43,20 +21,20 @@ export default function WelcomeGuide({ onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
-          <h2>Chào mừng đến Salary Working 👋</h2>
+          <h2>{t('welcome.title')}</h2>
           <button
             type="button"
             className="modal-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t('common.close')}
           >
             ×
           </button>
         </div>
 
-        <p className="muted">Vài bước nhanh để bắt đầu:</p>
+        <p className="muted">{t('welcome.subtitle')}</p>
         <ol className="welcome-steps">
-          {STEPS.map((s) => (
+          {steps.map((s) => (
             <li key={s.title} className="welcome-step">
               <span className="welcome-step-icon">{s.icon}</span>
               <span className="welcome-step-body">
@@ -68,7 +46,7 @@ export default function WelcomeGuide({ onClose }) {
         </ol>
 
         <button type="button" className="btn-addshift welcome-start" onClick={onClose}>
-          Bắt đầu
+          {t('welcome.start')}
         </button>
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 import PayPeriodPanel from './PayPeriodPanel.jsx'
+import { useI18n } from '../lib/i18n.jsx'
 
 // Biểu đồ tròn (donut) tự vẽ bằng SVG — chỉ hiện SỐ TỔNG ở giữa; chi tiết xem ở
 // chú thích bên dưới (không nhãn trong lát).
@@ -135,6 +136,7 @@ const DED_COLORS = ['#ff9f43', '#c084fc', '#22d3ee', '#f472b6', '#facc15', '#fb9
 
 // Biểu đồ thống kê gọn (4 donut, lưới 2×2) của một kỳ — vừa trong popup.
 function StatsCharts({ st, deductions = [] }) {
+  const { t } = useI18n()
   const dedTotal = sumDeductions(deductions)
   const dedsSorted = [...deductions]
     .filter((d) => Number(d.amount) > 0)
@@ -144,19 +146,19 @@ function StatsCharts({ st, deductions = [] }) {
   // lương nếu đi đúng giờ. Lát nào = 0 sẽ tự bỏ.
   const moneySegments = [
     {
-      label: 'Thực nhận',
+      label: t('pp.seg.net'),
       value: Math.max(0, net),
       color: C.good,
       display: formatMoney(net),
     },
     dedTotal > 0 && {
-      label: 'Tiền bồi thường',
+      label: t('pp.seg.ded'),
       value: dedTotal,
       color: C.ded,
       display: formatMoney(dedTotal),
     },
     st.lostPay > 0 && {
-      label: 'Mất do trễ',
+      label: t('pp.seg.lost'),
       value: st.lostPay,
       color: C.lost,
       display: formatMoney(st.lostPay),
@@ -164,7 +166,7 @@ function StatsCharts({ st, deductions = [] }) {
   ].filter(Boolean)
   // Lát donut "Tiền bị trừ": mỗi khoản (theo lý do) một lát.
   const dedSegments = dedsSorted.map((d, i) => ({
-    label: d.reason || '(không lý do)',
+    label: d.reason || t('pp.seg.noReason'),
     value: Number(d.amount),
     color: DED_COLORS[i % DED_COLORS.length],
     display: formatMoney(d.amount),
@@ -172,61 +174,67 @@ function StatsCharts({ st, deductions = [] }) {
   return (
     <div className="stats-donuts">
       <DonutBlock
-        title="Lương"
+        title={t('pp.donut.salary')}
         segments={moneySegments}
         centerValue={pct(net, st.idealPay)}
-        centerLabel="thực nhận"
+        centerLabel={t('pp.donut.salaryCenter')}
       />
       {dedSegments.length > 0 ? (
         <DonutBlock
-          title="Tiền bồi thường"
+          title={t('pp.donut.ded')}
           segments={dedSegments}
           centerValue={formatMoney(dedTotal)}
-          centerLabel="tổng"
+          centerLabel={t('pp.donut.dedCenter')}
         />
       ) : (
         <div className="donut-block donut-empty">
-          <span className="donut-title">Tiền bồi thường</span>
-          <p className="muted">Không có khoản trừ.</p>
+          <span className="donut-title">{t('pp.donut.ded')}</span>
+          <p className="muted">{t('pp.donut.noDed')}</p>
         </div>
       )}
       <DonutBlock
-        title="Giờ ngày / đêm"
+        title={t('pp.donut.hours')}
         segments={[
           {
-            label: 'Giờ ngày',
+            label: t('pp.seg.dayHours'),
             value: st.dayHours,
             color: C.day,
             display: `${formatHours(st.dayHours)} h`,
           },
           {
-            label: 'Giờ đêm',
+            label: t('pp.seg.nightHours'),
             value: st.nightHours,
             color: C.night,
             display: `${formatHours(st.nightHours)} h`,
           },
-        ]}
+          st.lostHours > 0 && {
+            label: t('pp.seg.lateHours'),
+            value: st.lostHours,
+            color: C.lost,
+            display: `${formatHours(st.lostHours)} h`,
+          },
+        ].filter(Boolean)}
         centerValue={`${formatHours(st.hours)}h`}
-        centerLabel="tổng giờ"
+        centerLabel={t('pp.donut.hoursCenter')}
       />
       <DonutBlock
-        title="Số ca ngày / đêm"
+        title={t('pp.donut.shifts')}
         segments={[
           {
-            label: 'Ca ngày',
+            label: t('pp.seg.dayShifts'),
             value: st.dayShiftCount,
             color: C.day,
-            display: `${st.dayShiftCount} ca`,
+            display: t('pp.unit.shift', { n: st.dayShiftCount }),
           },
           {
-            label: 'Ca đêm',
+            label: t('pp.seg.nightShifts'),
             value: st.nightShiftCount,
             color: C.night,
-            display: `${st.nightShiftCount} ca`,
+            display: t('pp.unit.shift', { n: st.nightShiftCount }),
           },
         ]}
         centerValue={`${st.dayShiftCount + st.nightShiftCount}`}
-        centerLabel="tổng ca"
+        centerLabel={t('pp.donut.shiftsCenter')}
       />
     </div>
   )
@@ -271,6 +279,7 @@ export default function PayPeriodPage({
   onAddDeduction,
   onDeleteDeduction,
 }) {
+  const { t } = useI18n()
   const periodKeys = [...new Set(shifts.map((s) => payPeriodKeyOf(s.work_date)))]
     .sort()
     .reverse()
@@ -284,11 +293,11 @@ export default function PayPeriodPage({
       : shifts.filter((s) => payPeriodKeyOf(s.work_date) === scope)
 
   const openTitle =
-    openScope === 'all' ? 'Tất cả các kỳ' : payPeriodLabel(openScope || '')
+    openScope === 'all' ? t('pp.allPeriods') : payPeriodLabel(openScope || '')
 
   const inner = (
     <>
-      <p className="muted scope-hint">Bấm vào một kỳ để xem biểu đồ chi tiết.</p>
+      <p className="muted scope-hint">{t('pp.scopeHint')}</p>
 
       <div className="period-stat-grid">
           {/* Card tổng tất cả các kỳ */}
@@ -301,13 +310,13 @@ export default function PayPeriodPage({
                   className="period-stat-card all"
                   onClick={() => setOpenScope('all')}
                 >
-                  <span className="period-stat-label">Tất cả các kỳ</span>
+                  <span className="period-stat-label">{t('pp.allPeriods')}</span>
                   <span className="period-stat-main">
                     {formatHours(s.hours)} h · {formatMoney(s.pay)}
                   </span>
                   {s.lostPay > 0 && (
                     <span className="period-stat-lost">
-                      Mất do trễ −{formatMoney(s.lostPay)}
+                      {t('pp.lostDueLate', { money: formatMoney(s.lostPay) })}
                     </span>
                   )}
                 </button>
@@ -330,7 +339,7 @@ export default function PayPeriodPage({
                 </span>
                 {s.lostPay > 0 && (
                   <span className="period-stat-lost">
-                    Mất do trễ −{formatMoney(s.lostPay)}
+                    {t('pp.lostDueLate', { money: formatMoney(s.lostPay) })}
                   </span>
                 )}
               </button>
@@ -338,12 +347,12 @@ export default function PayPeriodPage({
           })}
 
           {periodKeys.length === 0 && (
-            <p className="muted">Chưa có ca làm nào để thống kê.</p>
+            <p className="muted">{t('pp.noData')}</p>
           )}
         </div>
 
       {/* Chức năng cũ: danh sách kỳ đã nhận + khoản trừ + đánh dấu */}
-      <h2 className="salary-section-title">Các kỳ đã nhận</h2>
+      <h2 className="salary-section-title">{t('pp.receivedPeriods')}</h2>
       <PayPeriodPanel
         shifts={shifts}
         payrolls={payrolls}

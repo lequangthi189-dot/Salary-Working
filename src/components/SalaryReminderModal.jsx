@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { payPeriodLabel } from '../lib/payPeriod.js'
+import { useI18n } from '../lib/i18n.jsx'
 
 // Nhắc nhận lương khi đã tới ngày nhận. Hỏi "lương đã về tài khoản chưa?".
 // "Đã nhận" → đánh dấu kỳ đã nhận. "Chưa nhận" → đóng, lần đăng nhập sau hỏi lại.
@@ -9,6 +10,7 @@ export default function SalaryReminderModal({
   onReceived,
   onNotYet,
 }) {
+  const { t } = useI18n()
   const [busy, setBusy] = useState(false)
 
   async function received() {
@@ -17,18 +19,20 @@ export default function SalaryReminderModal({
     setBusy(false)
   }
 
-  const name = fullName ? fullName : 'Bạn'
+  const name = fullName ? fullName : t('common.you')
 
   return (
     <div className="modal-overlay">
       <div className="modal-card" role="dialog" aria-modal="true">
         <div className="modal-head">
-          <h2>Nhận lương</h2>
+          <h2>{t('reminder.title')}</h2>
         </div>
 
         <p>
-          <strong>{name}</strong>, lương kỳ <strong>{payPeriodLabel(periodKey)}</strong>{' '}
-          đã về tài khoản chưa?
+          {t('reminder.question', {
+            name,
+            period: payPeriodLabel(periodKey),
+          })}
         </p>
 
         <div className="profile-actions">
@@ -38,7 +42,7 @@ export default function SalaryReminderModal({
             onClick={onNotYet}
             disabled={busy}
           >
-            Chưa nhận
+            {t('reminder.notYet')}
           </button>
           <button
             type="button"
@@ -46,7 +50,7 @@ export default function SalaryReminderModal({
             onClick={received}
             disabled={busy}
           >
-            {busy ? '…' : 'Đã nhận'}
+            {busy ? '…' : t('reminder.received')}
           </button>
         </div>
       </div>
