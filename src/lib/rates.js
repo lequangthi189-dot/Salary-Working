@@ -35,6 +35,9 @@ export function setRates(cfg = {}) {
 }
 
 // Làm tròn để tránh sai số dấu phẩy động (vd 25500×1.3).
+export function getHasNightShift() {
+  return _hasNightShift
+}
 export function getDayRate() {
   return Math.round(_dayRate)
 }
