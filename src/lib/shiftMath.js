@@ -3,6 +3,7 @@ import {
   getNightRate,
   getHolidayDayRate,
   getHolidayNightRate,
+  getHasNightShift,
   NIGHT_START_HOUR,
   NIGHT_END_HOUR,
 } from './rates.js'
@@ -51,6 +52,7 @@ export function computeShift(startTime, endTime, isHoliday = false) {
     if (isNightMinute(t)) nightMin++
     else dayMin++
   }
+  ;({ dayMin, nightMin } = foldNight(dayMin, nightMin))
 
   const totalMin = end - start
   const decimalHours = totalMin / 60
@@ -81,6 +83,12 @@ function alignNear(value, ref) {
   return ref + v
 }
 
+// Không có ca đêm → gộp phút đêm vào phút ngày (mọi giờ coi là giờ ngày).
+function foldNight(dayMin, nightMin) {
+  if (!getHasNightShift()) return { dayMin: dayMin + nightMin, nightMin: 0 }
+  return { dayMin, nightMin }
+}
+
 // Day/night minute split over the half-open range [lo, hi).
 function splitRange(lo, hi) {
   let dayMin = 0
@@ -89,7 +97,7 @@ function splitRange(lo, hi) {
     if (isNightMinute(t)) nightMin++
     else dayMin++
   }
-  return { dayMin, nightMin }
+  return foldNight(dayMin, nightMin)
 }
 
 function toPart({ dayMin, nightMin }) {
