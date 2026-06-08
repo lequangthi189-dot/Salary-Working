@@ -99,6 +99,7 @@ export default function DeductionsCard({
           <div className="deduction-add">
             <input
               type="text"
+              className="deduction-amount-in"
               inputMode="numeric"
               placeholder={t('ded.amount')}
               value={amountDisplay}
@@ -106,6 +107,7 @@ export default function DeductionsCard({
             />
             <input
               type="text"
+              className="deduction-reason-in"
               placeholder={t('ded.reason')}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
