@@ -31,8 +31,12 @@ function clearEmpDraft() {
 // Form thông tin nhân viên — BẮT BUỘC điền sau đăng ký mới vào được app.
 // Thứ tự: họ, tên, mã NV, lương 1 giờ, phụ cấp đêm (%), phụ cấp lễ ca ngày/đêm (%).
 // Cũng dùng lại để chỉnh trong Hồ sơ (truyền onCancel để hiện nút Hủy).
+// Ký hiệu tiền theo ngôn ngữ (khớp với formatMoney).
+const CUR_SYMBOL = { vi: 'VND', en: '£', us: '$', au: 'A$' }
+
 export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBack }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
+  const cur = CUR_SYMBOL[lang] || 'VND'
   // Chỉ giữ nháp ở chế độ gate (có onBack), không áp dụng khi chỉnh trong Hồ sơ.
   const [draft] = useState(() => (onBack ? loadEmpDraft() : {}))
   const pick = (k, fallback) => (draft[k] !== undefined ? draft[k] : fallback)
@@ -174,7 +178,7 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
           </select>
         </label>
         <label>
-          {t('emp.hourlyRate')}
+          {t('emp.hourlyRate', { cur })}
           <input
             type="number"
             min="0"
