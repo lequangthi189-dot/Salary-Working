@@ -109,6 +109,11 @@ export default function ScheduleImportModal({
         throw new Error(detail)
       }
       if (data?.error) throw new Error(data.error)
+      if (data?.is_roster === false) {
+        setError(t('import.errNotRoster'))
+        setRows(null)
+        return
+      }
       if (!data?.found) {
         setError(t('import.errNotFound', { code: employeeCode }))
         setRows(null)
