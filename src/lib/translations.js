@@ -304,6 +304,7 @@ export const translations = {
     'emp.holidayNightPct': 'Holiday allowance — night shift (%)',
     'emp.hasNightShift': 'Does your store have night shifts?',
     'emp.save': 'Save & continue',
+    'emp.back': 'Back to sign up',
     'emp.errRequired': 'Please enter last name and first name.',
     'emp.errRate': 'Enter an hourly wage greater than 0.',
 
@@ -627,6 +628,7 @@ export const translations = {
     'emp.holidayNightPct': 'Phụ cấp ngày lễ — ca đêm (%)',
     'emp.hasNightShift': 'Cửa hàng bạn đang làm có ca đêm không?',
     'emp.save': 'Lưu & tiếp tục',
+    'emp.back': 'Quay lại đăng ký',
     'emp.errRequired': 'Vui lòng nhập họ và tên.',
     'emp.errRate': 'Nhập lương 1 giờ lớn hơn 0.',
 

@@ -147,6 +147,7 @@ export default function App() {
         <EmployeeInfoForm
           initial={profile}
           onSave={(info) => saveEmployeeInfo(info)}
+          onBack={signOut}
         />
       </div>
     )
