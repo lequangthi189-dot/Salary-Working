@@ -150,6 +150,7 @@ export default function ReconcileModal({
           imgStart,
           imgEnd,
           imgOff,
+          imgRaw: (d.raw || '').trim(), // chữ gốc trong ảnh (vd "7.55") khi không có giờ vào/ra
           actualStart,
           actualEnd,
           schedStart,
@@ -166,9 +167,13 @@ export default function ReconcileModal({
     }
   }
 
-  // Bỏ qua ngày mà cả ảnh, thực tế, dự kiến đều nghỉ/không có.
+  // Chỉ bỏ ngày HOÀN TOÀN trống: ảnh không có gì (kể cả giờ thô) + không có
+  // thực tế + không có dự kiến.
   const visibleRows = rows
-    ? rows.filter((r) => !(r.statusActual === 'off' && r.statusSched === 'off'))
+    ? rows.filter(
+        (r) =>
+          !r.imgOff || r.imgRaw || r.actualStart || r.schedStart
+      )
     : []
   const matchActual = visibleRows.filter((r) => r.statusActual === 'match').length
   const matchSched = visibleRows.filter((r) => r.statusSched === 'match').length
@@ -255,8 +260,8 @@ export default function ReconcileModal({
                 <thead>
                   <tr>
                     <th>{t('import.thDate')}</th>
-                    <th>{t('reconcile.colImage')}</th>
                     <th>{t('reconcile.colActual')}</th>
+                    <th>{t('reconcile.colImage')}</th>
                     <th>{t('reconcile.colSched')}</th>
                     <th>{t('reconcile.colResult')}</th>
                   </tr>
@@ -265,12 +270,16 @@ export default function ReconcileModal({
                   {visibleRows.map((r) => (
                     <tr key={r.weekday}>
                       <td>{dmShort(r.date)}</td>
-                      <td>{r.imgOff ? '—' : `${r.imgStart}–${r.imgEnd}`}</td>
                       <td
                         className={`rec-${r.statusActual}`}
                         title={t(`reconcile.${r.statusActual}`)}
                       >
                         {r.actualStart ? `${r.actualStart}–${r.actualEnd}` : '—'}
+                      </td>
+                      <td>
+                        {r.imgStart
+                          ? `${r.imgStart}–${r.imgEnd}`
+                          : r.imgRaw || '—'}
                       </td>
                       <td
                         className={`rec-${r.statusSched}`}
