@@ -333,6 +333,18 @@ export const translations = {
     // shift form holiday
     'shiftForm.holiday': 'Holiday',
 
+    // salary chatbot
+    'chat.title': 'Salary assistant',
+    'chat.intro': 'Hi! Ask me, e.g. "How many shifts to reach 3,000,000?"',
+    'chat.placeholder': 'Ask about your salary…',
+    'chat.send': 'Send',
+    'chat.estimateResult':
+      'Target {target}: you have {current}, need {remaining} more. At ~{avg}/shift → about {shifts} more shift(s) (~{hours}h).',
+    'chat.alreadyReached': 'You already reached {target}! 🎉',
+    'chat.noHistory':
+      'Not enough shift history to estimate. Log a few shifts first.',
+    'chat.error': 'Sorry, something went wrong. Please try again.',
+
     // lib: period label + lost breakdown
     'period.label': 'Salary month {m} ({start} – {end})',
     'lost.full': 'Lost {total}h — {segs}',
@@ -670,6 +682,18 @@ export const translations = {
 
     // shift form holiday
     'shiftForm.holiday': 'Ngày lễ',
+
+    // salary chatbot
+    'chat.title': 'Trợ lý lương',
+    'chat.intro': 'Chào! Hỏi mình nhé, vd "Cần làm bao nhiêu ca để được 3.000.000?"',
+    'chat.placeholder': 'Hỏi về lương của bạn…',
+    'chat.send': 'Gửi',
+    'chat.estimateResult':
+      'Mục tiêu {target}: bạn đang có {current}, cần thêm {remaining}. Trung bình ~{avg}/ca → cần khoảng {shifts} ca nữa (~{hours}h).',
+    'chat.alreadyReached': 'Bạn đã đạt {target} rồi! 🎉',
+    'chat.noHistory':
+      'Chưa đủ lịch sử ca để ước tính. Hãy chấm công vài ca trước đã.',
+    'chat.error': 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.',
 
     // lib: period label + lost breakdown
     'period.label': 'Lương tháng {m} ({start} – {end})',
