@@ -7,3 +7,7 @@ verify_jwt = false
 # Tỉ giá Wise: hàm công khai (không cần đăng nhập) — chỉ trả tỉ giá, không lộ token.
 [functions.fx-rate]
 verify_jwt = false
+
+# Trợ lý lương: nhận câu hỏi + số liệu từ frontend, trả lời (không truy cập DB).
+[functions.salary-chat]
+verify_jwt = false

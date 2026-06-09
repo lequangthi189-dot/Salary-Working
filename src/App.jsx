@@ -8,6 +8,7 @@ import Timesheet from './components/Timesheet.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import PayPeriodPage from './components/PayPeriodPage.jsx'
 import CompensationModal from './components/CompensationModal.jsx'
+import SalaryChat from './components/SalaryChat.jsx'
 import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
@@ -48,6 +49,7 @@ export default function App() {
   const [showImport, setShowImport] = useState(false)
   const [showReconcile, setShowReconcile] = useState(false)
   const [showDeductions, setShowDeductions] = useState(false)
+  const [showChat, setShowChat] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
   const [showSidebar, setShowSidebar] = useState(false)
@@ -183,6 +185,15 @@ export default function App() {
   )
   const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
   const currentDeductionTotal = sumDeductions(currentDeductions)
+  // Số liệu cho Trợ lý lương: lương kỳ này + TB mỗi ca theo TOÀN BỘ lịch sử.
+  const allStats = periodStats(shifts)
+  const allShiftCount = allStats.dayShiftCount + allStats.nightShiftCount
+  const chatSnapshot = {
+    currentPay: monthStats.pay - currentDeductionTotal,
+    avgPerShift: allShiftCount ? allStats.pay / allShiftCount : 0,
+    avgHoursPerShift: allShiftCount ? allStats.hours / allShiftCount : 0,
+    shiftCount: allShiftCount,
+  }
   // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
   const hasNightShift = profile?.has_night_shift !== false
   const schedByDate = buildSchedByDate(shifts)
@@ -229,6 +240,12 @@ export default function App() {
                     onClick={() => openFromTitle(setShowDeductions)}
                   >
                     {t('nav.deductions')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openFromTitle(setShowChat)}
+                  >
+                    {t('chat.title')}
                   </button>
                 </div>
               </>
@@ -330,6 +347,10 @@ export default function App() {
           onDelete={deleteDeduction}
           onClose={() => setShowDeductions(false)}
         />
+      )}
+
+      {showChat && (
+        <SalaryChat snapshot={chatSnapshot} onClose={() => setShowChat(false)} />
       )}
 
       {showImport && (

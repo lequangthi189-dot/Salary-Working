@@ -1,10 +1,22 @@
 // Nhật ký cập nhật (changelog). Mỗi lần ra bản mới: tăng APP_VERSION và thêm 1 mục
 // vào đầu mảng CHANGELOG (mới nhất ở trên). App sẽ tự hiện popup "Có cập nhật mới"
 // cho người dùng khi APP_VERSION khác phiên bản họ đã xem.
-export const APP_VERSION = '2.7.0'
+export const APP_VERSION = '2.8.0'
 
 // items: { vi: [...], en: [...] } — danh sách thay đổi theo ngôn ngữ.
 export const CHANGELOG = [
+  {
+    version: '2.8.0',
+    date: '2026-06-09',
+    items: {
+      vi: [
+        'Thêm "Trợ lý lương" (chatbot): hỏi vd "cần làm bao nhiêu ca để được 3 triệu?" — số ca tính chính xác theo lịch sử của bạn.',
+      ],
+      en: [
+        'Added a "Salary assistant" chatbot: ask e.g. "how many shifts to reach 3M?" — shift count computed precisely from your history.',
+      ],
+    },
+  },
   {
     version: '2.7.0',
     date: '2026-06-08',
