@@ -277,6 +277,24 @@ button[type='submit']:disabled {
 .modal-card.deduction-modal {
   max-width: 540px;
 }
+/* Hiệu ứng mở: nền mờ dần, thẻ fade-in + scale nhẹ (giữ theme tối) */
+@keyframes compOverlayIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes compPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.comp-fade {
+  animation: compOverlayIn 0.18s ease;
+}
+.comp-pop {
+  animation: compPopIn 0.2s ease;
+}
 .payday-view,
 .payday-edit,
 .field-view,
@@ -1210,6 +1228,12 @@ button[type='submit']:disabled {
 }
 .deduction-add input[type='date'] {
   color-scheme: dark; /* lịch native tông tối */
+}
+/* Mobile: các ô nhập xếp dọc 1 cột thay vì 2 */
+@media (max-width: 480px) {
+  .deduction-add {
+    grid-template-columns: 1fr;
+  }
 }
 .deduction-add input::placeholder {
   color: var(--muted);
