@@ -76,7 +76,11 @@ export default function DeductionsCard({
   }
 
   return (
-    <div className={`deduction-card${isOpen ? ' open' : ''}`}>
+    <div
+      className={`deduction-card${isOpen ? ' open' : ''}${
+        embedded ? ' embedded' : ''
+      }`}
+    >
       {!embedded && (
         <button
           type="button"
