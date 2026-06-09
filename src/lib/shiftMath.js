@@ -17,9 +17,6 @@ function ratesFor(isHoliday) {
     : { day: getDayRate(), night: getNightRate() }
 }
 
-// Giới hạn theo spec: mỗi ngày không quá 8 giờ làm việc.
-export const MAX_HOURS_PER_DAY = 8
-
 const MINUTES_PER_DAY = 1440
 const NIGHT_START_MIN = NIGHT_START_HOUR * 60 // 22:00 -> 1320
 const NIGHT_END_MIN = NIGHT_END_HOUR * 60 // 06:00 -> 360

@@ -1,48 +1,17 @@
 // Logic NGHIỆP VỤ thuần cho ca làm việc (không phụ thuộc React/Supabase).
 // Tách khỏi component để Controller (hooks) tái dùng và dễ test.
-import {
-  shiftTotals,
-  computeEffective,
-  formatHours,
-  hhmm,
-  MAX_HOURS_PER_DAY,
-} from './shiftMath.js'
+import { hhmm } from './shiftMath.js'
 import {
   payPeriodKeyOf,
   isPeriodEnded,
   localTodayStr,
 } from './payPeriod.js'
 
-// Tổng giờ hiệu dụng của một ca từ thời gian thô (chưa lưu).
-export function shiftHours(s) {
-  return computeEffective(
-    s.scheduled_start || '',
-    s.scheduled_end || '',
-    s.start_time,
-    s.end_time
-  ).decimalHours
-}
-
 // Chặn nhập công cho kỳ lương ĐÃ CHỐT (đã qua ngày 25 của kỳ chứa ngày làm).
 // Trả về chuỗi lỗi nếu kỳ đã đóng, ngược lại null.
 export function periodClosedError(workDate) {
   if (isPeriodEnded(payPeriodKeyOf(workDate))) {
     return `Kỳ lương của ngày ${workDate} đã chốt (qua ngày 25). Không thể nhập công cho kỳ cũ.`
-  }
-  return null
-}
-
-// Kiểm tra giới hạn 8 giờ/ngày. Trả về chuỗi lỗi nếu vượt, ngược lại null.
-// excludeId: bỏ qua ca đang sửa khi cộng dồn.
-export function dayLimitError(shifts, workDate, newHours, excludeId = null) {
-  const existing = shiftTotals(
-    shifts.filter((s) => s.work_date === workDate && s.id !== excludeId)
-  ).hours
-  const total = existing + newHours
-  if (total > MAX_HOURS_PER_DAY + 1e-9) {
-    return `Vượt giới hạn ${MAX_HOURS_PER_DAY} giờ/ngày: ngày ${workDate} sẽ thành ${formatHours(
-      total
-    )}h (đã có ${formatHours(existing)}h). Hãy giảm giờ lại.`
   }
   return null
 }

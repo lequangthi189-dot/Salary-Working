@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import {
   computeEffective,
-  durationHours,
   formatHours,
   formatMoney,
   formatLost,
-  MAX_HOURS_PER_DAY,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
 import { useI18n } from '../lib/i18n.jsx'
@@ -38,16 +36,6 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   }
 
   async function save() {
-    const schedDur = durationHours(schedStart, schedEnd)
-    if (schedDur > MAX_HOURS_PER_DAY + 1e-9) {
-      setError(
-        t('shiftForm.schedOverErr', {
-          n: MAX_HOURS_PER_DAY,
-          h: formatHours(schedDur),
-        })
-      )
-      return
-    }
     setBusy(true)
     setError(null)
     const err = await onUpdate(shift.id, {

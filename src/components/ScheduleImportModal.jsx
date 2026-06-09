@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
-import { durationHours, formatHours, MAX_HOURS_PER_DAY } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
 
@@ -167,23 +166,6 @@ export default function ScheduleImportModal({
   async function createShifts() {
     const picked = rows.filter((r) => !r.off && r.start && r.end)
     if (picked.length === 0) return setError(t('import.errNoShift'))
-    // Lịch dự kiến: mỗi ca không được quá 8 giờ.
-    const tooLong = picked.filter(
-      (r) => durationHours(r.start, r.end) > MAX_HOURS_PER_DAY + 1e-9
-    )
-    if (tooLong.length) {
-      const list = tooLong
-        .map(
-          (r) =>
-            `${t(`wd.${r.weekday}`)} ${r.start}-${r.end} (${formatHours(
-              durationHours(r.start, r.end)
-            )}h)`
-        )
-        .join(', ')
-      return setError(
-        t('import.errTooLong', { n: MAX_HOURS_PER_DAY, list })
-      )
-    }
     setSaving(true)
     setError(null)
     const errs = await onImport(picked)
