@@ -7,7 +7,7 @@ import MonthStats from './components/MonthStats.jsx'
 import Timesheet from './components/Timesheet.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import PayPeriodPage from './components/PayPeriodPage.jsx'
-import DeductionsCard from './components/DeductionsCard.jsx'
+import CompensationModal from './components/CompensationModal.jsx'
 import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
@@ -322,34 +322,14 @@ export default function App() {
       </main>
 
       {showDeductions && (
-        <div className="modal-overlay" onClick={() => setShowDeductions(false)}>
-          <div
-            className="modal-card wide deduction-modal"
-            role="dialog"
-            aria-modal="true"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-head">
-              <h2>{t('nav.deductions')}</h2>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={() => setShowDeductions(false)}
-                aria-label={t('common.close')}
-              >
-                ×
-              </button>
-            </div>
-            <DeductionsCard
-              periodKey={currentKey}
-              deductions={currentDeductions}
-              grossPay={monthStats.pay}
-              onAdd={addDeduction}
-              onDelete={deleteDeduction}
-              embedded
-            />
-          </div>
-        </div>
+        <CompensationModal
+          periodKey={currentKey}
+          deductions={currentDeductions}
+          grossPay={monthStats.pay}
+          onAdd={addDeduction}
+          onDelete={deleteDeduction}
+          onClose={() => setShowDeductions(false)}
+        />
       )}
 
       {showImport && (
