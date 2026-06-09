@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as shiftsModel from '../models/shiftsModel.js'
-import {
-  periodClosedError,
-  dayLimitError,
-  shiftHours,
-} from '../lib/shiftRules.js'
+import { periodClosedError } from '../lib/shiftRules.js'
 
 // CONTROLLER: state + thao tác cho ca làm việc. View gọi các hàm này, không đụng
 // trực tiếp Supabase. Trả lỗi dạng chuỗi cho form, hoặc set loadError cho nền.
@@ -29,8 +25,6 @@ export function useShifts(session) {
   async function addShift(shift) {
     const closedErr = periodClosedError(shift.work_date)
     if (closedErr) return closedErr
-    const limitErr = dayLimitError(shifts, shift.work_date, shiftHours(shift))
-    if (limitErr) return limitErr
     const { error } = await shiftsModel.insertShift(shift, session.user.id)
     if (error) return error.message
     await reload()
@@ -38,8 +32,6 @@ export function useShifts(session) {
   }
 
   async function updateShift(id, fields) {
-    const limitErr = dayLimitError(shifts, fields.work_date, shiftHours(fields), id)
-    if (limitErr) return limitErr
     const { error } = await shiftsModel.updateShift(id, fields)
     if (error) return error.message
     await reload()
@@ -67,11 +59,6 @@ export function useShifts(session) {
       const closedErr = periodClosedError(r.date)
       if (closedErr) {
         errors.push(`${r.date}: ${closedErr}`)
-        continue
-      }
-      const limitErr = dayLimitError(shifts, r.date, shiftHours(shift))
-      if (limitErr) {
-        errors.push(`${r.date}: ${limitErr}`)
         continue
       }
       const { error } = await shiftsModel.insertShift(shift, session.user.id)

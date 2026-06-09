@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import {
   computeEffective,
-  durationHours,
   formatHours,
   formatMoney,
   formatLost,
-  MAX_HOURS_PER_DAY,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
@@ -50,33 +48,12 @@ export default function ShiftForm({
   )
   const lostText = formatLost(preview)
   const equalTimes = startTime === endTime
-  const overLimit = preview.decimalHours > MAX_HOURS_PER_DAY + 1e-9
-  const schedDur = durationHours(effSchedStart, effSchedEnd)
-  const schedOverLimit = schedDur > MAX_HOURS_PER_DAY + 1e-9
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     if (!workDate) {
       setError(t('shiftForm.pickDate'))
-      return
-    }
-    if (schedOverLimit) {
-      setError(
-        t('shiftForm.schedOverErr', {
-          n: MAX_HOURS_PER_DAY,
-          h: formatHours(schedDur),
-        })
-      )
-      return
-    }
-    if (overLimit) {
-      setError(
-        t('shiftForm.shiftOverErr', {
-          n: MAX_HOURS_PER_DAY,
-          h: formatHours(preview.decimalHours),
-        })
-      )
       return
     }
     setBusy(true)
@@ -161,23 +138,6 @@ export default function ShiftForm({
           {lostText} · −{formatMoney(preview.lostPay)}
         </p>
       )}
-      {schedOverLimit && (
-        <p className="lost">
-          {t('shiftForm.schedOver', {
-            n: MAX_HOURS_PER_DAY,
-            h: formatHours(schedDur),
-          })}
-        </p>
-      )}
-      {overLimit && (
-        <p className="lost">
-          {t('shiftForm.shiftOver', {
-            n: MAX_HOURS_PER_DAY,
-            h: formatHours(preview.decimalHours),
-          })}
-        </p>
-      )}
-
       {/* Hàng nút: "Đã nhận lương" (khi tới hạn) + "Add shift" */}
       <div className="form-actions">
         {receiveDue && !receiveDisabled && (
@@ -193,7 +153,7 @@ export default function ShiftForm({
         <button
           type="submit"
           className="btn-addshift"
-          disabled={busy || overLimit || schedOverLimit}
+          disabled={busy}
         >
           {busy ? t('shiftForm.adding') : t('shiftForm.addShift')}
         </button>

@@ -91,11 +91,6 @@ export const translations = {
     'shiftForm.adding': 'Adding…',
     'shiftForm.addShift': 'Add shift',
     'shiftForm.pickDate': 'Please pick a date.',
-    'shiftForm.schedOverErr':
-      'Scheduled time cannot exceed {n} hours (currently {h}h).',
-    'shiftForm.shiftOverErr': 'A shift cannot exceed {n} hours (currently {h}h).',
-    'shiftForm.schedOver': 'Scheduled max {n} hours — currently {h}h.',
-    'shiftForm.shiftOver': 'Shift max {n} hours — currently {h}h.',
     'time.checkinReal': 'Check-in (actual time)',
     'time.checkoutReal': 'Check-out (actual time)',
     'time.schedInMark': 'Scheduled check-in (late reference)',
@@ -277,8 +272,6 @@ export const translations = {
     'import.infoRead':
       'Read schedule for code "{code}". Review/edit then press Create.',
     'import.errNoShift': 'No shift to create.',
-    'import.errTooLong':
-      'Scheduled shift cannot exceed {n} hours/shift. Fix: {list}',
     'import.errSome': 'Some shifts could not be created:\n{errs}',
     'import.errReadImage': 'Could not read the image',
     'reconcile.title': 'Verify timesheet',
@@ -441,11 +434,6 @@ export const translations = {
     'shiftForm.adding': 'Đang thêm…',
     'shiftForm.addShift': 'Thêm ca',
     'shiftForm.pickDate': 'Hãy chọn ngày.',
-    'shiftForm.schedOverErr':
-      'Lịch dự kiến không được quá {n} giờ (đang {h}h).',
-    'shiftForm.shiftOverErr': 'Một ca không được quá {n} giờ (đang {h}h).',
-    'shiftForm.schedOver': 'Lịch dự kiến tối đa {n} giờ — đang {h}h.',
-    'shiftForm.shiftOver': 'Một ca tối đa {n} giờ — đang {h}h.',
     'time.checkinReal': 'Check-in (giờ thực tế)',
     'time.checkoutReal': 'Check-out (giờ thực tế)',
     'time.schedInMark': 'Lịch dự kiến vào (mốc tính trễ)',
@@ -627,8 +615,6 @@ export const translations = {
     'import.infoRead':
       'Đã đọc lịch cho mã "{code}". Kiểm tra/sửa rồi bấm Tạo ca.',
     'import.errNoShift': 'Không có ca nào để tạo.',
-    'import.errTooLong':
-      'Lịch dự kiến không được quá {n} giờ/ca. Sửa lại: {list}',
     'import.errSome': 'Một số ca không tạo được:\n{errs}',
     'import.errReadImage': 'Không đọc được ảnh',
     'reconcile.title': 'Đối chiếu công',
