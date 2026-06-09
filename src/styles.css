@@ -273,6 +273,10 @@ button[type='submit']:disabled {
 .modal-card.wide {
   max-width: 480px;
 }
+/* Popup Tiền bồi thường: rộng hơn cho cân đối giữa khu nhập và danh sách card */
+.modal-card.deduction-modal {
+  max-width: 540px;
+}
 .payday-view,
 .payday-edit,
 .field-view,

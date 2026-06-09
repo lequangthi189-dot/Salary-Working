@@ -324,7 +324,7 @@ export default function App() {
       {showDeductions && (
         <div className="modal-overlay" onClick={() => setShowDeductions(false)}>
           <div
-            className="modal-card"
+            className="modal-card wide deduction-modal"
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
