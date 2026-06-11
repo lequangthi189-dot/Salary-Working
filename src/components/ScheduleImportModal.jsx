@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
+import ManualScheduleModal from './ManualScheduleModal.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -60,6 +61,7 @@ export default function ScheduleImportModal({
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [rows, setRows] = useState(null) // [{weekday,date,start,end,off}]
+  const [showManual, setShowManual] = useState(false) // popup nhập tay
   const [saving, setSaving] = useState(false)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
 
@@ -225,6 +227,14 @@ export default function ScheduleImportModal({
           >
             {loading ? t('import.reading') : t('import.readAI')}
           </button>
+          <button
+            type="button"
+            className="account-btn"
+            onClick={() => setShowManual(true)}
+            disabled={loading}
+          >
+            {t('import.enterManual')}
+          </button>
         </div>
 
         {info && <p className="msg info">{info}</p>}
@@ -298,6 +308,14 @@ export default function ScheduleImportModal({
             confirmState.resolve(ok)
             setConfirmState(null)
           }}
+        />
+      )}
+
+      {showManual && (
+        <ManualScheduleModal
+          onImport={onImport}
+          onClose={() => setShowManual(false)}
+          onDone={onClose}
         />
       )}
     </div>

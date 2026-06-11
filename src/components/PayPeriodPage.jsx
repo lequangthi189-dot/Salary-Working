@@ -7,11 +7,12 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 import PayPeriodPanel from './PayPeriodPanel.jsx'
+import TimesheetTable from './TimesheetTable.jsx'
 import { useI18n } from '../lib/i18n.jsx'
 
 // Biểu đồ tròn (donut) tự vẽ bằng SVG — chỉ hiện SỐ TỔNG ở giữa; chi tiết xem ở
 // chú thích bên dưới (không nhãn trong lát).
-function Donut({ segments, centerValue, centerLabel, size = 128, stroke = 22 }) {
+function Donut({ segments, centerValue, centerLabel, size = 104, stroke = 18 }) {
   const total = segments.reduce((s, x) => s + x.value, 0)
   const r = (size - stroke) / 2
   const circ = 2 * Math.PI * r
@@ -267,8 +268,11 @@ function StatsCharts({ st, deductions = [], hasNightShift = true }) {
   )
 }
 
-// Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng).
-function StatsModal({ title, st, deductions, hasNightShift = true, onClose }) {
+// Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng). Bảng công chi tiết là 1 NÚT
+// → bấm mở popup riêng (TimesheetModal).
+function StatsModal({ title, st, shifts = [], deductions, hasNightShift = true, onClose }) {
+  const { t } = useI18n()
+  const [showSheet, setShowSheet] = useState(false)
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -283,12 +287,56 @@ function StatsModal({ title, st, deductions, hasNightShift = true, onClose }) {
             type="button"
             className="modal-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t('common.close')}
           >
             ×
           </button>
         </div>
         <StatsCharts st={st} deductions={deductions} hasNightShift={hasNightShift} />
+        <button
+          type="button"
+          className="account-btn full detail-sheet-btn"
+          onClick={() => setShowSheet(true)}
+        >
+          {t('pp.detailTimesheet')}
+        </button>
+      </div>
+
+      {showSheet && (
+        <TimesheetModal
+          title={title}
+          shifts={shifts}
+          hasNightShift={hasNightShift}
+          onClose={() => setShowSheet(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Popup riêng chỉ hiện bảng công chi tiết (kiểu Excel) của kỳ.
+function TimesheetModal({ title, shifts, hasNightShift = true, onClose }) {
+  const { t } = useI18n()
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-card wide"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h2>{title ? `${title} · ${t('pp.detailTimesheet')}` : t('pp.detailTimesheet')}</h2>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            ×
+          </button>
+        </div>
+        <TimesheetTable shifts={shifts} hasNightShift={hasNightShift} />
       </div>
     </div>
   )
@@ -399,6 +447,7 @@ export default function PayPeriodPage({
     <StatsModal
       title={openTitle}
       st={periodStats(shiftsOf(openScope))}
+      shifts={shiftsOf(openScope)}
       deductions={
         openScope === 'all'
           ? deductions

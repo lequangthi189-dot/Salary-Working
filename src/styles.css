@@ -1067,9 +1067,6 @@ button[type='submit']:disabled {
 .shift-form .fields.check-row .holiday-check {
   padding-bottom: 0.6rem;
 }
-.shift-form .fields.scheduled {
-  grid-template-columns: 1fr 1fr;
-}
 /* Cho ô input co lại được trong lưới → không tràn/bể layout trên điện thoại */
 .shift-form .fields label {
   min-width: 0;
@@ -1079,10 +1076,9 @@ button[type='submit']:disabled {
   min-width: 0;
   box-sizing: border-box;
 }
-/* Màn rất hẹp: xếp check-in/out & scheduled thành 1 cột cho dễ bấm */
+/* Màn rất hẹp: xếp check-in/out thành 1 cột cho dễ bấm */
 @media (max-width: 420px) {
-  .shift-form .fields.check-row,
-  .shift-form .fields.scheduled {
+  .shift-form .fields.check-row {
     grid-template-columns: 1fr;
   }
 }
@@ -1159,6 +1155,7 @@ button[type='submit']:disabled {
 .import-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.6rem;
   margin: 0.6rem 0;
 }
 .import-table {
@@ -1910,7 +1907,7 @@ input.t-out {
 .stats-donuts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem 0.75rem;
+  gap: 0.5rem 0.75rem;
 }
 .donut-block {
   display: flex;
@@ -1928,7 +1925,7 @@ input.t-out {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.2rem;
 }
 .donut {
   max-width: 100%;
@@ -1936,7 +1933,7 @@ input.t-out {
 }
 .donut-center-val {
   fill: var(--text);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 .donut-center-label {
@@ -1969,9 +1966,9 @@ input.t-out {
 .chart-legend {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  margin-top: 0.45rem;
-  font-size: 0.72rem;
+  gap: 0.12rem;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
   color: var(--muted);
 }
 .legend-item {
@@ -2013,4 +2010,92 @@ input.t-out {
     grid-area: actions;
     justify-self: end;
   }
+}
+
+/* ---- Bảng công dạng lưới (như Excel), chỉ xem, trong popup tra cứu kỳ ---- */
+.tt-wrap {
+  margin-top: 0.5rem;
+  overflow-x: auto; /* cuộn ngang trên mobile thay vì vỡ layout */
+}
+.tt-weeks {
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+.tt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+.tt-table th,
+.tt-table td {
+  border: 1px solid var(--border);
+  padding: 0.18rem 0.3rem;
+  text-align: center;
+}
+.tt-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  color: var(--text);
+  font-weight: 600;
+}
+.tt-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+.tt-table .tt-pay {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tt-table td.lost {
+  color: var(--danger);
+}
+.tt-table .tt-sched {
+  color: var(--muted);
+}
+.tt-table tr.tt-planned td {
+  font-style: italic;
+}
+.tt-table tfoot td {
+  background: var(--panel-2);
+  font-weight: 700;
+}
+
+/* Nút mở popup Bảng công chi tiết trong popup kỳ lương */
+.detail-sheet-btn {
+  margin-top: 0.5rem;
+}
+
+/* ---- Popup Nhập tay lịch dự kiến: lưới co giãn, KHÔNG cuộn ngang ---- */
+.msched-list {
+  margin-top: 0.5rem;
+}
+.msched-head,
+.msched-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) 1.5rem;
+  gap: 0.4rem;
+  align-items: center;
+}
+.msched-head {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+.msched-row {
+  margin-bottom: 0.4rem;
+}
+.msched-row input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.msched-del {
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
 }
