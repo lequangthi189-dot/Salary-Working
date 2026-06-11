@@ -147,6 +147,8 @@ export const translations = {
     "pp.scopeHint": "Tap a period to see its charts and full timesheet.",
     "pp.detailTimesheet": "Detailed timesheet",
     "tt.date": "Date",
+    "tt.schedIn": "Sched in",
+    "tt.schedOut": "Sched out",
     "tt.in": "In",
     "tt.out": "Out",
     "tt.dayH": "Day h",
@@ -510,6 +512,8 @@ export const translations = {
     "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ và bảng công chi tiết.",
     "pp.detailTimesheet": "Bảng công chi tiết",
     "tt.date": "Ngày",
+    "tt.schedIn": "Lịch vào",
+    "tt.schedOut": "Lịch ra",
     "tt.in": "Vào",
     "tt.out": "Ra",
     "tt.dayH": "Giờ ngày",
@@ -619,7 +623,7 @@ export const translations = {
       'Vào "Tài khoản" để đặt mã nhân viên (dùng đọc lịch) và ngày nhận lương.',
 
     // schedule import
-    "import.title": "Nhập lịch tuần từ ảnh",
+    "import.title": "Nhập lịch tuần",
     "import.image": "Ảnh lịch",
     "import.weekStart": "Tuần bắt đầu (Thứ 2)",
     "import.empcodeFrom": "Mã nhân viên (từ hồ sơ): ",

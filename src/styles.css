@@ -2062,6 +2062,9 @@ input.t-out {
 .tt-table td.lost {
   color: var(--danger);
 }
+.tt-table .tt-sched {
+  color: var(--muted);
+}
 .tt-table tr.tt-planned td {
   font-style: italic;
 }
