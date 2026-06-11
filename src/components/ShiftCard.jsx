@@ -12,7 +12,7 @@ function hhmm(v) {
   return v ? String(v).slice(0, 5) : '' // "HH:MM:SS" -> "HH:MM"
 }
 
-export default function ShiftCard({ shift, onDelete, onUpdate, readOnly = false }) {
+export default function ShiftCard({ shift, onDelete, onUpdate }) {
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const [workDate, setWorkDate] = useState(shift.work_date)
@@ -176,26 +176,24 @@ export default function ShiftCard({ shift, onDelete, onUpdate, readOnly = false 
         )}
       </div>
       <div className="shift-pay">{formatMoney(pay)}</div>
-      {!readOnly && (
-        <div className="shift-actions">
-          <button
-            type="button"
-            className="edit"
-            onClick={() => setEditing(true)}
-            aria-label={t('shiftCard.editAria')}
-          >
-            ✎
-          </button>
-          <button
-            type="button"
-            className="delete"
-            onClick={() => onDelete(shift.id)}
-            aria-label={t('shiftCard.deleteAria')}
-          >
-            ×
-          </button>
-        </div>
-      )}
+      <div className="shift-actions">
+        <button
+          type="button"
+          className="edit"
+          onClick={() => setEditing(true)}
+          aria-label={t('shiftCard.editAria')}
+        >
+          ✎
+        </button>
+        <button
+          type="button"
+          className="delete"
+          onClick={() => onDelete(shift.id)}
+          aria-label={t('shiftCard.deleteAria')}
+        >
+          ×
+        </button>
+      </div>
     </div>
   )
 }

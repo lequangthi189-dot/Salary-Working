@@ -36,7 +36,6 @@ export default function Timesheet({
   onDelete,
   onUpdate,
   hasNightShift = true,
-  readOnly = false,
 }) {
   const { t: tr } = useI18n()
   const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
@@ -120,7 +119,6 @@ export default function Timesheet({
                   shift={s}
                   onDelete={onDelete}
                   onUpdate={onUpdate}
-                  readOnly={readOnly}
                 />
               ))}
             </div>

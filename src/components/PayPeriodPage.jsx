@@ -7,7 +7,7 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 import PayPeriodPanel from './PayPeriodPanel.jsx'
-import Timesheet from './Timesheet.jsx'
+import TimesheetTable from './TimesheetTable.jsx'
 import { useI18n } from '../lib/i18n.jsx'
 
 // Biểu đồ tròn (donut) tự vẽ bằng SVG — chỉ hiện SỐ TỔNG ở giữa; chi tiết xem ở
@@ -292,7 +292,7 @@ function StatsModal({ title, st, shifts = [], deductions, hasNightShift = true, 
         </div>
         <StatsCharts st={st} deductions={deductions} hasNightShift={hasNightShift} />
         <h3 className="salary-section-title">{t('pp.detailTimesheet')}</h3>
-        <Timesheet shifts={shifts} hasNightShift={hasNightShift} readOnly />
+        <TimesheetTable shifts={shifts} hasNightShift={hasNightShift} />
       </div>
     </div>
   )

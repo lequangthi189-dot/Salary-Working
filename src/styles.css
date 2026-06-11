@@ -2023,3 +2023,45 @@ input.t-out {
     justify-self: end;
   }
 }
+
+/* ---- Bảng công dạng lưới (như Excel), chỉ xem, trong popup tra cứu kỳ ---- */
+.tt-wrap {
+  margin-top: 0.5rem;
+  overflow-x: auto; /* cuộn ngang trên mobile thay vì vỡ layout */
+}
+.tt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.tt-table th,
+.tt-table td {
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.5rem;
+  text-align: center;
+}
+.tt-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  color: var(--text);
+  font-weight: 600;
+}
+.tt-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+.tt-table .tt-pay {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tt-table td.lost {
+  color: var(--danger);
+}
+.tt-table tr.tt-planned td {
+  font-style: italic;
+}
+.tt-table tfoot td {
+  background: var(--panel-2);
+  font-weight: 700;
+}
