@@ -5,7 +5,7 @@ export function fetchProfile(userId) {
   return supabase
     .from('profiles')
     .select(
-      'payday, full_name, first_name, last_name, employee_code, phone, email, hourly_rate, night_pct, holiday_day_pct, holiday_night_pct, has_night_shift'
+      'payday, full_name, first_name, last_name, employee_code, phone, email, hourly_rate, night_pct, holiday_day_pct, holiday_night_pct, has_night_shift, lang'
     )
     .eq('id', userId)
     .maybeSingle()
