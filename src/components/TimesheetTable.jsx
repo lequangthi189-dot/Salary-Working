@@ -91,16 +91,14 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
       <table className="tt-table">
         <colgroup>
           <col style={{ width: '10%' }} />
-          <col style={{ width: hasNightShift ? '21%' : '22%' }} />
-          <col style={{ width: hasNightShift ? '21%' : '22%' }} />
-          <col style={{ width: hasNightShift ? '12%' : '19%' }} />
-          {hasNightShift && <col style={{ width: '12%' }} />}
-          <col style={{ width: hasNightShift ? '24%' : '27%' }} />
+          <col style={{ width: hasNightShift ? '25%' : '28%' }} />
+          <col style={{ width: hasNightShift ? '15%' : '25%' }} />
+          {hasNightShift && <col style={{ width: '15%' }} />}
+          <col style={{ width: hasNightShift ? '35%' : '37%' }} />
         </colgroup>
         <thead>
           <tr>
             <th>{t('tt.date')}</th>
-            <th className="tt-sched">{t('tt.sched')}</th>
             <th>{t('tt.actual')}</th>
             <th>{t('tt.dayH')}</th>
             {hasNightShift && <th>{t('tt.nightH')}</th>}
@@ -118,13 +116,9 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
               end,
               !!s.is_holiday
             )
-            const schedIn = hhmm(s.scheduled_start)
-            const schedOut = hhmm(s.scheduled_end)
-            const sched = schedIn || schedOut ? `${schedIn || '—'}–${schedOut || '—'}` : '—'
             return (
               <tr key={s.id}>
                 <td>{dm(s.work_date)}</td>
-                <td className="tt-sched">{sched}</td>
                 <td>{`${start}–${end || '—'}`}</td>
                 <td>{eff.dayHours > 0 ? formatHours(eff.dayHours) : '—'}</td>
                 {hasNightShift && (
@@ -138,7 +132,7 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
         <tfoot>
           <tr>
             <td>{t('tt.total')}</td>
-            <td colSpan={2}>{formatHours(totals.hours)} h</td>
+            <td>{formatHours(totals.hours)} h</td>
             <td>{formatHours(totals.dayHours)}</td>
             {hasNightShift && <td>{formatHours(totals.nightHours)}</td>}
             <td className="tt-pay">{formatMoney(totals.pay)}</td>
