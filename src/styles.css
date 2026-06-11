@@ -2061,6 +2061,11 @@ input.t-out {
   font-weight: 700;
 }
 
+/* Nút mở popup Bảng công chi tiết trong popup kỳ lương */
+.detail-sheet-btn {
+  margin-top: 0.8rem;
+}
+
 /* ---- Popup Nhập tay lịch dự kiến: lưới co giãn, KHÔNG cuộn ngang ---- */
 .msched-list {
   margin-top: 0.5rem;
