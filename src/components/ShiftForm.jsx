@@ -26,17 +26,16 @@ export default function ShiftForm({
   const [workDate, setWorkDate] = useState(localTodayStr())
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
-  const [schedStart, setSchedStart] = useState('09:00')
-  const [schedEnd, setSchedEnd] = useState('17:00')
   const [isHoliday, setIsHoliday] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
-  // Ngày đang chọn đã có lịch dự kiến (vd nhập từ ảnh) → ẩn ô Sched, dùng lịch đó.
+  // Ngày đang chọn đã có lịch dự kiến (nhập từ "Nhập lịch tuần") → dùng làm mốc
+  // tính trễ. Không nhập giờ lịch tay ở form ngày nữa; ngày không có lịch dự kiến
+  // thì scheduled_* = null (không có mốc trễ).
   const daySched = schedByDate.get(workDate)
-  const hasSched = !!daySched
-  const effSchedStart = hasSched ? daySched.start : schedStart
-  const effSchedEnd = hasSched ? daySched.end : schedEnd
+  const effSchedStart = daySched ? daySched.start : ''
+  const effSchedEnd = daySched ? daySched.end : ''
 
   // --- TÍNH TOÁN xem trước (preview) cho dòng trạng thái/cảnh báo ---
   const preview = computeEffective(
@@ -62,30 +61,8 @@ export default function ShiftForm({
       work_date: workDate,
       start_time: startTime,
       end_time: endTime,
-      scheduled_start: effSchedStart,
-      scheduled_end: effSchedEnd,
-      is_holiday: isHoliday,
-    })
-    setBusy(false)
-    if (err) setError(err)
-  }
-
-  // Thêm CA DỰ KIẾN: chỉ lưu giờ lịch (Sched), bỏ trống giờ chấm công thực tế
-  // (start/end = null) → ca chưa chấm công, đóng góp 0 vào lương cho tới khi nhập
-  // giờ thực. Dùng để bổ sung tay 1 ngày dự kiến vào lịch (vd ngoài ảnh đã đọc).
-  async function handleAddPlanned() {
-    setError(null)
-    if (!workDate) {
-      setError(t('shiftForm.pickDate'))
-      return
-    }
-    setBusy(true)
-    const err = await onAdd({
-      work_date: workDate,
-      start_time: null,
-      end_time: null,
-      scheduled_start: schedStart,
-      scheduled_end: schedEnd,
+      scheduled_start: effSchedStart || null,
+      scheduled_end: effSchedEnd || null,
       is_holiday: isHoliday,
     })
     setBusy(false)
@@ -129,30 +106,6 @@ export default function ShiftForm({
           {t('shiftForm.holiday')}
         </label>
       </div>
-
-      {!hasSched && (
-        <>
-          <div className="fields scheduled">
-            <label>
-              {t('shiftForm.schedStart')}
-              <TimeInput value={schedStart} onChange={setSchedStart} />
-            </label>
-            <label>
-              {t('shiftForm.schedEnd')}
-              <TimeInput value={schedEnd} onChange={setSchedEnd} />
-            </label>
-          </div>
-          <button
-            type="button"
-            className="account-btn full btn-add-planned"
-            onClick={handleAddPlanned}
-            disabled={busy}
-          >
-            {t('shiftForm.addPlanned')}
-          </button>
-          <p className="planned-hint">{t('shiftForm.addPlannedHint')}</p>
-        </>
-      )}
 
       {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập */}
       <p className="preview-line">

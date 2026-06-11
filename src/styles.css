@@ -1067,9 +1067,6 @@ button[type='submit']:disabled {
 .shift-form .fields.check-row .holiday-check {
   padding-bottom: 0.6rem;
 }
-.shift-form .fields.scheduled {
-  grid-template-columns: 1fr 1fr;
-}
 /* Cho ô input co lại được trong lưới → không tràn/bể layout trên điện thoại */
 .shift-form .fields label {
   min-width: 0;
@@ -1079,21 +1076,11 @@ button[type='submit']:disabled {
   min-width: 0;
   box-sizing: border-box;
 }
-/* Màn rất hẹp: xếp check-in/out & scheduled thành 1 cột cho dễ bấm */
+/* Màn rất hẹp: xếp check-in/out thành 1 cột cho dễ bấm */
 @media (max-width: 420px) {
-  .shift-form .fields.check-row,
-  .shift-form .fields.scheduled {
+  .shift-form .fields.check-row {
     grid-template-columns: 1fr;
   }
-}
-/* Nút "Chỉ thêm lịch dự kiến" + gợi ý ngay dưới ô Sched. start/end */
-.shift-form .btn-add-planned {
-  margin-top: 0.4rem;
-}
-.shift-form .planned-hint {
-  margin: 0.35rem 0 0;
-  font-size: 0.8rem;
-  color: var(--muted, #888);
 }
 
 /* ---- Khối chính: Nhập ca (trái 40%) + Thống kê (phải 60%) ----

@@ -68,6 +68,22 @@ export default function ScheduleImportModal({
     return new Promise((resolve) => setConfirmState({ message, resolve }))
   }
 
+  // Tạo bảng tuần TRỐNG để nhập giờ lịch dự kiến bằng tay (không cần ảnh). Mặc
+  // định tuần hiện tại (Thứ 2 → Chủ nhật); người dùng sửa ngày/giờ rồi tạo ca.
+  function startManual() {
+    setError(null)
+    setInfo(null)
+    setRows(
+      WEEKDAYS.map((wd, i) => ({
+        weekday: wd,
+        date: addDays(weekStart, i),
+        start: '',
+        end: '',
+        off: false,
+      }))
+    )
+  }
+
   function pickFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
@@ -225,6 +241,14 @@ export default function ScheduleImportModal({
           >
             {loading ? t('import.reading') : t('import.readAI')}
           </button>
+          <button
+            type="button"
+            className="account-btn"
+            onClick={startManual}
+            disabled={loading}
+          >
+            {t('import.enterManual')}
+          </button>
         </div>
 
         {info && <p className="msg info">{info}</p>}
@@ -247,7 +271,13 @@ export default function ScheduleImportModal({
                 {rows.map((r, i) => (
                   <tr key={r.weekday} className={r.off ? 'off' : ''}>
                     <td>{t(`wd.${r.weekday}`)}</td>
-                    <td className="muted">{r.date}</td>
+                    <td>
+                      <input
+                        type="date"
+                        value={r.date}
+                        onChange={(e) => updateRow(i, { date: e.target.value })}
+                      />
+                    </td>
                     <td>
                       <input
                         type="time"
