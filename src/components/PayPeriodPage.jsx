@@ -172,100 +172,115 @@ function StatsCharts({ st, deductions = [], hasNightShift = true }) {
     color: DED_COLORS[i % DED_COLORS.length],
     display: formatMoney(d.amount),
   }))
-  return (
-    <div className="stats-donuts">
+  const shiftCount = st.dayShiftCount + st.nightShiftCount
+
+  // Chỉ dựng những donut CÓ dữ liệu — donut rỗng bị ẩn, các donut còn lại tự căn
+  // giữa cho đẹp (xem .stats-donuts dùng flex-wrap center).
+  const blocks = []
+  if (st.pay > 0 || dedTotal > 0 || st.lostPay > 0) {
+    blocks.push(
       <DonutBlock
+        key="salary"
         title={t('pp.donut.salary')}
         segments={moneySegments}
         centerValue={pct(net, st.idealPay)}
         centerLabel={t('pp.donut.salaryCenter')}
       />
-      {dedSegments.length > 0 ? (
+    )
+  }
+  if (dedSegments.length > 0) {
+    blocks.push(
+      <DonutBlock
+        key="ded"
+        title={t('pp.donut.ded')}
+        segments={dedSegments}
+        centerValue={formatMoney(dedTotal)}
+        centerLabel={t('pp.donut.dedCenter')}
+      />
+    )
+  }
+  if (st.hours > 0 || st.lostHours > 0) {
+    blocks.push(
+      hasNightShift ? (
         <DonutBlock
-          title={t('pp.donut.ded')}
-          segments={dedSegments}
-          centerValue={formatMoney(dedTotal)}
-          centerLabel={t('pp.donut.dedCenter')}
+          key="hours"
+          title={t('pp.donut.hours')}
+          segments={[
+            {
+              label: t('pp.seg.dayHours'),
+              value: st.dayHours,
+              color: C.day,
+              display: `${formatHours(st.dayHours)} h`,
+            },
+            {
+              label: t('pp.seg.nightHours'),
+              value: st.nightHours,
+              color: C.night,
+              display: `${formatHours(st.nightHours)} h`,
+            },
+            st.lostHours > 0 && {
+              label: t('pp.seg.lateHours'),
+              value: st.lostHours,
+              color: C.lost,
+              display: `${formatHours(st.lostHours)} h`,
+            },
+          ].filter(Boolean)}
+          centerValue={`${formatHours(st.hours)}h`}
+          centerLabel={t('pp.donut.hoursCenter')}
         />
       ) : (
-        <div className="donut-block donut-empty">
-          <span className="donut-title">{t('pp.donut.ded')}</span>
-          <p className="muted">{t('pp.donut.noDed')}</p>
-        </div>
-      )}
-      {hasNightShift ? (
-        <>
-          <DonutBlock
-            title={t('pp.donut.hours')}
-            segments={[
-              {
-                label: t('pp.seg.dayHours'),
-                value: st.dayHours,
-                color: C.day,
-                display: `${formatHours(st.dayHours)} h`,
-              },
-              {
-                label: t('pp.seg.nightHours'),
-                value: st.nightHours,
-                color: C.night,
-                display: `${formatHours(st.nightHours)} h`,
-              },
-              st.lostHours > 0 && {
-                label: t('pp.seg.lateHours'),
-                value: st.lostHours,
-                color: C.lost,
-                display: `${formatHours(st.lostHours)} h`,
-              },
-            ].filter(Boolean)}
-            centerValue={`${formatHours(st.hours)}h`}
-            centerLabel={t('pp.donut.hoursCenter')}
-          />
-          <DonutBlock
-            title={t('pp.donut.shifts')}
-            segments={[
-              {
-                label: t('pp.seg.dayShifts'),
-                value: st.dayShiftCount,
-                color: C.day,
-                display: t('pp.unit.shift', { n: st.dayShiftCount }),
-              },
-              {
-                label: t('pp.seg.nightShifts'),
-                value: st.nightShiftCount,
-                color: C.night,
-                display: t('pp.unit.shift', { n: st.nightShiftCount }),
-              },
-            ]}
-            centerValue={`${st.dayShiftCount + st.nightShiftCount}`}
-            centerLabel={t('pp.donut.shiftsCenter')}
-          />
-        </>
-      ) : (
-        // Không có ca đêm → 1 donut Tổng giờ (giờ làm + giờ trễ), đẩy ra giữa.
-        <div className="donut-span">
-          <DonutBlock
-            title={t('pp.donut.totalHours')}
-            segments={[
-              {
-                label: t('pp.seg.workedHours'),
-                value: st.hours,
-                color: C.good,
-                display: `${formatHours(st.hours)} h`,
-              },
-              st.lostHours > 0 && {
-                label: t('pp.seg.lateHours'),
-                value: st.lostHours,
-                color: C.lost,
-                display: `${formatHours(st.lostHours)} h`,
-              },
-            ].filter(Boolean)}
-            centerValue={`${formatHours(st.hours)}h`}
-            centerLabel={t('pp.donut.hoursCenter')}
-          />
-        </div>
-      )}
-    </div>
-  )
+        <DonutBlock
+          key="totalHours"
+          title={t('pp.donut.totalHours')}
+          segments={[
+            {
+              label: t('pp.seg.workedHours'),
+              value: st.hours,
+              color: C.good,
+              display: `${formatHours(st.hours)} h`,
+            },
+            st.lostHours > 0 && {
+              label: t('pp.seg.lateHours'),
+              value: st.lostHours,
+              color: C.lost,
+              display: `${formatHours(st.lostHours)} h`,
+            },
+          ].filter(Boolean)}
+          centerValue={`${formatHours(st.hours)}h`}
+          centerLabel={t('pp.donut.hoursCenter')}
+        />
+      )
+    )
+  }
+  if (hasNightShift && shiftCount > 0) {
+    blocks.push(
+      <DonutBlock
+        key="shifts"
+        title={t('pp.donut.shifts')}
+        segments={[
+          {
+            label: t('pp.seg.dayShifts'),
+            value: st.dayShiftCount,
+            color: C.day,
+            display: t('pp.unit.shift', { n: st.dayShiftCount }),
+          },
+          {
+            label: t('pp.seg.nightShifts'),
+            value: st.nightShiftCount,
+            color: C.night,
+            display: t('pp.unit.shift', { n: st.nightShiftCount }),
+          },
+        ]}
+        centerValue={`${shiftCount}`}
+        centerLabel={t('pp.donut.shiftsCenter')}
+      />
+    )
+  }
+
+  if (blocks.length === 0) {
+    return <p className="muted pp-no-chart">{t('pp.noData')}</p>
+  }
+  return <div className="stats-donuts">{blocks}</div>
 }
 
 // Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng). Bảng công chi tiết là 1 NÚT

@@ -253,6 +253,12 @@ export const translations = {
     "welcome.step6.title": "Account",
     "welcome.step6.desc":
       'Open "Account" to set your employee code (used for reading schedules) and payday.',
+    "welcome.step7.title": "Look up timesheet",
+    "welcome.step7.desc":
+      'In "Pay period", tap any month to see its charts and a detailed timesheet (Excel-style, filter by week starting Monday).',
+    "welcome.step8.title": "Language",
+    "welcome.step8.desc":
+      "Pick a language from the flag menu. It's saved to your account, so the next login keeps the same language.",
 
     // schedule import
     "import.title": "Import weekly schedule from image",
@@ -620,6 +626,12 @@ export const translations = {
     "welcome.step6.title": "Tài khoản",
     "welcome.step6.desc":
       'Vào "Tài khoản" để đặt mã nhân viên (dùng đọc lịch) và ngày nhận lương.',
+    "welcome.step7.title": "Tra cứu bảng công",
+    "welcome.step7.desc":
+      'Trong "Kỳ lương", bấm vào một tháng để xem biểu đồ và bảng công chi tiết (kiểu Excel, lọc theo tuần bắt đầu Thứ 2).',
+    "welcome.step8.title": "Ngôn ngữ",
+    "welcome.step8.desc":
+      "Chọn ngôn ngữ ở menu lá cờ. Ngôn ngữ được lưu theo tài khoản nên đăng nhập lại vẫn giữ nguyên.",
 
     // schedule import
     "import.title": "Nhập lịch tuần",

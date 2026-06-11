@@ -1915,15 +1915,21 @@ input.t-out {
 
 /* Biểu đồ tròn (donut) — lưới 2×2 gọn trong popup, không cần cuộn */
 .stats-donuts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* số biểu đồ lẻ vẫn căn giữa cho đẹp */
+  gap: 0.6rem 1rem;
 }
 .donut-block {
+  flex: 0 1 150px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+.pp-no-chart {
+  text-align: center;
+  margin: 1rem 0;
 }
 /* Donut đơn lẻ (vd Tổng giờ khi không có ca đêm): trải 2 cột + căn giữa */
 .donut-span {
