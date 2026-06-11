@@ -45,6 +45,7 @@ input {
 
 .center {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   /* safe: khi nội dung cao hơn màn hình thì căn từ trên, không cắt mất đầu form */
   place-items: safe center;
@@ -863,11 +864,20 @@ button[type='submit']:disabled {
   padding: 1.5rem;
   width: 100%;
   max-width: 360px;
-  /* Nội dung cao (ảnh + bảng 7 ngày) không tràn ra ngoài màn hình → cho cuộn dọc */
+  /* Nội dung cao (ảnh + bảng 7 ngày) không tràn ra ngoài màn hình → cho cuộn dọc.
+     Dùng dvh để khớp vùng nhìn thấy thật trên mobile (trừ thanh URL), fallback vh. */
   max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   overflow-y: auto;
 }
-@media (max-width: 380px) {
+/* Ô input/select trong modal KHÔNG được rộng quá khung (native date/time hay ép
+   bề rộng tối thiểu → tràn/bể layout trên mobile). */
+.modal-card input,
+.modal-card select {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 480px) {
   .modal-card {
     padding: 1rem;
   }
