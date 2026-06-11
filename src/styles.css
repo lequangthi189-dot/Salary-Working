@@ -2031,6 +2031,7 @@ input.t-out {
 /* ---- Bảng công dạng lưới (như Excel), chỉ xem, trong popup tra cứu kỳ ---- */
 .tt-wrap {
   margin-top: 0.5rem;
+  overflow-x: auto; /* màn cực hẹp thì cuộn ngang, không bẻ hàng cho vỡ layout */
 }
 .tt-weeks {
   margin-bottom: 0.5rem;
@@ -2038,18 +2039,15 @@ input.t-out {
 }
 .tt-table {
   width: 100%;
-  table-layout: fixed; /* cột chia đều theo bề rộng → KHÔNG tràn ngang */
   border-collapse: collapse;
   font-size: 0.72rem;
 }
 .tt-table th,
 .tt-table td {
   border: 1px solid var(--border);
-  padding: 0.16rem 0.2rem;
+  padding: 0.18rem 0.3rem;
   text-align: center;
-  white-space: normal; /* cho xuống dòng thay vì đẩy rộng bảng */
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  white-space: nowrap; /* mỗi ô 1 dòng → hàng ngày không bị bể */
 }
 .tt-table thead th {
   position: sticky;
