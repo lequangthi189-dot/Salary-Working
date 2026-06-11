@@ -252,25 +252,36 @@ function StatsCharts({ st, deductions = [], hasNightShift = true }) {
       )
     )
   }
-  if (hasNightShift && shiftCount > 0) {
-    blocks.push(
-      <DonutBlock
-        key="shifts"
-        title={t('pp.donut.shifts')}
-        segments={[
-          {
+  if (shiftCount > 0) {
+    // Có ca đêm → tách ngày/đêm; không có ca đêm → 1 lát tổng số ca. Lọc lát = 0.
+    const shiftSegments = hasNightShift
+      ? [
+          st.dayShiftCount > 0 && {
             label: t('pp.seg.dayShifts'),
             value: st.dayShiftCount,
             color: C.day,
             display: t('pp.unit.shift', { n: st.dayShiftCount }),
           },
-          {
+          st.nightShiftCount > 0 && {
             label: t('pp.seg.nightShifts'),
             value: st.nightShiftCount,
             color: C.night,
             display: t('pp.unit.shift', { n: st.nightShiftCount }),
           },
-        ]}
+        ].filter(Boolean)
+      : [
+          {
+            label: t('pp.donut.shiftsCenter'),
+            value: shiftCount,
+            color: C.good,
+            display: t('pp.unit.shift', { n: shiftCount }),
+          },
+        ]
+    blocks.push(
+      <DonutBlock
+        key="shifts"
+        title={t('pp.donut.shifts')}
+        segments={shiftSegments}
         centerValue={`${shiftCount}`}
         centerLabel={t('pp.donut.shiftsCenter')}
       />
