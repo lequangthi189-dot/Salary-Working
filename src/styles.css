@@ -2015,7 +2015,6 @@ input.t-out {
 /* ---- Bảng công dạng lưới (như Excel), chỉ xem, trong popup tra cứu kỳ ---- */
 .tt-wrap {
   margin-top: 0.5rem;
-  overflow-x: auto; /* cuộn ngang trên mobile thay vì vỡ layout */
 }
 .tt-weeks {
   margin-bottom: 0.5rem;
@@ -2023,15 +2022,18 @@ input.t-out {
 }
 .tt-table {
   width: 100%;
+  table-layout: fixed; /* cột chia đều theo bề rộng → KHÔNG tràn ngang */
   border-collapse: collapse;
-  font-size: 0.76rem;
-  white-space: nowrap;
+  font-size: 0.72rem;
 }
 .tt-table th,
 .tt-table td {
   border: 1px solid var(--border);
-  padding: 0.18rem 0.3rem;
+  padding: 0.16rem 0.2rem;
   text-align: center;
+  white-space: normal; /* cho xuống dòng thay vì đẩy rộng bảng */
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .tt-table thead th {
   position: sticky;

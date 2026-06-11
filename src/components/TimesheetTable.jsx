@@ -89,6 +89,15 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
       )}
 
       <table className="tt-table">
+        <colgroup>
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '19%' }} />
+          <col style={{ width: '19%' }} />
+          <col style={{ width: hasNightShift ? '11%' : '17%' }} />
+          {hasNightShift && <col style={{ width: '11%' }} />}
+          <col style={{ width: '10%' }} />
+          <col style={{ width: hasNightShift ? '21%' : '26%' }} />
+        </colgroup>
         <thead>
           <tr>
             <th>{t('tt.date')}</th>
