@@ -60,56 +60,47 @@ export default function ManualScheduleModal({ onImport, onClose, onDone }) {
           </button>
         </div>
 
-        <div className="import-table-wrap">
-          <table className="import-table">
-            <thead>
-              <tr>
-                <th>{t('import.thDate')}</th>
-                <th>{t('tt.schedIn')}</th>
-                <th>{t('tt.schedOut')}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={i}>
-                  <td>
-                    <input
-                      type="date"
-                      value={r.date}
-                      onChange={(e) => updateRow(i, { date: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="time"
-                      value={r.start}
-                      onChange={(e) => updateRow(i, { start: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="time"
-                      value={r.end}
-                      onChange={(e) => updateRow(i, { end: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    {rows.length > 1 && (
-                      <button
-                        type="button"
-                        className="modal-close"
-                        onClick={() => removeRow(i)}
-                        aria-label={t('import.delRow')}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="msched-list">
+          <div className="msched-head">
+            <span>{t('import.thDate')}</span>
+            <span>{t('tt.schedIn')}</span>
+            <span>{t('tt.schedOut')}</span>
+            <span className="msched-del-col" />
+          </div>
+          {rows.map((r, i) => (
+            <div className="msched-row" key={i}>
+              <input
+                type="date"
+                title={t('import.thDate')}
+                value={r.date}
+                onChange={(e) => updateRow(i, { date: e.target.value })}
+              />
+              <input
+                type="time"
+                title={t('tt.schedIn')}
+                value={r.start}
+                onChange={(e) => updateRow(i, { start: e.target.value })}
+              />
+              <input
+                type="time"
+                title={t('tt.schedOut')}
+                value={r.end}
+                onChange={(e) => updateRow(i, { end: e.target.value })}
+              />
+              {rows.length > 1 ? (
+                <button
+                  type="button"
+                  className="msched-del"
+                  onClick={() => removeRow(i)}
+                  aria-label={t('import.delRow')}
+                >
+                  ×
+                </button>
+              ) : (
+                <span className="msched-del-col" />
+              )}
+            </div>
+          ))}
         </div>
 
         {error && (

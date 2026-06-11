@@ -2059,3 +2059,37 @@ input.t-out {
   background: var(--panel-2);
   font-weight: 700;
 }
+
+/* ---- Popup Nhập tay lịch dự kiến: lưới co giãn, KHÔNG cuộn ngang ---- */
+.msched-list {
+  margin-top: 0.5rem;
+}
+.msched-head,
+.msched-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) 1.5rem;
+  gap: 0.4rem;
+  align-items: center;
+}
+.msched-head {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+.msched-row {
+  margin-bottom: 0.4rem;
+}
+.msched-row input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.msched-del {
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
