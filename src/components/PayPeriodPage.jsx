@@ -7,6 +7,7 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 import PayPeriodPanel from './PayPeriodPanel.jsx'
+import Timesheet from './Timesheet.jsx'
 import { useI18n } from '../lib/i18n.jsx'
 
 // Biểu đồ tròn (donut) tự vẽ bằng SVG — chỉ hiện SỐ TỔNG ở giữa; chi tiết xem ở
@@ -267,8 +268,9 @@ function StatsCharts({ st, deductions = [], hasNightShift = true }) {
   )
 }
 
-// Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng).
-function StatsModal({ title, st, deductions, hasNightShift = true, onClose }) {
+// Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng) + bảng công chi tiết (chỉ xem).
+function StatsModal({ title, st, shifts = [], deductions, hasNightShift = true, onClose }) {
+  const { t } = useI18n()
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -283,12 +285,14 @@ function StatsModal({ title, st, deductions, hasNightShift = true, onClose }) {
             type="button"
             className="modal-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t('common.close')}
           >
             ×
           </button>
         </div>
         <StatsCharts st={st} deductions={deductions} hasNightShift={hasNightShift} />
+        <h3 className="salary-section-title">{t('pp.detailTimesheet')}</h3>
+        <Timesheet shifts={shifts} hasNightShift={hasNightShift} readOnly />
       </div>
     </div>
   )
@@ -399,6 +403,7 @@ export default function PayPeriodPage({
     <StatsModal
       title={openTitle}
       st={periodStats(shiftsOf(openScope))}
+      shifts={shiftsOf(openScope)}
       deductions={
         openScope === 'all'
           ? deductions

@@ -144,7 +144,8 @@ export const translations = {
     "ded.delAria": "Delete deduction",
 
     // pay period page
-    "pp.scopeHint": "Tap a period to see detailed charts.",
+    "pp.scopeHint": "Tap a period to see its charts and full timesheet.",
+    "pp.detailTimesheet": "Detailed timesheet",
     "pp.allPeriods": "All periods",
     "pp.lostDueLate": "Lost to late −{money}",
     "pp.noData": "No shifts to summarize yet.",
@@ -496,7 +497,8 @@ export const translations = {
     "ded.delAria": "Xóa khoản trừ",
 
     // pay period page
-    "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ chi tiết.",
+    "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ và bảng công chi tiết.",
+    "pp.detailTimesheet": "Bảng công chi tiết",
     "pp.allPeriods": "Tất cả các kỳ",
     "pp.lostDueLate": "Mất do trễ −{money}",
     "pp.noData": "Chưa có ca làm nào để thống kê.",
