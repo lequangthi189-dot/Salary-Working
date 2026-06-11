@@ -60,6 +60,7 @@ export default function ScheduleImportModal({
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [rows, setRows] = useState(null) // [{weekday,date,start,end,off}]
+  const [manual, setManual] = useState(false) // true = bảng nhập tay (gọn cột)
   const [saving, setSaving] = useState(false)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
 
@@ -73,6 +74,7 @@ export default function ScheduleImportModal({
   function startManual() {
     setError(null)
     setInfo(null)
+    setManual(true)
     setRows(
       WEEKDAYS.map((wd, i) => ({
         weekday: wd,
@@ -97,6 +99,7 @@ export default function ScheduleImportModal({
   async function readSchedule() {
     setError(null)
     setInfo(null)
+    setManual(false)
     if (!file) return setError(t('import.errPickImage'))
     if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
       return setError(t('import.errNoCode'))
@@ -260,17 +263,17 @@ export default function ScheduleImportModal({
             <table className="import-table">
               <thead>
                 <tr>
-                  <th>{t('import.thWeekday')}</th>
+                  {!manual && <th>{t('import.thWeekday')}</th>}
                   <th>{t('import.thDate')}</th>
-                  <th>{t('import.thIn')}</th>
-                  <th>{t('import.thOut')}</th>
-                  <th>{t('import.thOff')}</th>
+                  <th>{manual ? t('tt.schedIn') : t('import.thIn')}</th>
+                  <th>{manual ? t('tt.schedOut') : t('import.thOut')}</th>
+                  {!manual && <th>{t('import.thOff')}</th>}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={r.weekday} className={r.off ? 'off' : ''}>
-                    <td>{t(`wd.${r.weekday}`)}</td>
+                    {!manual && <td>{t(`wd.${r.weekday}`)}</td>}
                     <td>
                       <input
                         type="date"
@@ -294,13 +297,15 @@ export default function ScheduleImportModal({
                         onChange={(e) => updateRow(i, { end: e.target.value })}
                       />
                     </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={r.off}
-                        onChange={(e) => updateRow(i, { off: e.target.checked })}
-                      />
-                    </td>
+                    {!manual && (
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={r.off}
+                          onChange={(e) => updateRow(i, { off: e.target.checked })}
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
