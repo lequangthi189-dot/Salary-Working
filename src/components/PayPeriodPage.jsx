@@ -321,7 +321,6 @@ function StatsModal({ title, st, shifts = [], deductions, hasNightShift = true, 
         <TimesheetModal
           title={title}
           shifts={shifts}
-          hasNightShift={hasNightShift}
           onClose={() => setShowSheet(false)}
         />
       )}
@@ -330,7 +329,7 @@ function StatsModal({ title, st, shifts = [], deductions, hasNightShift = true, 
 }
 
 // Popup riêng chỉ hiện bảng công chi tiết (kiểu Excel) của kỳ.
-function TimesheetModal({ title, shifts, hasNightShift = true, onClose }) {
+function TimesheetModal({ title, shifts, onClose }) {
   const { t } = useI18n()
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -351,7 +350,7 @@ function TimesheetModal({ title, shifts, hasNightShift = true, onClose }) {
             ×
           </button>
         </div>
-        <TimesheetTable shifts={shifts} hasNightShift={hasNightShift} />
+        <TimesheetTable shifts={shifts} />
       </div>
     </div>
   )

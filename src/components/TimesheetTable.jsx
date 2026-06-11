@@ -29,7 +29,7 @@ function mondayOf(dateStr) {
 
 // Bảng công dạng lưới (như Excel) — CHỈ XEM. Chỉ liệt kê ca ĐÃ CHẤM CÔNG (có giờ
 // vào); ngày chưa chấm công bị bỏ hẳn. Có bộ lọc theo tuần (tuần bắt đầu Thứ 2).
-export default function TimesheetTable({ shifts, hasNightShift = true }) {
+export default function TimesheetTable({ shifts }) {
   const { t } = useI18n()
   const [week, setWeek] = useState('all') // 'all' | mốc Thứ 2 của tuần
 
@@ -93,8 +93,6 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
           <tr>
             <th>{t('tt.date')}</th>
             <th>{t('tt.actual')}</th>
-            <th>{t('tt.dayH')}</th>
-            {hasNightShift && <th>{t('tt.nightH')}</th>}
             <th className="tt-pay">{t('tt.pay')}</th>
           </tr>
         </thead>
@@ -113,10 +111,6 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
               <tr key={s.id}>
                 <td>{dm(s.work_date)}</td>
                 <td>{`${start}–${end || '—'}`}</td>
-                <td>{eff.dayHours > 0 ? formatHours(eff.dayHours) : '—'}</td>
-                {hasNightShift && (
-                  <td>{eff.nightHours > 0 ? formatHours(eff.nightHours) : '—'}</td>
-                )}
                 <td className="tt-pay">{formatMoney(eff.pay)}</td>
               </tr>
             )
@@ -126,8 +120,6 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
           <tr>
             <td>{t('tt.total')}</td>
             <td>{formatHours(totals.hours)} h</td>
-            <td>{formatHours(totals.dayHours)}</td>
-            {hasNightShift && <td>{formatHours(totals.nightHours)}</td>}
             <td className="tt-pay">{formatMoney(totals.pay)}</td>
           </tr>
         </tfoot>
