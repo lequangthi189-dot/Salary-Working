@@ -9,6 +9,7 @@ import ProfileModal from './components/ProfileModal.jsx'
 import PayPeriodPage from './components/PayPeriodPage.jsx'
 import CompensationModal from './components/CompensationModal.jsx'
 import SalaryChat from './components/SalaryChat.jsx'
+import ChatbotAvatar from './components/ChatbotAvatar.jsx'
 import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
@@ -314,6 +315,15 @@ export default function App() {
               </>
             )}
           </div>
+          <button
+            type="button"
+            className="chat-avatar-btn"
+            onClick={() => setShowChat(true)}
+            aria-label={t('chat.title')}
+            title={t('chat.title')}
+          >
+            <ChatbotAvatar size={34} />
+          </button>
         </div>
       </header>
 
