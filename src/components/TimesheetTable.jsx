@@ -90,13 +90,12 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
 
       <table className="tt-table">
         <colgroup>
-          <col style={{ width: '9%' }} />
-          <col style={{ width: '19%' }} />
-          <col style={{ width: '19%' }} />
-          <col style={{ width: hasNightShift ? '11%' : '17%' }} />
-          {hasNightShift && <col style={{ width: '11%' }} />}
           <col style={{ width: '10%' }} />
-          <col style={{ width: hasNightShift ? '21%' : '26%' }} />
+          <col style={{ width: hasNightShift ? '21%' : '22%' }} />
+          <col style={{ width: hasNightShift ? '21%' : '22%' }} />
+          <col style={{ width: hasNightShift ? '12%' : '19%' }} />
+          {hasNightShift && <col style={{ width: '12%' }} />}
+          <col style={{ width: hasNightShift ? '24%' : '27%' }} />
         </colgroup>
         <thead>
           <tr>
@@ -105,7 +104,6 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
             <th>{t('tt.actual')}</th>
             <th>{t('tt.dayH')}</th>
             {hasNightShift && <th>{t('tt.nightH')}</th>}
-            <th>{t('tt.late')}</th>
             <th className="tt-pay">{t('tt.pay')}</th>
           </tr>
         </thead>
@@ -132,9 +130,6 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
                 {hasNightShift && (
                   <td>{eff.nightHours > 0 ? formatHours(eff.nightHours) : '—'}</td>
                 )}
-                <td className={eff.lostHours > 0 ? 'lost' : undefined}>
-                  {eff.lostHours > 0 ? formatHours(eff.lostHours) : '—'}
-                </td>
                 <td className="tt-pay">{formatMoney(eff.pay)}</td>
               </tr>
             )
@@ -146,9 +141,6 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
             <td colSpan={2}>{formatHours(totals.hours)} h</td>
             <td>{formatHours(totals.dayHours)}</td>
             {hasNightShift && <td>{formatHours(totals.nightHours)}</td>}
-            <td className={totals.lostHours > 0 ? 'lost' : undefined}>
-              {totals.lostHours > 0 ? formatHours(totals.lostHours) : '—'}
-            </td>
             <td className="tt-pay">{formatMoney(totals.pay)}</td>
           </tr>
         </tfoot>
