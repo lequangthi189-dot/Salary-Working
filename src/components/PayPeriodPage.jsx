@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { periodStats, formatHours, formatMoney } from '../lib/shiftMath.js'
 import {
   payPeriodKeyOf,
@@ -19,6 +19,15 @@ function Donut({ segments, centerValue, centerLabel, size = 104, stroke = 18 }) 
   const cx = size / 2
   const cy = size / 2
   const [tip, setTip] = useState(null) // { x, y, text }
+  const tipTimer = useRef(null)
+
+  // Chạm/bấm (mobile không có hover) → hiện tooltip rồi tự ẩn sau 3s.
+  function tapTip(e, text) {
+    const p = e.touches?.[0] || e
+    setTip({ x: p.clientX, y: p.clientY, text })
+    clearTimeout(tipTimer.current)
+    tipTimer.current = setTimeout(() => setTip(null), 3000)
+  }
 
   let acc = 0
   const arcs = segments.map((seg) => {
@@ -40,6 +49,8 @@ function Donut({ segments, centerValue, centerLabel, size = 104, stroke = 18 }) 
         onMouseEnter={(e) => setTip({ x: e.clientX, y: e.clientY, text })}
         onMouseMove={(e) => setTip({ x: e.clientX, y: e.clientY, text })}
         onMouseLeave={() => setTip(null)}
+        onClick={(e) => tapTip(e, text)}
+        onTouchStart={(e) => tapTip(e, text)}
       />
     )
     acc += len
