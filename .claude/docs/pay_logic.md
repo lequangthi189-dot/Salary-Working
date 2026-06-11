@@ -73,18 +73,19 @@ Lương chốt ngày 25 hằng tháng. Công của "tháng M" = **26 của thán
 - `formatMoney(n)` → làm tròn rồi format theo locale `vi-VN` (vd `285.600`).
 - `formatHours(h)` → tối đa 2 chữ số thập phân, bỏ số 0 thừa.
 
-## Quy tắc trong SPEC nhưng CHƯA được code (cần xác nhận trước khi làm)
+## Quy tắc nâng cao trong SPEC
 
-> ⚠️ Code hiện tại KHÔNG implement những mục dưới đây. Đừng giả định chúng tồn tại.
+> Trạng thái cập nhật: **Giới hạn 8 giờ/ngày** và **Lương lễ** đều ĐÃ được code (xem chi tiết bên dưới). Mục còn lại là quy ước, không phải tính năng phải code.
 
 - ~~**Giới hạn 8 giờ/ngày**~~ — ĐÃ IMPLEMENT (validation, không cắt giờ ngầm):
   - Hằng số `MAX_HOURS_PER_DAY = 8` trong `shiftMath.js`.
   - `App.jsx` chặn khi thêm/sửa ca nếu **tổng giờ trong ngày** (cộng dồn các ca cùng `work_date`, dùng `computeEffective(...).decimalHours`) vượt 8 → trả chuỗi lỗi, không ghi DB.
   - `ShiftForm.jsx` cảnh báo sớm + disable nút khi **một ca** > 8h.
-- **Lương lễ (holiday)**:
-  - Lễ ca ngày: `DAY_RATE * giờ_thập_phân * 300%`.
-  - Lễ ca đêm: `NIGHT_RATE * giờ_thập_phân * 390%`.
-  - Hiện chưa có cờ "ngày lễ" trong DB (`shifts` không có cột này) lẫn trong UI/logic.
+- ~~**Lương lễ (holiday)**~~ — ĐÃ IMPLEMENT (phụ cấp lễ là BỘI SỐ trên đơn giá, theo hồ sơ):
+  - Lễ ca ngày: `getHolidayDayRate() = lương_ngày × holidayDayPct%` (mặc định hồ sơ 300%).
+  - Lễ ca đêm: `getHolidayNightRate() = (lương_ngày × (1+nightPct/100)) × holidayNightPct%` (mặc định 390%) — cộng dồn phụ cấp đêm thường rồi mới nhân bội số lễ.
+  - Cờ ngày lễ lưu ở cột `shifts.is_holiday` (boolean). UI bật/tắt ở `ShiftForm.jsx`/`ShiftCard.jsx`; % lễ cấu hình ở `EmployeeInfoForm.jsx`/`ProfileModal.jsx` (cột `profiles.holiday_day_pct`/`holiday_night_pct`).
+  - `computeShift`/`computeEffective` nhận tham số `isHoliday`; `shiftTotals`/`periodStats` đọc `!!s.is_holiday`. Test trong `shiftMath.test.js` (describe `lương lễ (holiday pay)`).
+  - **Lưu ý quirk**: trong `periodStats`, `dayPay`/`nightPay` luôn tách theo đơn giá THƯỜNG (`getDayRate()`/`getNightRate()`), nên với ca lễ thì `dayPay + nightPay ≠ pay` (`pay` tổng dùng giá lễ). Đây là chủ ý: hai trường đó chỉ để hiển thị cơ cấu giờ ngày/đêm.
+  - Mặc định khi hồ sơ CHƯA cấu hình: `holidayDayPct = holidayNightPct = 100` (×1 = như ngày thường), tránh trả 0.
 - **Khái niệm Ca 1 / Ca 2 / Ca đêm cố định** (06–14 / 14–22 / 22–06): code không phân loại theo ca đặt tên, chỉ tách phút ngày/đêm theo cửa sổ. Mọi giờ tuỳ ý đều hợp lệ.
-
-Khi implement các mục này: cập nhật `rates.js` (hệ số lễ), `computeShift` (tham số `isHoliday`), schema `shifts` (cột `is_holiday`), và bổ sung test tương ứng.

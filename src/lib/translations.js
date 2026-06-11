@@ -331,11 +331,17 @@ export const translations = {
     'chat.intro': 'Hi! Ask me, e.g. "How many shifts to reach 3,000,000?"',
     'chat.placeholder': 'Ask about your salary…',
     'chat.send': 'Send',
-    'chat.estimateResult':
-      'Target {target}: you have {current}, need {remaining} more. At ~{avg}/shift → about {shifts} more shift(s) (~{hours}h).',
+    'chat.estHeader':
+      '🎯 Target {target}: you have {current}, {remaining} to go.',
+    'chat.estDayLine':
+      '• Working DAY hours (at {rate}/h): about {hours}h needed.',
+    'chat.estNightLine':
+      '• Working NIGHT hours (at {rate}/h): about {hours}h needed.',
+    'chat.estMix':
+      'Or mix both — the total hours fall between these two.',
     'chat.alreadyReached': 'You already reached {target}! 🎉',
-    'chat.noHistory':
-      'Not enough shift history to estimate. Log a few shifts first.',
+    'chat.noRate':
+      "You haven't set your hourly wage in your profile yet, so I can't estimate. Please update it and ask again.",
     'chat.error': 'Sorry, something went wrong. Please try again.',
 
     // lib: period label + lost breakdown
@@ -674,11 +680,17 @@ export const translations = {
     'chat.intro': 'Chào! Hỏi mình nhé, vd "Cần làm bao nhiêu ca để được 3.000.000?"',
     'chat.placeholder': 'Hỏi về lương của bạn…',
     'chat.send': 'Gửi',
-    'chat.estimateResult':
-      'Mục tiêu {target}: bạn đang có {current}, cần thêm {remaining}. Trung bình ~{avg}/ca → cần khoảng {shifts} ca nữa (~{hours}h).',
+    'chat.estHeader':
+      '🎯 Mục tiêu {target}: bạn đang có {current}, còn thiếu {remaining}.',
+    'chat.estDayLine':
+      '• Làm ca NGÀY ({rate}/giờ): cần khoảng {hours} giờ.',
+    'chat.estNightLine':
+      '• Làm ca ĐÊM ({rate}/giờ): cần khoảng {hours} giờ.',
+    'chat.estMix':
+      'Hoặc kết hợp cả hai — tổng số giờ sẽ nằm giữa hai mức trên.',
     'chat.alreadyReached': 'Bạn đã đạt {target} rồi! 🎉',
-    'chat.noHistory':
-      'Chưa đủ lịch sử ca để ước tính. Hãy chấm công vài ca trước đã.',
+    'chat.noRate':
+      'Bạn chưa đặt "lương 1 giờ" trong hồ sơ nên mình chưa tính được. Hãy cập nhật rồi hỏi lại nhé.',
     'chat.error': 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.',
 
     // lib: period label + lost breakdown

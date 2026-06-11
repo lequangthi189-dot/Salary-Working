@@ -24,24 +24,42 @@ export default function SalaryChat({ snapshot, onClose }) {
     listRef.current?.scrollTo(0, listRef.current.scrollHeight)
   }, [messages, busy])
 
-  // Tính số ca/giờ cần làm để đạt mục tiêu (CODE, không để AI tính).
+  // Tính số GIỜ cần làm để đạt mục tiêu, dựa trên LƯƠNG 1 GIỜ (đơn giá ngày/đêm) —
+  // CODE tính, không để AI tính. Trả về: cần ~X giờ nếu làm toàn ca ngày, ~Y giờ nếu
+  // làm toàn ca đêm (đêm trả cao hơn → cần ít giờ hơn), hoặc kết hợp (tổng giờ nằm giữa).
   function buildEstimate(target) {
     const cur = snapshot.currentPay || 0
     const remaining = Math.max(0, target - cur)
-    if (remaining <= 0) return t('chat.alreadyReached', { target: formatMoney(target) })
-    if (!snapshot.avgPerShift) return t('chat.noHistory')
-    const shifts = Math.ceil(remaining / snapshot.avgPerShift)
-    const hours = snapshot.avgHoursPerShift
-      ? Math.round(shifts * snapshot.avgHoursPerShift * 10) / 10
-      : '—'
-    return t('chat.estimateResult', {
-      target: formatMoney(target),
-      current: formatMoney(cur),
-      remaining: formatMoney(remaining),
-      avg: formatMoney(snapshot.avgPerShift),
-      shifts,
-      hours,
-    })
+    if (remaining <= 0)
+      return t('chat.alreadyReached', { target: formatMoney(target) })
+    const dayRate = snapshot.dayRate || 0
+    if (!dayRate) return t('chat.noRate')
+
+    const ceil1 = (h) => Math.ceil(h * 10) / 10 // làm tròn LÊN 0.1h để đủ mục tiêu
+    const nightRate = snapshot.nightRate || 0
+    const hasNight = snapshot.hasNightShift && nightRate > dayRate
+
+    const lines = [
+      t('chat.estHeader', {
+        target: formatMoney(target),
+        current: formatMoney(cur),
+        remaining: formatMoney(remaining),
+      }),
+      t('chat.estDayLine', {
+        rate: formatMoney(dayRate),
+        hours: ceil1(remaining / dayRate),
+      }),
+    ]
+    if (hasNight) {
+      lines.push(
+        t('chat.estNightLine', {
+          rate: formatMoney(nightRate),
+          hours: ceil1(remaining / nightRate),
+        })
+      )
+      lines.push(t('chat.estMix'))
+    }
+    return lines.join('\n')
   }
 
   async function send() {

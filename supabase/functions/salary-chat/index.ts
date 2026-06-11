@@ -31,8 +31,8 @@ const SCHEMA = {
 }
 
 const SYSTEM = `Bạn là TRỢ LÝ LƯƠNG của một app chấm công. Trả lời NGẮN GỌN, thân thiện, bằng ĐÚNG ngôn ngữ của câu hỏi (Việt hoặc Anh).
-Người dùng được cung cấp SỐ LIỆU thật (lương kỳ này, lương trung bình mỗi ca, giờ trung bình mỗi ca). Tuyệt đối KHÔNG bịa số; chỉ dùng số liệu được cung cấp.
-- Nếu người dùng hỏi kiểu "cần làm bao nhiêu ca / bao nhiêu nữa để ĐẠT/NHẬN được X tiền", hãy đặt field "target" = X (chỉ chữ số, đơn vị VND, vd "3000000"), và để "reply" là một câu mở đầu ngắn (vd "Để đạt mục tiêu đó:"). KHÔNG tự tính số ca trong reply — app sẽ tự tính chính xác.
+Người dùng được cung cấp SỐ LIỆU thật (lương kỳ này, đơn giá lương 1 giờ ca ngày và ca đêm, lương/giờ trung bình mỗi ca). Tuyệt đối KHÔNG bịa số; chỉ dùng số liệu được cung cấp.
+- Nếu người dùng hỏi kiểu "cần làm bao nhiêu ca / bao nhiêu giờ / bao nhiêu nữa để ĐẠT/NHẬN được X tiền", hãy đặt field "target" = X (chỉ chữ số, đơn vị VND, vd "3000000"), và để "reply" là một câu mở đầu ngắn (vd "Để đạt mục tiêu đó:"). KHÔNG tự tính trong reply — app sẽ tự tính chính xác số GIỜ ngày/đêm cần làm dựa trên lương 1 giờ.
 - Nếu là câu hỏi chung (vd "tôi đang được bao nhiêu", "trung bình mỗi ca bao nhiêu"), trả lời thẳng trong "reply" dựa trên số liệu, và đặt "target" = "".
 - Nếu không liên quan lương, lịch sự từ chối ngắn gọn, "target" = "".`
 
@@ -46,6 +46,9 @@ Deno.serve(async (req: Request) => {
     lang?: string
     snapshot?: {
       currentPay?: number
+      dayRate?: number
+      nightRate?: number
+      hasNightShift?: boolean
       avgPerShift?: number
       avgHoursPerShift?: number
       shiftCount?: number
@@ -62,6 +65,9 @@ Deno.serve(async (req: Request) => {
 
   const context =
     `Số liệu của tôi: lương kỳ này = ${Math.round(s.currentPay || 0)} VND; ` +
+    `lương 1 giờ ca ngày = ${Math.round(s.dayRate || 0)} VND; ` +
+    `lương 1 giờ ca đêm = ${Math.round(s.nightRate || 0)} VND` +
+    `${s.hasNightShift === false ? ' (cửa hàng không có ca đêm)' : ''}; ` +
     `lương trung bình mỗi ca = ${Math.round(s.avgPerShift || 0)} VND; ` +
     `giờ trung bình mỗi ca = ${s.avgHoursPerShift || 0}; ` +
     `số ca đã làm = ${s.shiftCount || 0}.\n` +

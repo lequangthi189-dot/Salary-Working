@@ -25,6 +25,7 @@ import { usePayrolls } from './controllers/usePayrolls.js'
 import { useDeductions } from './controllers/useDeductions.js'
 import { useProfile } from './controllers/useProfile.js'
 import { periodStats } from './lib/shiftMath.js'
+import { getDayRate, getNightRate } from './lib/rates.js'
 import {
   pendingPeriodKey,
   visibleBoardShifts,
@@ -185,17 +186,21 @@ export default function App() {
   )
   const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
   const currentDeductionTotal = sumDeductions(currentDeductions)
-  // Số liệu cho Trợ lý lương: lương kỳ này + TB mỗi ca theo TOÀN BỘ lịch sử.
+  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
+  const hasNightShift = profile?.has_night_shift !== false
+  // Số liệu cho Trợ lý lương: lương kỳ này + ĐƠN GIÁ 1 GIỜ ngày/đêm (để tính số GIỜ
+  // cần làm theo lương 1 giờ) + TB mỗi ca (cho câu hỏi chung).
   const allStats = periodStats(shifts)
   const allShiftCount = allStats.dayShiftCount + allStats.nightShiftCount
   const chatSnapshot = {
     currentPay: monthStats.pay - currentDeductionTotal,
+    dayRate: getDayRate(),
+    nightRate: getNightRate(),
+    hasNightShift,
     avgPerShift: allShiftCount ? allStats.pay / allShiftCount : 0,
     avgHoursPerShift: allShiftCount ? allStats.hours / allShiftCount : 0,
     shiftCount: allShiftCount,
   }
-  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
-  const hasNightShift = profile?.has_night_shift !== false
   const schedByDate = buildSchedByDate(shifts)
   const salaryDue = isSalaryDue(pendingKey, profile?.payday, paymentWindow)
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt

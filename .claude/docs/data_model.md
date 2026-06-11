@@ -13,6 +13,7 @@ Nguồn: `supabase/schema.sql`. Backend là Supabase (Postgres + Auth). Chạy f
 | `end_time` | `time` | nullable (giờ chấm công thực tế — kết thúc; `null` = ca lịch dự kiến chưa chấm công) |
 | `scheduled_start` | `time` | nullable (giờ ca chuẩn theo lịch — bắt đầu) |
 | `scheduled_end` | `time` | nullable (giờ ca chuẩn theo lịch — kết thúc) |
+| `is_holiday` | `boolean` | `not null`, `default false` (ca ngày lễ → tính theo đơn giá lễ) |
 | `hide_at` | `timestamptz` | nullable (ca nhập từ ảnh lịch tuần: MỐC ẨN, không xoá; `null` = nhập tay) |
 | `created_at` | `timestamptz` | `not null`, `default now()` |
 
@@ -20,7 +21,7 @@ Lưu ý:
 - DB **chỉ lưu thời gian thô**. `decimalHours`, `dayHours`, `nightHours`, `pay`, giờ bị mất KHÔNG lưu — luôn tính lại ở client qua `computeShift`/`computeEffective` (xem `pay_logic.md`).
 - `start_time`/`end_time`/`scheduled_*` từ Supabase trả về dạng `"HH:MM:SS"`; client cắt còn `"HH:MM"` bằng helper `hhmm()` trước khi tính.
 - `scheduled_start`/`scheduled_end` để **so với giờ thực tế và tính "giờ bị mất"** khi chấm công không đúng giờ. Nullable để tương thích với các ca cũ chưa có ca chuẩn — khi thiếu, `computeLost` trả về 0. Schema dùng `add column if not exists` để nâng cấp DB cũ.
-- Không có cột phân biệt ngày lễ → tính năng lương lễ vẫn chưa được hỗ trợ ở tầng dữ liệu.
+- `is_holiday` (`boolean`, `not null default false`): ca rơi vào ngày lễ → tính theo đơn giá lễ (phụ cấp `holiday_day_pct`/`holiday_night_pct` trong `profiles`). Schema dùng `add column if not exists` để nâng cấp DB cũ.
 - `hide_at` (trước đây tên `auto_delete_at`): ca tạo từ "Nhập lịch tuần" được gắn mốc = 12:00 trưa Thứ 2 tuần kế tiếp làm **MỐC ẨN** (không còn tự xoá). Qua mốc này, client **ẩn** ca khỏi bảng công ngày (`visibleShifts` trong `App.jsx` lọc `hide_at <= now()`) nhưng dữ liệu vẫn nằm trong `shifts` để `PayPeriodPanel` tổng hợp vào kỳ lương. Lưu mốc ở DB nên ẩn nhất quán trên mọi thiết bị; ca nhập tay để `null` nên luôn hiển thị. Ca lịch dự kiến chỉ có `scheduled_*` (chưa chấm công) đóng góp 0 vào lương cho tới khi nhập `start_time`/`end_time`. Schema dùng khối `do $$` để đổi tên cột cũ an toàn (idempotent).
 
 ## Bảng `public.profiles`
