@@ -2029,6 +2029,10 @@ input.t-out {
   margin-top: 0.5rem;
   overflow-x: auto; /* cuộn ngang trên mobile thay vì vỡ layout */
 }
+.tt-weeks {
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
 .tt-table {
   width: 100%;
   border-collapse: collapse;
