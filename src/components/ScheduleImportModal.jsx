@@ -69,21 +69,22 @@ export default function ScheduleImportModal({
     return new Promise((resolve) => setConfirmState({ message, resolve }))
   }
 
-  // Tạo bảng tuần TRỐNG để nhập giờ lịch dự kiến bằng tay (không cần ảnh). Mặc
-  // định tuần hiện tại (Thứ 2 → Chủ nhật); người dùng sửa ngày/giờ rồi tạo ca.
+  // Một dòng trống để nhập tay: ngày (mặc định hôm nay) + giờ lịch dự kiến.
+  function blankRow() {
+    return { weekday: 'm', date: localTodayStr(), start: '', end: '', off: false }
+  }
+
+  // Nhập giờ lịch dự kiến bằng tay (không cần ảnh): bắt đầu với ĐÚNG MỘT dòng;
+  // bấm "Thêm dòng" nếu muốn nhập nhiều ngày.
   function startManual() {
     setError(null)
     setInfo(null)
     setManual(true)
-    setRows(
-      WEEKDAYS.map((wd, i) => ({
-        weekday: wd,
-        date: addDays(weekStart, i),
-        start: '',
-        end: '',
-        off: false,
-      }))
-    )
+    setRows([blankRow()])
+  }
+
+  function addRow() {
+    setRows((prev) => [...(prev || []), blankRow()])
   }
 
   function pickFile(e) {
@@ -272,7 +273,7 @@ export default function ScheduleImportModal({
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={r.weekday} className={r.off ? 'off' : ''}>
+                  <tr key={i} className={r.off ? 'off' : ''}>
                     {!manual && <td>{t(`wd.${r.weekday}`)}</td>}
                     <td>
                       <input
@@ -313,6 +314,11 @@ export default function ScheduleImportModal({
             </div>
 
             <div className="import-actions">
+              {manual && (
+                <button type="button" className="account-btn" onClick={addRow}>
+                  {t('import.addRow')}
+                </button>
+              )}
               <button
                 type="button"
                 className="btn-addshift"
