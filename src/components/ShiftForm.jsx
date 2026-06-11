@@ -70,6 +70,28 @@ export default function ShiftForm({
     if (err) setError(err)
   }
 
+  // Thêm CA DỰ KIẾN: chỉ lưu giờ lịch (Sched), bỏ trống giờ chấm công thực tế
+  // (start/end = null) → ca chưa chấm công, đóng góp 0 vào lương cho tới khi nhập
+  // giờ thực. Dùng để bổ sung tay 1 ngày dự kiến vào lịch (vd ngoài ảnh đã đọc).
+  async function handleAddPlanned() {
+    setError(null)
+    if (!workDate) {
+      setError(t('shiftForm.pickDate'))
+      return
+    }
+    setBusy(true)
+    const err = await onAdd({
+      work_date: workDate,
+      start_time: null,
+      end_time: null,
+      scheduled_start: schedStart,
+      scheduled_end: schedEnd,
+      is_holiday: isHoliday,
+    })
+    setBusy(false)
+    if (err) setError(err)
+  }
+
   return (
     <form className="shift-form" onSubmit={handleSubmit}>
       <h2 className="form-title">{t('shiftForm.title')}</h2>
@@ -109,16 +131,27 @@ export default function ShiftForm({
       </div>
 
       {!hasSched && (
-        <div className="fields scheduled">
-          <label>
-            {t('shiftForm.schedStart')}
-            <TimeInput value={schedStart} onChange={setSchedStart} />
-          </label>
-          <label>
-            {t('shiftForm.schedEnd')}
-            <TimeInput value={schedEnd} onChange={setSchedEnd} />
-          </label>
-        </div>
+        <>
+          <div className="fields scheduled">
+            <label>
+              {t('shiftForm.schedStart')}
+              <TimeInput value={schedStart} onChange={setSchedStart} />
+            </label>
+            <label>
+              {t('shiftForm.schedEnd')}
+              <TimeInput value={schedEnd} onChange={setSchedEnd} />
+            </label>
+          </div>
+          <button
+            type="button"
+            className="account-btn full btn-add-planned"
+            onClick={handleAddPlanned}
+            disabled={busy}
+          >
+            {t('shiftForm.addPlanned')}
+          </button>
+          <p className="planned-hint">{t('shiftForm.addPlannedHint')}</p>
+        </>
       )}
 
       {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập */}

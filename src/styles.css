@@ -1086,6 +1086,15 @@ button[type='submit']:disabled {
     grid-template-columns: 1fr;
   }
 }
+/* Nút "Chỉ thêm lịch dự kiến" + gợi ý ngay dưới ô Sched. start/end */
+.shift-form .btn-add-planned {
+  margin-top: 0.4rem;
+}
+.shift-form .planned-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted, #888);
+}
 
 /* ---- Khối chính: Nhập ca (trái 40%) + Thống kê (phải 60%) ----
    Dùng 2fr/3fr (≈40/60) + minmax(0,…) để gap không làm tràn, card không giãn quá. */
