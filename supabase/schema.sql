@@ -93,6 +93,7 @@ create table if not exists public.profiles (
   holiday_day_pct integer,
   holiday_night_pct integer,
   has_night_shift boolean not null default true,
+  lang text,
   email_confirmed boolean not null default false,
   phone_confirmed boolean not null default false,
   created_at timestamptz not null default now()
@@ -110,6 +111,8 @@ alter table public.profiles add column if not exists holiday_night_pct integer;
 alter table public.profiles add column if not exists has_night_shift boolean not null default true;
 alter table public.profiles add column if not exists email_confirmed boolean not null default false;
 alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
+-- Ngôn ngữ ưa thích của người dùng (vi/en/us/au) — đăng nhập lại giữ đúng ngôn ngữ.
+alter table public.profiles add column if not exists lang text;
 
 alter table public.profiles enable row level security;
 

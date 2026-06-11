@@ -41,7 +41,7 @@ import {
 } from './lib/payPeriod.js'
 
 export default function App() {
-  const { t } = useI18n()
+  const { t, lang, setLang } = useI18n()
   const { updatedAt: fxUpdatedAt } = useCurrency()
   const { session, loading, signOut, recovery, endRecovery, switchAccount } =
     useAuth()
@@ -128,6 +128,22 @@ export default function App() {
     setShowPaydayPrompt,
     skipPayday,
   } = useProfile(session)
+
+  // Khi hồ sơ nạp xong (đăng nhập), áp dụng ngôn ngữ đã lưu theo tài khoản. Nhờ
+  // vậy đăng nhập lại (kể cả máy khác) giữ đúng ngôn ngữ người dùng đã chọn.
+  useEffect(() => {
+    const saved = profile?.lang
+    if (saved && ['vi', 'en', 'us', 'au'].includes(saved) && saved !== lang) {
+      setLang(saved)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.lang])
+
+  // Đổi ngôn ngữ khi đã đăng nhập: đổi tại chỗ + lưu vào hồ sơ (để lần sau giữ).
+  function changeLang(code) {
+    setLang(code)
+    if (profile) saveProfileFields({ lang: code })
+  }
 
   // Đánh dấu kỳ đang chờ nhận = đã nhận (ngày nhận = hôm nay).
   async function receiveSalary() {
@@ -309,7 +325,7 @@ export default function App() {
               <button type="button" onClick={() => openFromSidebar(setShowWelcome)}>
                 {t('nav.guide')}
               </button>
-              <LangToggle up />
+              <LangToggle up onPick={changeLang} />
             </div>
           </aside>
         </div>
