@@ -1907,7 +1907,7 @@ input.t-out {
 .stats-donuts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem 0.75rem;
+  gap: 0.5rem 0.75rem;
 }
 .donut-block {
   display: flex;
@@ -1925,7 +1925,7 @@ input.t-out {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.2rem;
 }
 .donut {
   max-width: 100%;
@@ -1933,7 +1933,7 @@ input.t-out {
 }
 .donut-center-val {
   fill: var(--text);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 .donut-center-label {
@@ -1966,9 +1966,9 @@ input.t-out {
 .chart-legend {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  margin-top: 0.45rem;
-  font-size: 0.72rem;
+  gap: 0.12rem;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
   color: var(--muted);
 }
 .legend-item {
@@ -2063,7 +2063,7 @@ input.t-out {
 
 /* Nút mở popup Bảng công chi tiết trong popup kỳ lương */
 .detail-sheet-btn {
-  margin-top: 0.8rem;
+  margin-top: 0.5rem;
 }
 
 /* ---- Popup Nhập tay lịch dự kiến: lưới co giãn, KHÔNG cuộn ngang ---- */

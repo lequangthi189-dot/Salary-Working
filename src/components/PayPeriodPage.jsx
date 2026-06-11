@@ -12,7 +12,7 @@ import { useI18n } from '../lib/i18n.jsx'
 
 // Biểu đồ tròn (donut) tự vẽ bằng SVG — chỉ hiện SỐ TỔNG ở giữa; chi tiết xem ở
 // chú thích bên dưới (không nhãn trong lát).
-function Donut({ segments, centerValue, centerLabel, size = 128, stroke = 22 }) {
+function Donut({ segments, centerValue, centerLabel, size = 104, stroke = 18 }) {
   const total = segments.reduce((s, x) => s + x.value, 0)
   const r = (size - stroke) / 2
   const circ = 2 * Math.PI * r
