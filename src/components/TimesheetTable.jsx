@@ -92,10 +92,8 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
         <thead>
           <tr>
             <th>{t('tt.date')}</th>
-            <th className="tt-sched">{t('tt.schedIn')}</th>
-            <th className="tt-sched">{t('tt.schedOut')}</th>
-            <th>{t('tt.in')}</th>
-            <th>{t('tt.out')}</th>
+            <th className="tt-sched">{t('tt.sched')}</th>
+            <th>{t('tt.actual')}</th>
             <th>{t('tt.dayH')}</th>
             {hasNightShift && <th>{t('tt.nightH')}</th>}
             <th>{t('tt.late')}</th>
@@ -115,13 +113,12 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
             )
             const schedIn = hhmm(s.scheduled_start)
             const schedOut = hhmm(s.scheduled_end)
+            const sched = schedIn || schedOut ? `${schedIn || '—'}–${schedOut || '—'}` : '—'
             return (
               <tr key={s.id}>
                 <td>{dm(s.work_date)}</td>
-                <td className="tt-sched">{schedIn || '—'}</td>
-                <td className="tt-sched">{schedOut || '—'}</td>
-                <td>{start}</td>
-                <td>{end || '—'}</td>
+                <td className="tt-sched">{sched}</td>
+                <td>{`${start}–${end || '—'}`}</td>
                 <td>{eff.dayHours > 0 ? formatHours(eff.dayHours) : '—'}</td>
                 {hasNightShift && (
                   <td>{eff.nightHours > 0 ? formatHours(eff.nightHours) : '—'}</td>
@@ -137,7 +134,7 @@ export default function TimesheetTable({ shifts, hasNightShift = true }) {
         <tfoot>
           <tr>
             <td>{t('tt.total')}</td>
-            <td colSpan={4}>{formatHours(totals.hours)} h</td>
+            <td colSpan={2}>{formatHours(totals.hours)} h</td>
             <td>{formatHours(totals.dayHours)}</td>
             {hasNightShift && <td>{formatHours(totals.nightHours)}</td>}
             <td className={totals.lostHours > 0 ? 'lost' : undefined}>
