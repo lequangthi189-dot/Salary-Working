@@ -21,6 +21,7 @@ export const translations = {
 
     // nav / app
     "nav.importWeek": "Import weekly schedule",
+    "nav.tools": "Tools",
     "nav.payPeriod": "Pay period",
     "nav.account": "Account",
     "nav.guide": "Guide",
@@ -393,6 +394,7 @@ export const translations = {
 
     // nav / app
     "nav.importWeek": "Nhập lịch tuần",
+    "nav.tools": "Công cụ",
     "nav.payPeriod": "Kỳ lương",
     "nav.account": "Tài khoản",
     "nav.guide": "Hướng dẫn",
