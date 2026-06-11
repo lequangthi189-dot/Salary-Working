@@ -714,6 +714,11 @@ button[type='submit']:disabled {
   min-width: 180px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
+/* căn phải cho dropdown ở header bên phải, tránh tràn mép màn hình */
+.dropdown-menu.right {
+  left: auto;
+  right: 0;
+}
 .dropdown-menu button {
   text-align: left;
   background: none;

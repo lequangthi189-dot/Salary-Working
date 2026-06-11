@@ -55,6 +55,7 @@ export default function App() {
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
   const [showSidebar, setShowSidebar] = useState(false)
   const [showTitleMenu, setShowTitleMenu] = useState(false)
+  const [showTools, setShowTools] = useState(false) // dropdown Nhập lịch/Đối chiếu
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
@@ -274,20 +275,45 @@ export default function App() {
           </div>
         </div>
         <div className="header-actions">
-          <button
-            type="button"
-            className="account-btn header-import"
-            onClick={() => setShowImport(true)}
-          >
-            {t('nav.importWeek')}
-          </button>
-          <button
-            type="button"
-            className="account-btn header-import"
-            onClick={() => setShowReconcile(true)}
-          >
-            {t('reconcile.title')}
-          </button>
+          <div className="title-menu">
+            <button
+              type="button"
+              className="account-btn header-import"
+              onClick={() => setShowTools((o) => !o)}
+              aria-haspopup="true"
+              aria-expanded={showTools}
+            >
+              {t('nav.tools')} <span className="title-caret">▾</span>
+            </button>
+            {showTools && (
+              <>
+                <div
+                  className="dropdown-overlay"
+                  onClick={() => setShowTools(false)}
+                />
+                <div className="dropdown-menu right" role="menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTools(false)
+                      setShowImport(true)
+                    }}
+                  >
+                    {t('nav.importWeek')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTools(false)
+                      setShowReconcile(true)
+                    }}
+                  >
+                    {t('reconcile.title')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
