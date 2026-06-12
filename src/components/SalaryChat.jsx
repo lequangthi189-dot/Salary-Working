@@ -146,6 +146,35 @@ function parseAddShift(msg) {
   return { date, start: times[0], end: times[1] }
 }
 
+// "thu 7"/"thu bay" → 6 (getDay Thứ 7), "chu nhat"/"cn" → 0. Null nếu không có.
+function matchWeekday(s) {
+  const map = { 2: 1, hai: 1, 3: 2, ba: 2, 4: 3, tu: 3, 5: 4, nam: 4, 6: 5, sau: 5, 7: 6, bay: 6 }
+  const m = s.match(/\bthu\s*(2|3|4|5|6|7|hai|ba|tu|nam|sau|bay)\b/)
+  if (m) return map[m[1]]
+  if (/\bchu nhat\b|\bcn\b/.test(s)) return 0
+  return null
+}
+
+// Cú pháp nói tắt: THỨ + LOẠI CA, vd "thứ 7 tôi có 1 ca đêm". Chỉ kích hoạt khi có
+// THỨ và KHÔNG phải câu hỏi (tránh nhầm câu tra cứu). Giờ mặc định: đêm 22:00–06:00,
+// ngày 06:00–14:00. Trả {date, start, end} hoặc null.
+function parseShiftShorthand(msg) {
+  const s = deaccent(msg)
+  if (/\?|khong/.test(s)) return null
+  const night = /ca dem/.test(s)
+  const day = /ca ngay/.test(s)
+  if (!night && !day) return null
+  const wd = matchWeekday(s)
+  if (wd == null) return null
+  const today = localTodayStr()
+  const [ty, tm, td] = today.split('-').map(Number)
+  const todayDow = new Date(ty, tm - 1, td).getDay()
+  const date = addDaysStr(today, (wd - todayDow + 7) % 7)
+  return night
+    ? { date, start: '22:00', end: '06:00' }
+    : { date, start: '06:00', end: '14:00' }
+}
+
 // Yêu cầu THÊM khoản trừ: cần từ khoá "trừ/bồi thường" + số tiền (≥1000 hoặc có
 // đơn vị) + lý do (sau "lý do"/"vì"/"do"). Ngày tuỳ chọn (mặc định hôm nay).
 function parseDeductionAdd(msg) {
@@ -472,6 +501,12 @@ export default function SalaryChat({
     const addReq = parseAddShift(msg)
     if (addReq) {
       await handleAddShift(addReq)
+      return
+    }
+    // Nói tắt: thứ + loại ca, vd "thứ 7 tôi có 1 ca đêm".
+    const shReq = parseShiftShorthand(msg)
+    if (shReq) {
+      await handleAddShift(shReq)
       return
     }
     // Bồi thường: thêm khoản trừ (ưu tiên trước hỏi-ngày vì câu có thể kèm ngày).
