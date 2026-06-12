@@ -261,5 +261,41 @@ create policy "delete own deductions"
   on public.deductions for delete
   using (auth.uid() = user_id);
 
+-- ===================== extra_income (thu nhập việc ngoài) =====================
+-- Khoản tiền từ việc làm thêm KHÔNG cố định: không theo giờ ngày/đêm, không nhân
+-- đơn giá. Chỉ gồm ngày + mô tả + số tiền (VND, số nguyên). Hoàn toàn TÁCH khỏi
+-- phép tính lương ca (shiftMath). amount: VND.
+create table if not exists public.extra_income (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  date date not null default current_date,
+  description text,
+  amount bigint not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table public.extra_income enable row level security;
+
+drop policy if exists "select own extra_income" on public.extra_income;
+create policy "select own extra_income"
+  on public.extra_income for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "insert own extra_income" on public.extra_income;
+create policy "insert own extra_income"
+  on public.extra_income for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "update own extra_income" on public.extra_income;
+create policy "update own extra_income"
+  on public.extra_income for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "delete own extra_income" on public.extra_income;
+create policy "delete own extra_income"
+  on public.extra_income for delete
+  using (auth.uid() = user_id);
+
 -- Làm mới cache schema của PostgREST.
 notify pgrst, 'reload schema';

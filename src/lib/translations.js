@@ -26,6 +26,7 @@ export const translations = {
     "nav.account": "Account",
     "nav.guide": "Guide",
     "nav.deductions": "Compensation",
+    "nav.extraIncome": "Extra income",
     "nav.openMenu": "Open menu",
     "nav.closeMenu": "Close menu",
     "lang.toggle": "Tiếng Việt",
@@ -140,6 +141,21 @@ export const translations = {
     "ded.dateErr": "Pick the deduction date.",
     "ded.empty": "No deductions in this period yet.",
     "ded.delAria": "Delete deduction",
+
+    // extra income (thu nhập việc ngoài)
+    "extra.title": "Extra income",
+    "extra.date": "Date",
+    "extra.desc": "Description",
+    "extra.amount": "Amount (VND)",
+    "extra.add": "+ Add",
+    "extra.empty": "No extra income in this period yet.",
+    "extra.amountErr": "Enter an amount (> 0).",
+    "extra.dateErr": "Pick a date.",
+    "extra.editAria": "Edit entry",
+    "extra.delAria": "Delete entry",
+    "extra.sumShift": "Shift pay",
+    "extra.sumExtra": "Extra income",
+    "extra.sumTotal": "Total",
 
     // pay period page
     "pp.scopeHint": "Tap a period to see its charts and full timesheet.",
@@ -435,6 +451,7 @@ export const translations = {
     "nav.account": "Tài khoản",
     "nav.guide": "Hướng dẫn",
     "nav.deductions": "Tiền bồi thường",
+    "nav.extraIncome": "Thu nhập việc ngoài",
     "nav.openMenu": "Mở menu",
     "nav.closeMenu": "Đóng menu",
     "lang.toggle": "English",
@@ -550,6 +567,21 @@ export const translations = {
     "ded.dateErr": "Chọn ngày bị trừ.",
     "ded.empty": "Chưa có khoản trừ nào trong kỳ này.",
     "ded.delAria": "Xóa khoản trừ",
+
+    // extra income (thu nhập việc ngoài)
+    "extra.title": "Thu nhập việc ngoài",
+    "extra.date": "Ngày",
+    "extra.desc": "Mô tả",
+    "extra.amount": "Số tiền (VND)",
+    "extra.add": "+ Thêm",
+    "extra.empty": "Kỳ này chưa có khoản việc ngoài nào.",
+    "extra.amountErr": "Nhập số tiền (> 0).",
+    "extra.dateErr": "Chọn ngày.",
+    "extra.editAria": "Sửa khoản",
+    "extra.delAria": "Xóa khoản",
+    "extra.sumShift": "Lương ca",
+    "extra.sumExtra": "Thu nhập việc ngoài",
+    "extra.sumTotal": "Tổng cộng",
 
     // pay period page
     "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ và bảng công chi tiết.",

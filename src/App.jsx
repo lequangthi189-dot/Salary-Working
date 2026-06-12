@@ -8,6 +8,7 @@ import Timesheet from './components/Timesheet.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import PayPeriodPage from './components/PayPeriodPage.jsx'
 import CompensationModal from './components/CompensationModal.jsx'
+import ExtraIncomeModal from './components/ExtraIncomeModal.jsx'
 import SalaryChat from './components/SalaryChat.jsx'
 import ChatbotAvatar from './components/ChatbotAvatar.jsx'
 import ScheduleImportModal from './components/ScheduleImportModal.jsx'
@@ -24,6 +25,7 @@ import { useCurrency } from './lib/currency.jsx'
 import { useShifts } from './controllers/useShifts.js'
 import { usePayrolls } from './controllers/usePayrolls.js'
 import { useDeductions } from './controllers/useDeductions.js'
+import { useExtraIncome } from './controllers/useExtraIncome.js'
 import { useProfile } from './controllers/useProfile.js'
 import { periodStats } from './lib/shiftMath.js'
 import { getDayRate, getNightRate } from './lib/rates.js'
@@ -51,6 +53,7 @@ export default function App() {
   const [showImport, setShowImport] = useState(false)
   const [showReconcile, setShowReconcile] = useState(false)
   const [showDeductions, setShowDeductions] = useState(false)
+  const [showExtraIncome, setShowExtraIncome] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
@@ -120,6 +123,12 @@ export default function App() {
     session,
     setLoadError
   )
+  const {
+    extraIncome,
+    addExtraIncome,
+    updateExtraIncome,
+    deleteExtraIncome,
+  } = useExtraIncome(session, setLoadError)
   const {
     profile,
     profileComplete,
@@ -264,6 +273,12 @@ export default function App() {
                   >
                     {t('nav.deductions')}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => openFromTitle(setShowExtraIncome)}
+                  >
+                    {t('nav.extraIncome')}
+                  </button>
                 </div>
               </>
             )}
@@ -397,6 +412,18 @@ export default function App() {
           onAdd={addDeduction}
           onDelete={deleteDeduction}
           onClose={() => setShowDeductions(false)}
+        />
+      )}
+
+      {showExtraIncome && (
+        <ExtraIncomeModal
+          periodKey={currentKey}
+          shiftPay={monthStats.pay}
+          extraIncome={extraIncome}
+          onAdd={addExtraIncome}
+          onUpdate={updateExtraIncome}
+          onDelete={deleteExtraIncome}
+          onClose={() => setShowExtraIncome(false)}
         />
       )}
 
