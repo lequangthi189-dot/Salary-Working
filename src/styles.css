@@ -1801,6 +1801,17 @@ input.t-out {
   border-radius: 999px;
   white-space: nowrap;
 }
+/* Ca đã qua ngày mà chưa chấm công — cảnh báo đỏ rõ */
+.overdue-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--danger);
+  border-radius: 999px;
+  white-space: nowrap;
+}
 .edit-fields {
   display: flex;
   flex-wrap: wrap;

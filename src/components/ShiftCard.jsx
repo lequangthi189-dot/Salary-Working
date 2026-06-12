@@ -143,9 +143,13 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   // Ca mới nhập từ lịch (chưa check-in/out) → hiện lịch dự kiến + nhãn "chưa check-in".
   const noActual = !s || !e
 
-  // Ca chưa chấm công ở TƯƠNG LAI = lịch dự kiến (amber); ở hôm nay/quá khứ = quên
-  // chấm công (đỏ, cảnh báo).
-  const isPlanned = noActual && shift.work_date > localTodayStr()
+  // Ca chưa chấm công:
+  //  - TƯƠNG LAI (> hôm nay) = lịch dự kiến → amber.
+  //  - ĐÃ QUA (< hôm nay) mà chưa chấm = QUÁ HẠN → cảnh báo đỏ rõ.
+  //  - HÔM NAY = chưa check-in (đỏ nhẹ, vẫn còn kịp).
+  const today = localTodayStr()
+  const isPlanned = noActual && shift.work_date > today
+  const isOverdue = noActual && shift.work_date < today
 
   return (
     <div
@@ -161,6 +165,8 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
             <span className="t-out muted">{schedE || '—'}</span>
             {isPlanned ? (
               <span className="planned-badge">{t('shiftCard.plannedBadge')}</span>
+            ) : isOverdue ? (
+              <span className="overdue-badge">{t('shiftCard.overdueBadge')}</span>
             ) : (
               <span className="next-day"> {t('shiftCard.notCheckedIn')}</span>
             )}
