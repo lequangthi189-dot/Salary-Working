@@ -58,7 +58,6 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
   const [showSidebar, setShowSidebar] = useState(false)
-  const [showTitleMenu, setShowTitleMenu] = useState(false)
   const [showTools, setShowTools] = useState(false) // dropdown Nhập lịch/Đối chiếu
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
@@ -99,12 +98,6 @@ export default function App() {
   // Mở một mục từ sidebar rồi đóng sidebar lại.
   function openFromSidebar(setter) {
     setShowSidebar(false)
-    setter(true)
-  }
-
-  // Mở một mục từ dropdown tiêu đề rồi đóng dropdown lại.
-  function openFromTitle(setter) {
-    setShowTitleMenu(false)
     setter(true)
   }
 
@@ -249,40 +242,7 @@ export default function App() {
           >
             <img className="app-logo" src="/logo.svg" alt="Salary Working logo" />
           </button>
-          <div className="title-menu">
-            <button
-              type="button"
-              className="title-btn"
-              onClick={() => setShowTitleMenu((o) => !o)}
-              aria-expanded={showTitleMenu}
-              aria-haspopup="true"
-            >
-              <h1>Salary Working</h1>
-              <span className="title-caret">▾</span>
-            </button>
-            {showTitleMenu && (
-              <>
-                <div
-                  className="dropdown-overlay"
-                  onClick={() => setShowTitleMenu(false)}
-                />
-                <div className="dropdown-menu" role="menu">
-                  <button
-                    type="button"
-                    onClick={() => openFromTitle(setShowDeductions)}
-                  >
-                    {t('nav.deductions')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openFromTitle(setShowExtraIncome)}
-                  >
-                    {t('nav.extraIncome')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <h1 className="app-title">Salary Working</h1>
         </div>
         <div className="header-actions">
           <div className="title-menu">
@@ -319,6 +279,24 @@ export default function App() {
                     }}
                   >
                     {t('reconcile.title')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTools(false)
+                      setShowDeductions(true)
+                    }}
+                  >
+                    {t('nav.deductions')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTools(false)
+                      setShowExtraIncome(true)
+                    }}
+                  >
+                    {t('nav.extraIncome')}
                   </button>
                 </div>
               </>
