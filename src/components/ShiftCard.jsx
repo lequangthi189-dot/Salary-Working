@@ -6,6 +6,7 @@ import {
   formatLost,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
+import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
 
 function hhmm(v) {
@@ -142,15 +143,27 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   // Ca mới nhập từ lịch (chưa check-in/out) → hiện lịch dự kiến + nhãn "chưa check-in".
   const noActual = !s || !e
 
+  // Ca chưa chấm công ở TƯƠNG LAI = lịch dự kiến (amber); ở hôm nay/quá khứ = quên
+  // chấm công (đỏ, cảnh báo).
+  const isPlanned = noActual && shift.work_date > localTodayStr()
+
   return (
-    <div className={`shift-card${noActual ? ' not-checked-in' : ''}`}>
+    <div
+      className={`shift-card${
+        noActual ? (isPlanned ? ' planned' : ' not-checked-in') : ''
+      }`}
+    >
       <div className="shift-times">
         {noActual ? (
           <>
             <span className="t-in muted">{schedS || '—'}</span>
             <span className="dash"> – </span>
             <span className="t-out muted">{schedE || '—'}</span>
-            <span className="next-day"> {t('shiftCard.notCheckedIn')}</span>
+            {isPlanned ? (
+              <span className="planned-badge">{t('shiftCard.plannedBadge')}</span>
+            ) : (
+              <span className="next-day"> {t('shiftCard.notCheckedIn')}</span>
+            )}
           </>
         ) : (
           <>

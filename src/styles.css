@@ -1785,6 +1785,22 @@ input.t-out {
   color: #ff3b3b;
   font-weight: 700;
 }
+/* Ca dự kiến (tương lai, chưa chấm công) — amber, phân biệt với cảnh báo đỏ */
+.shift-card.planned {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.12);
+}
+.planned-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--checkin);
+  background: rgba(255, 159, 67, 0.18);
+  border: 1px solid var(--checkin);
+  border-radius: 999px;
+  white-space: nowrap;
+}
 .edit-fields {
   display: flex;
   flex-wrap: wrap;

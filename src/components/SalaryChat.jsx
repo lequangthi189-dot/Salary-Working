@@ -122,30 +122,6 @@ function findTimes(s) {
   return out
 }
 
-// Yêu cầu THÊM CA: "thêm ca ngày 15/6 22:00 đến 06:00". Cần từ khoá + ngày + 2 mốc
-// giờ. Ngày tương lai → trả về để lưu thành lịch dự kiến.
-function parseAddShift(msg) {
-  const s = deaccent(msg)
-  // Động từ + đối tượng (cho phép từ chen giữa: "thêm một ca", "tạo ca").
-  if (!/(them|tao|dang ky|add)/.test(s)) return null
-  if (!/(ca|lich|shift)/.test(s)) return null
-  const times = findTimes(s)
-  if (times.length < 2) return null
-  // Ngày: ưu tiên DD/MM hoặc "ngày D tháng M"; nếu không, lấy SỐ NGÀY trần (tháng
-  // hiện tại) sau khi đã loại các mốc giờ. Không có ngày → mặc định hôm nay.
-  let date = parseDayReq(msg, false)
-  if (!date) {
-    const noTimes = s.replace(/\d{1,2}\s*(?::|h|gio)\s*\d{0,2}/g, ' ')
-    const dm = noTimes.match(/\b(\d{1,2})\b/)
-    if (dm && Number(dm[1]) >= 1 && Number(dm[1]) <= 31) {
-      const now = new Date()
-      date = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(Number(dm[1]))}`
-    }
-  }
-  if (!date) date = localTodayStr()
-  return { date, start: times[0], end: times[1] }
-}
-
 // "thu 7"/"thu bay" → 6 (getDay Thứ 7), "chu nhat"/"cn" → 0. Null nếu không có.
 function matchWeekday(s) {
   const map = { 2: 1, hai: 1, 3: 2, ba: 2, 4: 3, tu: 3, 5: 4, nam: 4, 6: 5, sau: 5, 7: 6, bay: 6 }
@@ -155,22 +131,52 @@ function matchWeekday(s) {
   return null
 }
 
-// Cú pháp nói tắt: THỨ + LOẠI CA, vd "thứ 7 tôi có 1 ca đêm". Chỉ kích hoạt khi có
-// THỨ và KHÔNG phải câu hỏi (tránh nhầm câu tra cứu). Giờ mặc định: đêm 22:00–06:00,
-// ngày 06:00–14:00. Trả {date, start, end} hoặc null.
-function parseShiftShorthand(msg) {
+// Suy ra NGÀY TUYỆT ĐỐI ("YYYY-MM-DD") từ câu, dựa trên HÔM NAY:
+//  - tương đối: hôm nay / mai / mốt (ngày kia)
+//  - thứ: "thứ 6", kèm "tuần này" / "tuần sau" (mặc định lần gần nhất sắp tới)
+//  - tuyệt đối: DD/MM, "ngày D tháng M"
+//  - ngày trần: "ngày 14" hoặc số ngày còn lại sau khi bỏ mốc giờ
+// Trả null nếu không xác định được ngày.
+function resolveDate(msg) {
+  const s = deaccent(msg)
+  const today = localTodayStr()
+  if (/hom nay/.test(s)) return today
+  if (/ngay mai|\bmai\b/.test(s)) return addDaysStr(today, 1)
+  if (/ngay mot|ngay kia/.test(s)) return addDaysStr(today, 2)
+  const wd = matchWeekday(s)
+  if (wd != null) {
+    const [ty, tm, td] = today.split('-').map(Number)
+    const todayDow = new Date(ty, tm - 1, td).getDay()
+    let add = (wd - todayDow + 7) % 7
+    if (/tuan sau|tuan toi/.test(s)) add += 7
+    return addDaysStr(today, add)
+  }
+  const abs = parseDayReq(msg, false)
+  if (abs) return abs
+  const bm = s.match(/\bngay\s*(\d{1,2})\b/)
+  if (bm && Number(bm[1]) >= 1 && Number(bm[1]) <= 31) {
+    const [ty, tm] = today.split('-')
+    return `${ty}-${tm}-${pad2(Number(bm[1]))}`
+  }
+  return null
+}
+
+// Ý ĐỊNH THÊM CA từ câu tự nhiên. Kích hoạt khi có loại ca ("đêm"/"ca ngày") HOẶC
+// động từ thêm/tạo + ca; KHÔNG phải câu hỏi. Trả { date, times[], type } — phần nào
+// thiếu để null/[] và chatbot sẽ hỏi lại. type: 'night'|'day'|null.
+function parseShiftIntent(msg) {
   const s = deaccent(msg)
   if (/\?|khong/.test(s)) return null
-  const night = /ca dem/.test(s)
-  const day = /ca ngay/.test(s)
-  if (!night && !day) return null
-  const wd = matchWeekday(s)
-  if (wd == null) return null
-  const today = localTodayStr()
-  const [ty, tm, td] = today.split('-').map(Number)
-  const todayDow = new Date(ty, tm - 1, td).getDay()
-  const date = addDaysStr(today, (wd - todayDow + 7) % 7)
-  return { date, night }
+  const night = /\bdem\b|ca dem|ban dem/.test(s)
+  const day = /ca ngay|ban ngay/.test(s)
+  const addVerb = /(them|tao|dang ky|add)/.test(s) && /(ca|lich|shift)/.test(s)
+  if (!night && !day && !addVerb) return null
+  const date = resolveDate(msg)
+  const times = findTimes(s)
+  const type = night ? 'night' : day ? 'day' : null
+  // Tránh nhận nhầm câu mơ hồ: cần có loại ca, hoặc đủ 2 mốc giờ, hoặc ngày rõ.
+  if (!type && times.length < 2 && !date) return null
+  return { date, times, type }
 }
 
 // Yêu cầu THÊM khoản trừ: cần từ khoá "trừ/bồi thường" + số tiền (≥1000 hoặc có
@@ -451,6 +457,21 @@ export default function SalaryChat({
       )
   }
 
+  // Hoàn tất 1 ý định thêm ca: đủ giờ → thêm; ca đêm → 22:00–06:00; ca ngày → hỏi
+  // chọn giờ; còn lại (thiếu giờ) → hỏi giờ vào/ra. (Đã có ngày tới đây.)
+  async function finalizeShift({ date, times, type }) {
+    if (times && times.length >= 2) {
+      await handleAddShift({ date, start: times[0], end: times[1] })
+    } else if (type === 'night') {
+      await handleAddShift({ date, start: '22:00', end: '06:00' })
+    } else if (type === 'day') {
+      pushDayChoice(date)
+    } else {
+      setPending({ date, awaiting: 'times' })
+      bot(t('chat.askTimes'))
+    }
+  }
+
   // THÊM khoản trừ qua chat → ghi DB (period_key suy từ ngày bị trừ).
   async function handleAddDeduction({ amount, reason, date }) {
     if (!onAddDeduction) return bot(t('chat.error'))
@@ -524,13 +545,24 @@ export default function SalaryChat({
     setMessages((m) => [...m, { role: 'user', text: msg }])
     const norm = deaccent(msg)
 
-    // Đang chờ nhập giờ cho ca ngày (sau khi bấm "Giờ khác").
+    // Đang chờ bổ sung thông tin còn thiếu (giờ vào/ra hoặc ngày).
     if (pending) {
       if (/huy|cancel|thoi|bo qua/.test(norm)) {
         setPending(null)
         bot(t('chat.cancelled'))
         return
       }
+      if (pending.awaiting === 'date') {
+        const d = resolveDate(msg)
+        if (!d) {
+          bot(t('chat.askDateRetry'))
+          return
+        }
+        setPending(null)
+        await finalizeShift({ date: d, times: pending.times, type: pending.type })
+        return
+      }
+      // awaiting times
       const times = findTimes(norm)
       if (times.length >= 2) {
         const d = pending.date
@@ -553,19 +585,15 @@ export default function SalaryChat({
       onOpenReconcile()
       return
     }
-    // Thêm ca (tương lai → lịch dự kiến) — trước hỏi-ngày vì câu có kèm ngày.
-    const addReq = parseAddShift(msg)
-    if (addReq) {
-      await handleAddShift(addReq)
-      return
-    }
-    // Nói tắt: thứ + loại ca, vd "thứ 7 tôi có 1 ca đêm".
-    const shReq = parseShiftShorthand(msg)
-    if (shReq) {
-      if (shReq.night) {
-        await handleAddShift({ date: shReq.date, start: '22:00', end: '06:00' })
+    // Thêm ca từ câu tự nhiên (keyword ngày/đêm hoặc 'thêm ca' + ngày/giờ). Tương
+    // lai → lịch dự kiến. Thiếu ngày/giờ → hỏi lại thay vì tạo ca lỗi.
+    const si = parseShiftIntent(msg)
+    if (si) {
+      if (!si.date) {
+        setPending({ awaiting: 'date', times: si.times, type: si.type })
+        bot(t('chat.askDate'))
       } else {
-        pushDayChoice(shReq.date) // ca ngày → hỏi chọn giờ
+        await finalizeShift(si)
       }
       return
     }

@@ -117,6 +117,7 @@ export const translations = {
     "filter.night": "Night shifts",
     "filter.none": "No matching shifts.",
     "shiftCard.notCheckedIn": "(not checked in)",
+    "shiftCard.plannedBadge": "Planned",
     "shiftCard.lateIn": " · late in {h}h",
     "shiftCard.earlyOut": " · left early {h}h",
     "shiftCard.in": "In",
@@ -384,6 +385,10 @@ export const translations = {
     "chat.otherHours": "Other hours",
     "chat.askDayCustom": "Type the hours (in – out), e.g. 8h-17h.",
     "chat.askDayTimesRetry": "Please type the hours, e.g. 8h-17h (or 'cancel').",
+    "chat.askTimes": "What time does this shift start and end? (e.g. 8h-17h)",
+    "chat.askDate": "Which date is this shift? (e.g. 15/6, tomorrow, next Friday)",
+    "chat.askDateRetry":
+      "I didn't catch the date. Please give one, e.g. 15/6, tomorrow, next Friday.",
     "chat.cancelled": "Cancelled.",
     "chat.estHeader":
       "🎯 Target {target}: you have {current}, {remaining} to go.",
@@ -521,6 +526,7 @@ export const translations = {
     "filter.night": "Ca đêm",
     "filter.none": "Không có ca phù hợp.",
     "shiftCard.notCheckedIn": "(chưa check-in)",
+    "shiftCard.plannedBadge": "Dự kiến",
     "shiftCard.lateIn": " · vào trễ {h}h",
     "shiftCard.earlyOut": " · ra sớm {h}h",
     "shiftCard.in": "Vào",
@@ -788,6 +794,10 @@ export const translations = {
     "chat.otherHours": "Giờ khác",
     "chat.askDayCustom": "Nhập giờ vào–ra, vd 8h-17h.",
     "chat.askDayTimesRetry": "Vui lòng nhập giờ, vd 8h-17h (hoặc 'huỷ').",
+    "chat.askTimes": "Bạn làm ca này từ mấy giờ đến mấy giờ? (vd 8h-17h)",
+    "chat.askDate": "Ca này vào ngày nào? (vd 15/6, mai, thứ 6 tuần sau)",
+    "chat.askDateRetry":
+      "Mình chưa rõ ngày. Bạn cho ngày cụ thể nhé, vd 15/6, mai, thứ 6 tuần sau.",
     "chat.cancelled": "Đã huỷ.",
     "chat.estHeader":
       "🎯 Mục tiêu {target}: bạn đang có {current}, còn thiếu {remaining}.",
