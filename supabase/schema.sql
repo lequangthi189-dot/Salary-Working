@@ -158,9 +158,11 @@ begin
     new.phone_confirmed_at is not null
   )
   on conflict (id) do update set
-    full_name       = excluded.full_name,
+    -- GIỮ tên/điện thoại do app đã đặt (form thông tin NV) khi metadata auth không
+    -- có — tránh trigger ghi đè full_name/phone về NULL mỗi lần auth.users cập nhật.
+    full_name       = coalesce(excluded.full_name, public.profiles.full_name),
     employee_code   = coalesce(excluded.employee_code, public.profiles.employee_code),
-    phone           = excluded.phone,
+    phone           = coalesce(excluded.phone, public.profiles.phone),
     email           = excluded.email,
     email_confirmed = excluded.email_confirmed,
     phone_confirmed = excluded.phone_confirmed;
@@ -190,12 +192,19 @@ select
   u.phone_confirmed_at is not null
 from auth.users u
 on conflict (id) do update set
-  full_name       = excluded.full_name,
+  full_name       = coalesce(excluded.full_name, public.profiles.full_name),
   employee_code   = coalesce(excluded.employee_code, public.profiles.employee_code),
-  phone           = excluded.phone,
+  phone           = coalesce(excluded.phone, public.profiles.phone),
   email           = excluded.email,
   email_confirmed = excluded.email_confirmed,
   phone_confirmed = excluded.phone_confirmed;
+
+-- Backfill: dòng có họ/tên nhưng full_name trống (do trigger cũ ghi đè) → ghép lại
+-- "Họ Tên". An toàn lặp lại: chỉ đụng dòng full_name đang null/rỗng.
+update public.profiles
+set full_name = trim(coalesce(last_name, '') || ' ' || coalesce(first_name, ''))
+where coalesce(full_name, '') = ''
+  and coalesce(first_name, '') || coalesce(last_name, '') <> '';
 
 -- ===================== payrolls (kỳ lương đã nhận) =====================
 -- period_key: "YYYY-MM" của tháng kết thúc kỳ. received_on: ngày thực nhận.

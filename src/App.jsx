@@ -226,7 +226,10 @@ export default function App() {
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt
 
   const fullName =
-    profile?.full_name || session.user.user_metadata?.full_name || ''
+    profile?.full_name ||
+    [profile?.last_name, profile?.first_name].filter(Boolean).join(' ') ||
+    session.user.user_metadata?.full_name ||
+    ''
   const employeeCode =
     profile?.employee_code || session.user.user_metadata?.employee_code || ''
 
