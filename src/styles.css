@@ -349,6 +349,14 @@ button[type='submit']:disabled {
   margin-bottom: 0.45rem;
   overflow-wrap: anywhere;
 }
+.chat-confirm-list {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+.chat-confirm-list li {
+  margin: 0.1rem 0;
+}
 /* Nút lựa chọn giờ ca ngày trong chat */
 .chat-choice-btns {
   display: flex;

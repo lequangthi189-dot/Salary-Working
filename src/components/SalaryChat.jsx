@@ -224,6 +224,61 @@ function parseExtraIncomeAdd(msg) {
   return { date, description, amount }
 }
 
+// Tìm SỐ TIỀN trong câu, BỎ QUA giờ ("14h"/"16:00"). Ưu tiên số có đơn vị tiền;
+// nếu không, số ≥ 4 chữ số (không phải giờ). Trả số nguyên VND hoặc null.
+function findMoney(s) {
+  let m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|lit|k)\b/)
+  if (m) {
+    let n = Number(m[1].replace(/\./g, ''))
+    const u = m[2]
+    if (u === 'trieu' || u === 'tr') n *= 1000000
+    else if (u === 'lit') n *= 100000
+    else n *= 1000
+    return Math.round(n)
+  }
+  m = s.match(/(\d{4,})(?!\s*[:h])/) // số lớn không theo sau bởi : hoặc h
+  if (m) return Number(m[1])
+  return null
+}
+
+// Lấy TẤT CẢ ngày dạng DD/MM (hoặc DD/MM/YYYY) trong câu → mảng "YYYY-MM-DD" (năm
+// nay nếu thiếu năm; KHÔNG lùi năm vì đây là ngày lịch). Trùng → bỏ; sắp tăng dần.
+function extractDates(msg) {
+  const [cy] = localTodayStr().split('-')
+  const out = []
+  const re = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/g
+  let m
+  while ((m = re.exec(msg))) {
+    const d = Number(m[1])
+    const mo = Number(m[2])
+    if (d < 1 || d > 31 || mo < 1 || mo > 12) continue
+    let y = m[3] ? Number(m[3]) : Number(cy)
+    if (y < 100) y += 2000
+    out.push(`${y}-${pad2(mo)}-${pad2(d)}`)
+  }
+  return [...new Set(out)].sort()
+}
+
+// Nhập HÀNG LOẠT việc ngoài: NHIỀU ngày (>=2) + một số tiền (mỗi buổi). vd:
+// "các ngày 12/6, 19/6, 26/6 làm AC mỗi buổi 200k". Mỗi ngày = 1 khoản cùng tiền.
+function parseExtraIncomeBatch(msg) {
+  const s = deaccent(msg)
+  if (/\btru\b|boi thuong|khau tru/.test(s)) return null // đó là khoản trừ, không phải việc ngoài
+  const dates = extractDates(msg)
+  if (dates.length < 2) return null
+  const amount = findMoney(s)
+  if (!amount || amount <= 0) return null
+  const description = msg
+    .replace(/\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/g, ' ')
+    .replace(/\d{1,2}\s*[:h]\s*\d{0,2}/gi, ' ')
+    .replace(/\d[\d.]*\s*(triệu|tr|nghìn|ngàn|lít|k|đ|vnd)?/gi, ' ')
+    .replace(/các ngày|mỗi buổi|mỗi ngày|mỗi lần|mỗi|buổi|làm|các|ngày|từ|đến/gi, ' ')
+    .replace(/[-,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return { dates, description, amount }
+}
+
 // Yêu cầu xem LỊCH DỰ KIẾN tuần này.
 function parsePlannedReq(msg) {
   const s = deaccent(msg)
@@ -592,6 +647,57 @@ export default function SalaryChat({
     ])
   }
 
+  // Ghi NHIỀU khoản việc ngoài (mỗi ngày 1 khoản, cùng tiền).
+  async function handleAddExtraBatch(dates, description, amount) {
+    if (!onAddExtraIncome) return bot(t('chat.error'))
+    setBusy(true)
+    let ok = 0
+    for (const date of dates) {
+      const err = await onAddExtraIncome({ date, description, amount })
+      if (!err) ok++
+    }
+    setBusy(false)
+    bot(t('chat.extraBatchDone', { ok, total: dates.length }))
+  }
+
+  // Thẻ XÁC NHẬN nhập HÀNG LOẠT: liệt kê tất cả ngày + tiền/buổi, Lưu một lần.
+  function pushExtraBatchConfirm({ dates, description, amount }) {
+    const today = localTodayStr()
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-confirm">
+            <div className="chat-confirm-line">
+              <strong>{t('extra.title')}</strong>
+              {` × ${dates.length} · ${description || '—'} · ${formatMoney(amount)}${t('chat.perTime')}`}
+            </div>
+            <ul className="chat-confirm-list">
+              {dates.map((d) => (
+                <li key={d}>
+                  {dmy(d)}
+                  {d > today ? ` · ${t('extra.plannedBadge')}` : ''}
+                </li>
+              ))}
+            </ul>
+            <div className="chat-choice-btns">
+              <button
+                type="button"
+                onClick={() => handleAddExtraBatch(dates, description, amount)}
+              >
+                {t('chat.saveAll')}
+              </button>
+              <button type="button" onClick={() => bot(t('chat.editPrompt'))}>
+                {t('chat.edit')}
+              </button>
+            </div>
+          </div>
+        ),
+      },
+    ])
+  }
+
   // TRA CỨU khoản trừ của một kỳ: liệt kê + tổng + thực nhận sau trừ.
   function handleDeductionQuery({ month, year }) {
     const key = month
@@ -684,6 +790,13 @@ export default function SalaryChat({
     if (/doi chieu/.test(norm) && onOpenReconcile) {
       bot(t('chat.openReconcile'))
       onOpenReconcile()
+      return
+    }
+    // Nhập HÀNG LOẠT việc ngoài: nhiều ngày + 1 mức tiền/buổi (kiểm trước thêm-ca
+    // vì câu có cả giờ lẫn ngày).
+    const exBatch = parseExtraIncomeBatch(msg)
+    if (exBatch) {
+      pushExtraBatchConfirm(exBatch)
       return
     }
     // Thêm ca từ câu tự nhiên (keyword ngày/đêm hoặc 'thêm ca' + ngày/giờ). Tương
