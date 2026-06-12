@@ -5,7 +5,7 @@ export function fetchProfile(userId) {
   return supabase
     .from('profiles')
     .select(
-      'payday, full_name, first_name, last_name, employee_code, phone, email, hourly_rate, night_pct, holiday_day_pct, holiday_night_pct, has_night_shift, lang'
+      'payday, full_name, first_name, last_name, employee_code, phone, email, hourly_rate, night_pct, holiday_day_pct, holiday_night_pct, has_night_shift, lang, period_start_day, period_end_day'
     )
     .eq('id', userId)
     .maybeSingle()
@@ -36,6 +36,8 @@ export function updateEmployeeInfo(userId, info) {
       holiday_day_pct: info.holidayDayPct,
       holiday_night_pct: info.holidayNightPct,
       has_night_shift: info.hasNightShift,
+      period_start_day: info.periodStartDay,
+      period_end_day: info.periodEndDay,
     })
     .eq('id', userId)
 }

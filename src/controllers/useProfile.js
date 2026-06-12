@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as profileModel from '../models/profileModel.js'
 import { setRates } from '../lib/rates.js'
+import { setPayPeriod } from '../lib/payPeriod.js'
 
 // Hồ sơ được coi là ĐÃ HOÀN TẤT khi có đủ thông tin nhân viên bắt buộc
 // (họ, tên, mã NV, lương 1 giờ). Thiếu → app bắt điền form thông tin.
@@ -26,6 +27,14 @@ function applyRates(p) {
   })
 }
 
+// Nạp kỳ lương (ngày bắt đầu/chốt) theo hồ sơ. Thiếu → mặc định 26/25.
+function applyPeriod(p) {
+  setPayPeriod({
+    startDay: p?.period_start_day ?? 26,
+    endDay: p?.period_end_day ?? 25,
+  })
+}
+
 // CONTROLLER: state + thao tác cho hồ sơ người dùng (profile) + nhắc đặt ngày nhận lương.
 export function useProfile(session) {
   const [profile, setProfile] = useState(null)
@@ -36,6 +45,7 @@ export function useProfile(session) {
     const { data } = await profileModel.fetchProfile(session.user.id)
     setProfile(data ?? null)
     applyRates(data)
+    applyPeriod(data)
     // Hỏi ngày nhận lương nếu chưa đặt và chưa từng bỏ qua trên máy này.
     const skipped = localStorage.getItem(`payday-skipped-${session.user.id}`)
     if (data && data.payday == null && !skipped) setShowPaydayPrompt(true)

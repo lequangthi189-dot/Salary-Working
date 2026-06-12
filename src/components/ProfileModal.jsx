@@ -277,6 +277,20 @@ export default function ProfileModal({
               type="bool"
               onSave={(v) => onSaveField({ has_night_shift: v })}
             />
+            <EditableRow
+              label={t('profile.periodStartDay')}
+              display={profile?.period_start_day ?? 26}
+              initial={profile?.period_start_day ?? 26}
+              type="number"
+              onSave={(v) => onSaveField({ period_start_day: v })}
+            />
+            <EditableRow
+              label={t('profile.periodEndDay')}
+              display={profile?.period_end_day ?? 25}
+              initial={profile?.period_end_day ?? 25}
+              type="number"
+              onSave={(v) => onSaveField({ period_end_day: v })}
+            />
           </dl>
 
           {/* Chuyển tài khoản: danh sách tài khoản đã lưu trên máy + thêm mới */}
