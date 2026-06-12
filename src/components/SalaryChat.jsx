@@ -126,11 +126,23 @@ function findTimes(s) {
 // giờ. Ngày tương lai → trả về để lưu thành lịch dự kiến.
 function parseAddShift(msg) {
   const s = deaccent(msg)
-  if (!/(them ca|tao ca|them lich|dang ky ca|add shift)/.test(s)) return null
-  const date = parseDayReq(msg, false)
-  if (!date) return null
+  // Động từ + đối tượng (cho phép từ chen giữa: "thêm một ca", "tạo ca").
+  if (!/(them|tao|dang ky|add)/.test(s)) return null
+  if (!/(ca|lich|shift)/.test(s)) return null
   const times = findTimes(s)
   if (times.length < 2) return null
+  // Ngày: ưu tiên DD/MM hoặc "ngày D tháng M"; nếu không, lấy SỐ NGÀY trần (tháng
+  // hiện tại) sau khi đã loại các mốc giờ. Không có ngày → mặc định hôm nay.
+  let date = parseDayReq(msg, false)
+  if (!date) {
+    const noTimes = s.replace(/\d{1,2}\s*(?::|h|gio)\s*\d{0,2}/g, ' ')
+    const dm = noTimes.match(/\b(\d{1,2})\b/)
+    if (dm && Number(dm[1]) >= 1 && Number(dm[1]) <= 31) {
+      const now = new Date()
+      date = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(Number(dm[1]))}`
+    }
+  }
+  if (!date) date = localTodayStr()
   return { date, start: times[0], end: times[1] }
 }
 
