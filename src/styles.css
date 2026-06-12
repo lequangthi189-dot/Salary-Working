@@ -334,6 +334,37 @@ button[type='submit']:disabled {
   color: #fff;
   border-bottom-right-radius: 4px;
 }
+/* Message chứa bảng công: trải rộng hết khung chat */
+.chat-msg.chat-table {
+  max-width: 100%;
+  width: 100%;
+  align-self: stretch;
+}
+.chat-ts-title {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+/* Nút lựa chọn giờ ca ngày trong chat */
+.chat-choice-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+.chat-choice-btns button {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chat-choice-btns button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .chat-typing {
   color: var(--muted);
   letter-spacing: 0.15em;
@@ -1753,6 +1784,33 @@ input.t-out {
 .shift-card.not-checked-in .next-day {
   color: #ff3b3b;
   font-weight: 700;
+}
+/* Ca dự kiến (tương lai, chưa chấm công) — amber, phân biệt với cảnh báo đỏ */
+.shift-card.planned {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.12);
+}
+.planned-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--checkin);
+  background: rgba(255, 159, 67, 0.18);
+  border: 1px solid var(--checkin);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+/* Ca đã qua ngày mà chưa chấm công — cảnh báo đỏ rõ */
+.overdue-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--danger);
+  border-radius: 999px;
+  white-space: nowrap;
 }
 .edit-fields {
   display: flex;

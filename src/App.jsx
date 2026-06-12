@@ -401,7 +401,22 @@ export default function App() {
       )}
 
       {showChat && (
-        <SalaryChat snapshot={chatSnapshot} onClose={() => setShowChat(false)} />
+        <SalaryChat
+          snapshot={chatSnapshot}
+          shifts={shifts}
+          deductions={deductions}
+          onAddDeduction={addDeduction}
+          onAddShift={addShift}
+          onOpenImport={() => {
+            setShowChat(false)
+            setShowImport(true)
+          }}
+          onOpenReconcile={() => {
+            setShowChat(false)
+            setShowReconcile(true)
+          }}
+          onClose={() => setShowChat(false)}
+        />
       )}
 
       {showImport && (
