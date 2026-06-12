@@ -26,15 +26,48 @@ const SCHEMA = {
   properties: {
     reply: { type: 'STRING' },
     target: { type: 'STRING' },
+    action: {
+      type: 'OBJECT',
+      properties: {
+        intent: { type: 'STRING' }, // "ca" | "viec_ngoai" | "khong_ro"
+        date: { type: 'STRING' }, // "YYYY-MM-DD" hoặc ""
+        start: { type: 'STRING' }, // "HH:MM" hoặc ""
+        end: { type: 'STRING' }, // "HH:MM" hoặc ""
+        amount: { type: 'INTEGER' }, // VND, 0 nếu không có
+        description: { type: 'STRING' },
+        thieu_thong_tin: { type: 'ARRAY', items: { type: 'STRING' } },
+      },
+      required: [
+        'intent',
+        'date',
+        'start',
+        'end',
+        'amount',
+        'description',
+        'thieu_thong_tin',
+      ],
+    },
   },
-  required: ['reply', 'target'],
+  required: ['reply', 'target', 'action'],
 }
 
 const SYSTEM = `Bạn là TRỢ LÝ LƯƠNG của một app chấm công. Trả lời NGẮN GỌN, thân thiện, bằng ĐÚNG ngôn ngữ của câu hỏi (Việt hoặc Anh).
 Người dùng được cung cấp SỐ LIỆU thật (lương kỳ này, đơn giá lương 1 giờ ca ngày và ca đêm, lương/giờ trung bình mỗi ca). Tuyệt đối KHÔNG bịa số; chỉ dùng số liệu được cung cấp.
 - Nếu người dùng hỏi kiểu "cần làm bao nhiêu ca / bao nhiêu giờ / bao nhiêu nữa để ĐẠT/NHẬN được X tiền", hãy đặt field "target" = X (chỉ chữ số, đơn vị VND, vd "3000000"), và để "reply" là một câu mở đầu ngắn (vd "Để đạt mục tiêu đó:"). KHÔNG tự tính trong reply — app sẽ tự tính chính xác số GIỜ ngày/đêm cần làm dựa trên lương 1 giờ.
 - Nếu là câu hỏi chung (vd "tôi đang được bao nhiêu", "trung bình mỗi ca bao nhiêu"), trả lời thẳng trong "reply" dựa trên số liệu, và đặt "target" = "".
-- Nếu không liên quan lương, lịch sự từ chối ngắn gọn, "target" = "".`
+- Nếu không liên quan lương, lịch sự từ chối ngắn gọn, "target" = "".
+
+NGOÀI RA, hãy PHÂN LOẠI xem người dùng có muốn GHI NHẬN thu nhập không, điền vào "action":
+- intent:
+  • "ca" — nói về CA LÀM VIỆC có giờ vào/ra (vd "làm 8h-17h", "ca đêm hôm nay", "mai làm từ 6h chiều").
+  • "viec_ngoai" — một KHOẢN TIỀN làm thêm KHÔNG theo giờ, thường có số tiền + mô tả (vd "nhận 500k sửa máy", "làm freelance được 1 triệu", "ai đó trả 300k").
+  • "khong_ro" — chỉ là câu hỏi/không đủ thông tin để ghi nhận.
+- date: NGÀY TUYỆT ĐỐI "YYYY-MM-DD" tính từ HÔM NAY (đã cho). Hiểu ngày tương đối: "hôm nay", "mai", "mốt", "thứ 6 tuần sau"... Không nói ngày → "".
+- start/end: giờ vào/ra "HH:MM" — CHỈ cho "ca". Không có → "".
+- amount: số tiền VND (số nguyên) — CHỈ cho "viec_ngoai". Hiểu tiền Việt: "k"=nghìn, "tr"/"triệu"=triệu, "lít"=trăm nghìn (2 lít=200000). Không có → 0.
+- description: mô tả công việc — cho "viec_ngoai". Không có → "".
+- thieu_thong_tin: mảng tên trường còn THIẾU. Ca thiếu giờ → "gio_vao"/"gio_ra"; thiếu ngày → "ngay". Việc ngoài thiếu tiền → "so_tien". Đủ → [].
+QUY TẮC: "ca" KHÔNG có amount; "viec_ngoai" KHÔNG có giờ. Nếu intent="khong_ro" thì để date/start/end="", amount=0, description="", thieu_thong_tin=[].`
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -44,6 +77,7 @@ Deno.serve(async (req: Request) => {
   let body: {
     message?: string
     lang?: string
+    today?: string
     snapshot?: {
       currentPay?: number
       dayRate?: number
@@ -71,6 +105,7 @@ Deno.serve(async (req: Request) => {
     `lương trung bình mỗi ca = ${Math.round(s.avgPerShift || 0)} VND; ` +
     `giờ trung bình mỗi ca = ${s.avgHoursPerShift || 0}; ` +
     `số ca đã làm = ${s.shiftCount || 0}.\n` +
+    `HÔM NAY là ${body.today || ''} (dùng để tính ngày tương đối).\n` +
     `Ngôn ngữ trả lời: ${body.lang === 'vi' ? 'Tiếng Việt' : 'English'}.\n` +
     `Câu hỏi: ${message}`
 

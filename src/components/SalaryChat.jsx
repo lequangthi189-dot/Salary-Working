@@ -705,9 +705,35 @@ export default function SalaryChat({
     setBusy(true)
     try {
       const { data, error } = await supabase.functions.invoke('salary-chat', {
-        body: { message: msg, lang, snapshot },
+        body: { message: msg, lang, today: localTodayStr(), snapshot },
       })
       if (error || data?.error) throw new Error(data?.error || error.message)
+
+      // AI phân loại ý định GHI NHẬN → xử lý ở client (validate + thẻ xác nhận).
+      const act = data.action
+      const isDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''))
+      const isTime = (x) => /^\d{1,2}:\d{2}$/.test(String(x || ''))
+      if (act && act.intent === 'viec_ngoai') {
+        const amount = Math.round(Number(act.amount) || 0)
+        if (!(amount > 0)) {
+          bot(t('chat.extraAskAmount'))
+          return
+        }
+        const date = isDate(act.date) ? act.date : localTodayStr()
+        pushExtraConfirm({ date, description: act.description || '', amount })
+        return
+      }
+      if (act && act.intent === 'ca') {
+        const times = [act.start, act.end].filter(isTime)
+        if (!isDate(act.date)) {
+          setPending({ awaiting: 'date', times, type: null })
+          bot(t('chat.askDate'))
+          return
+        }
+        await finalizeShift({ date: act.date, times, type: null })
+        return
+      }
+
       let text = data.reply || ''
       const target = parseInt(String(data.target || '').replace(/\D/g, ''), 10)
       if (Number.isFinite(target) && target > 0) {
