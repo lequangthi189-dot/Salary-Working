@@ -4,9 +4,38 @@ import {
   formatMoney,
   formatHours,
   computeEffective,
+  shiftTotals,
   hhmm,
 } from '../lib/shiftMath.js'
-import { payPeriodKeyOf, payPeriodLabel } from '../lib/payPeriod.js'
+import {
+  payPeriodKeyOf,
+  payPeriodLabel,
+  localTodayStr,
+  sumDeductions,
+} from '../lib/payPeriod.js'
+
+// Bỏ dấu + đ→d + thường hoá, để khớp lệnh dù gõ có dấu hay không.
+function deaccent(s) {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+}
+
+// Đọc số tiền VND từ chuỗi: "200k"/"200 nghìn"→200000, "2tr"/"2 triệu"→2000000,
+// "200000"→200000. Số trần (không đơn vị) phải ≥ 1000 mới coi là tiền (tránh nhầm ngày).
+function parseAmountVnd(s) {
+  const m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|k)?/)
+  if (!m) return null
+  let n = Number(m[1].replace(/\./g, ''))
+  if (!Number.isFinite(n) || n <= 0) return null
+  const unit = m[2]
+  if (unit === 'trieu' || unit === 'tr') n *= 1000000
+  else if (unit === 'nghin' || unit === 'ngan' || unit === 'k') n *= 1000
+  else if (n < 1000) return null
+  return Math.round(n)
+}
 import { useI18n } from '../lib/i18n.jsx'
 import TimesheetTable from './TimesheetTable.jsx'
 
@@ -21,6 +50,19 @@ function mondayOf(dateStr) {
   const dow = (dt.getDay() + 6) % 7
   dt.setDate(dt.getDate() - dow)
   return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
+}
+
+// Cộng n ngày vào "YYYY-MM-DD" (theo lịch địa phương).
+function addDaysStr(dateStr, n) {
+  const [y, m, d] = String(dateStr).split('-').map(Number)
+  const dt = new Date(y, m - 1, d + n)
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
+}
+
+// "YYYY-MM-DD" -> "DD/MM/YYYY"
+function dmy(d) {
+  const [y, m, dd] = String(d).split('-')
+  return `${dd}/${m}/${y}`
 }
 
 // Nhận diện yêu cầu xem BẢNG CÔNG theo tháng (và tuần tuỳ chọn). Bỏ dấu để khớp
@@ -66,10 +108,51 @@ function parseDayReq(msg) {
   return `${year}-${pad2(month)}-${pad2(day)}`
 }
 
+// Yêu cầu THÊM khoản trừ: cần từ khoá "trừ/bồi thường" + số tiền (≥1000 hoặc có
+// đơn vị) + lý do (sau "lý do"/"vì"/"do"). Ngày tuỳ chọn (mặc định hôm nay).
+function parseDeductionAdd(msg) {
+  const s = deaccent(msg)
+  if (!/(tru|boi thuong|khau tru)/.test(s)) return null
+  const amount = parseAmountVnd(s)
+  if (!amount) return null
+  const rm = s.match(/(?:ly do|vi|do)\s+(.+)/)
+  if (!rm) return null
+  let reason = rm[1].replace(/\s*ngay\s*\d.*$/, '').trim()
+  if (!reason) return null
+  const date = parseDayReq(msg) || localTodayStr()
+  return { amount, reason, date }
+}
+
+// Yêu cầu TRA CỨU khoản trừ của một kỳ (tháng). Không có tháng → kỳ hiện tại.
+function parseDeductionQuery(msg) {
+  const s = deaccent(msg)
+  if (!/(tru|boi thuong|khau tru)/.test(s)) return null
+  const m = s.match(/thang\s*(\d{1,2})/)
+  const y = s.match(/(20\d{2})/)
+  return { month: m ? Number(m[1]) : null, year: y ? Number(y[1]) : null }
+}
+
+// Yêu cầu xem LỊCH DỰ KIẾN tuần này.
+function parsePlannedReq(msg) {
+  const s = deaccent(msg)
+  if (/lich du kien|lich tuan nay|tuan nay co lich|lich.*tuan nay/.test(s)) {
+    return { scope: 'week' }
+  }
+  return null
+}
+
 // Trợ lý lương: AI hiểu câu hỏi + diễn đạt; phép TÍNH số ca cần làm do CODE tính
-// (chính xác) dựa trên số liệu lịch sử (snapshot). Riêng yêu cầu BẢNG CÔNG được
-// xử lý tại client từ `shifts` (không gọi AI).
-export default function SalaryChat({ snapshot, shifts = [], onClose }) {
+// (chính xác) dựa trên số liệu lịch sử (snapshot). Bảng công / chi tiết ngày /
+// bồi thường / lịch dự kiến đều xử lý tại client từ dữ liệu (không gọi AI).
+export default function SalaryChat({
+  snapshot,
+  shifts = [],
+  deductions = [],
+  onAddDeduction,
+  onOpenImport,
+  onOpenReconcile,
+  onClose,
+}) {
   const { t, lang } = useI18n()
   const [messages, setMessages] = useState([
     { role: 'bot', text: t('chat.intro') },
@@ -224,12 +307,104 @@ export default function SalaryChat({ snapshot, shifts = [], onClose }) {
     setMessages((m) => [...m, { role: 'bot', text: lines.join('\n') }])
   }
 
+  const bot = (text) => setMessages((m) => [...m, { role: 'bot', text }])
+
+  // THÊM khoản trừ qua chat → ghi DB (period_key suy từ ngày bị trừ).
+  async function handleAddDeduction({ amount, reason, date }) {
+    if (!onAddDeduction) return bot(t('chat.error'))
+    setBusy(true)
+    const key = payPeriodKeyOf(date)
+    const err = await onAddDeduction(key, amount, reason, date)
+    setBusy(false)
+    if (err) bot(t('chat.dedAddErr', { err }))
+    else
+      bot(
+        t('chat.dedAdded', {
+          amount: formatMoney(amount),
+          reason,
+          date: dmy(date),
+          label: payPeriodLabel(key),
+        })
+      )
+  }
+
+  // TRA CỨU khoản trừ của một kỳ: liệt kê + tổng + thực nhận sau trừ.
+  function handleDeductionQuery({ month, year }) {
+    const key = month
+      ? `${year || new Date().getFullYear()}-${pad2(month)}`
+      : payPeriodKeyOf(localTodayStr())
+    const label = payPeriodLabel(key)
+    const list = (deductions || []).filter((d) => d.period_key === key)
+    if (list.length === 0) return bot(t('chat.dedNone', { label }))
+    const sorted = [...list].sort((a, b) =>
+      String(a.deduct_date).localeCompare(String(b.deduct_date))
+    )
+    const total = sumDeductions(list)
+    const gross = shiftTotals(
+      (shifts || []).filter((s) => payPeriodKeyOf(s.work_date) === key)
+    ).pay
+    const lines = [t('chat.dedHeader', { label, total: formatMoney(total) })]
+    for (const d of sorted)
+      lines.push(
+        t('chat.dedLine', {
+          date: dmy(d.deduct_date),
+          reason: d.reason || '—',
+          amount: formatMoney(d.amount),
+        })
+      )
+    lines.push(t('chat.dedNet', { net: formatMoney(gross - total) }))
+    bot(lines.join('\n'))
+  }
+
+  // LỊCH DỰ KIẾN tuần này (các ca có scheduled_*).
+  function handlePlanned() {
+    const mon = mondayOf(localTodayStr())
+    const week = new Set(Array.from({ length: 7 }, (_, i) => addDaysStr(mon, i)))
+    const planned = (shifts || [])
+      .filter((s) => s.scheduled_start && week.has(s.work_date))
+      .sort((a, b) => String(a.work_date).localeCompare(String(b.work_date)))
+    if (planned.length === 0) return bot(t('chat.plannedNone'))
+    const lines = [t('chat.plannedHeader')]
+    for (const s of planned)
+      lines.push(
+        t('chat.plannedLine', {
+          date: dmy(s.work_date),
+          sched: `${hhmm(s.scheduled_start)}–${hhmm(s.scheduled_end) || '—'}`,
+        })
+      )
+    bot(lines.join('\n'))
+  }
+
   async function send() {
     const msg = input.trim()
     if (!msg || busy) return
     setInput('')
     setMessages((m) => [...m, { role: 'user', text: msg }])
+    const norm = deaccent(msg)
 
+    // Mở công cụ cần ảnh.
+    if (/nhap lich/.test(norm) && onOpenImport) {
+      bot(t('chat.openImport'))
+      onOpenImport()
+      return
+    }
+    if (/doi chieu/.test(norm) && onOpenReconcile) {
+      bot(t('chat.openReconcile'))
+      onOpenReconcile()
+      return
+    }
+    // Bồi thường: thêm khoản trừ (ưu tiên trước hỏi-ngày vì câu có thể kèm ngày).
+    const dedAdd = parseDeductionAdd(msg)
+    if (dedAdd) {
+      await handleAddDeduction(dedAdd)
+      return
+    }
+    // Bồi thường: tra cứu khoản trừ theo kỳ.
+    const dedQ = parseDeductionQuery(msg)
+    if (dedQ) {
+      handleDeductionQuery(dedQ)
+      return
+    }
     // Yêu cầu bảng công → xử lý tại client từ shifts, không gọi AI.
     const tsReq = parseTimesheetReq(msg)
     if (tsReq) {
@@ -240,6 +415,11 @@ export default function SalaryChat({ snapshot, shifts = [], onClose }) {
     const dayReq = parseDayReq(msg)
     if (dayReq) {
       handleDay(dayReq)
+      return
+    }
+    // Lịch dự kiến tuần này.
+    if (parsePlannedReq(msg)) {
+      handlePlanned()
       return
     }
 

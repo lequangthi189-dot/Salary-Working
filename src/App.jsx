@@ -404,6 +404,16 @@ export default function App() {
         <SalaryChat
           snapshot={chatSnapshot}
           shifts={shifts}
+          deductions={deductions}
+          onAddDeduction={addDeduction}
+          onOpenImport={() => {
+            setShowChat(false)
+            setShowImport(true)
+          }}
+          onOpenReconcile={() => {
+            setShowChat(false)
+            setShowReconcile(true)
+          }}
           onClose={() => setShowChat(false)}
         />
       )}

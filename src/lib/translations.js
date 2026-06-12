@@ -364,6 +364,18 @@ export const translations = {
     "chat.dayHeader": "On {date}: you worked.",
     "chat.dayShiftLine": "• In {in} – out {out}: {hours} h · {pay}",
     "chat.dayTotal": "Total: {hours} h · {pay}",
+    "chat.openImport": "Opening Import weekly schedule…",
+    "chat.openReconcile": "Opening Reconcile…",
+    "chat.dedAdded":
+      "Added a deduction {amount} ({reason}) on {date} — period {label}.",
+    "chat.dedAddErr": "Couldn't add the deduction: {err}",
+    "chat.dedNone": "{label}: no deductions.",
+    "chat.dedHeader": "{label} — total deducted {total}:",
+    "chat.dedLine": "• {date} {reason}: −{amount}",
+    "chat.dedNet": "Net after deductions: {net}",
+    "chat.plannedNone": "No planned schedule for this week yet.",
+    "chat.plannedHeader": "Planned schedule this week:",
+    "chat.plannedLine": "• {date}: {sched}",
     "chat.estHeader":
       "🎯 Target {target}: you have {current}, {remaining} to go.",
     "chat.estDayLine":
@@ -747,6 +759,18 @@ export const translations = {
     "chat.dayHeader": "Ngày {date}: bạn có đi làm.",
     "chat.dayShiftLine": "• Vào {in} – ra {out}: {hours} giờ · {pay}",
     "chat.dayTotal": "Tổng: {hours} giờ · {pay}",
+    "chat.openImport": "Đang mở Nhập lịch tuần…",
+    "chat.openReconcile": "Đang mở Đối chiếu công…",
+    "chat.dedAdded":
+      "Đã thêm khoản trừ {amount} ({reason}) ngày {date} — kỳ {label}.",
+    "chat.dedAddErr": "Không thêm được khoản trừ: {err}",
+    "chat.dedNone": "{label}: không có khoản trừ nào.",
+    "chat.dedHeader": "{label} — tổng bị trừ {total}:",
+    "chat.dedLine": "• {date} {reason}: −{amount}",
+    "chat.dedNet": "Thực nhận sau trừ: {net}",
+    "chat.plannedNone": "Tuần này chưa có lịch dự kiến.",
+    "chat.plannedHeader": "Lịch dự kiến tuần này:",
+    "chat.plannedLine": "• {date}: {sched}",
     "chat.estHeader":
       "🎯 Mục tiêu {target}: bạn đang có {current}, còn thiếu {remaining}.",
     "chat.estDayLine": "• Làm ca NGÀY ({rate}/giờ): cần khoảng {hours} giờ.",
