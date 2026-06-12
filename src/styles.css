@@ -304,6 +304,27 @@ button[type='submit']:disabled {
   flex-direction: column;
   height: min(70vh, 560px);
 }
+/* Cửa sổ chat NỔI, kéo được như bong bóng trò chuyện (mặc định góc dưới phải) */
+.chat-float {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  width: min(92vw, 380px);
+  height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+}
+.chat-drag {
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
 .chat-list {
   flex: 1;
   min-height: 0;
@@ -343,6 +364,19 @@ button[type='submit']:disabled {
 .chat-ts-title {
   font-weight: 600;
   margin-bottom: 0.35rem;
+}
+/* Thẻ xác nhận (vd việc ngoài) trước khi ghi DB */
+.chat-confirm-line {
+  margin-bottom: 0.45rem;
+  overflow-wrap: anywhere;
+}
+.chat-confirm-list {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+.chat-confirm-list li {
+  margin: 0.1rem 0;
 }
 /* Nút lựa chọn giờ ca ngày trong chat */
 .chat-choice-btns {
@@ -2227,8 +2261,8 @@ input.t-out {
   color: var(--green);
 }
 .extra-add {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
 }
@@ -2240,17 +2274,28 @@ input.t-out {
   padding: 0.5rem 0.6rem;
   color: var(--text);
   min-width: 0;
+  box-sizing: border-box;
+}
+/* Ô co giãn + xuống dòng khi hẹp → không vỡ layout */
+.extra-add input[type='date'],
+.extra-edit input[type='date'] {
+  flex: 1 1 8.5rem;
+}
+.extra-add input[type='text'],
+.extra-edit input[type='text'] {
+  flex: 1 1 7rem;
 }
 .extra-add input[type='date'],
 .extra-edit input[type='date'] {
   color-scheme: dark;
 }
 .extra-add-btn {
+  flex: 0 0 auto;
   background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 0 0.9rem;
+  padding: 0.5rem 0.9rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2313,23 +2358,26 @@ input.t-out {
 .extra-actions .edit:hover {
   color: var(--accent);
 }
+/* Khoản việc ngoài DỰ KIẾN (ngày tương lai) — amber, chưa tính thực nhận */
+.extra-item.planned {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.1);
+}
+.extra-summary-row.planned-line strong {
+  color: var(--checkin);
+}
 .extra-item.editing {
   flex-direction: column;
   align-items: stretch;
 }
 .extra-edit {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
 }
 .extra-edit-actions {
   display: flex;
   gap: 0.3rem;
-}
-@media (max-width: 480px) {
-  .extra-add,
-  .extra-edit {
-    grid-template-columns: 1fr 1fr;
-  }
+  flex: 0 0 auto;
 }

@@ -89,10 +89,17 @@ function ExtraRow({ item, onUpdate, onDelete }) {
     )
   }
 
+  const isPlanned = item.date > localTodayStr()
+
   return (
-    <li className="extra-item">
+    <li className={`extra-item${isPlanned ? ' planned' : ''}`}>
       <div className="extra-item-main">
-        <span className="extra-amt">{formatMoney(item.amount)}</span>
+        <span className="extra-amt">
+          {formatMoney(item.amount)}
+          {isPlanned && (
+            <span className="planned-badge">{t('extra.plannedBadge')}</span>
+          )}
+        </span>
         <span className="extra-desc">{item.description}</span>
       </div>
       <span className="extra-date">{fmtDate(item.date)}</span>
@@ -146,7 +153,10 @@ export default function ExtraIncomeModal({
   const items = extraIncome
     .filter((x) => payPeriodKeyOf(x.date) === periodKey)
     .sort((a, b) => String(b.date).localeCompare(String(a.date)))
-  const extraTotal = sumExtraIncome(items)
+  // Ngày tương lai = DỰ KIẾN (chưa thực nhận) → không cộng vào tổng thực nhận.
+  const today = localTodayStr()
+  const extraTotal = sumExtraIncome(items.filter((x) => x.date <= today))
+  const plannedTotal = sumExtraIncome(items.filter((x) => x.date > today))
   const total = totalIncome(shiftPay, extraTotal)
 
   const amountDisplay = amount ? Number(amount).toLocaleString('vi-VN') : ''
@@ -205,6 +215,12 @@ export default function ExtraIncomeModal({
             <span>{t('extra.sumExtra')}</span>
             <strong>{formatMoney(extraTotal)}</strong>
           </div>
+          {plannedTotal > 0 && (
+            <div className="extra-summary-row planned-line">
+              <span>{t('extra.sumPlanned')}</span>
+              <strong>{formatMoney(plannedTotal)}</strong>
+            </div>
+          )}
           <div className="extra-summary-row total">
             <span>{t('extra.sumTotal')}</span>
             <strong>{formatMoney(total)}</strong>

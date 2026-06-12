@@ -14,6 +14,16 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 
+// Gom toàn bộ HƯỚNG DẪN dùng app (từ các bước WelcomeGuide) thành text, theo đúng
+// ngôn ngữ hiện tại. Gửi cho AI để trả lời câu "cách dùng" — CHỈ dựa vào đây.
+function buildGuide(t) {
+  const lines = [t('welcome.subtitle')]
+  for (let i = 1; i <= 8; i++) {
+    lines.push(`${i}. ${t(`welcome.step${i}.title`)}: ${t(`welcome.step${i}.desc`)}`)
+  }
+  return lines.join('\n')
+}
+
 // Bỏ dấu + đ→d + thường hoá, để khớp lệnh dù gõ có dấu hay không.
 function deaccent(s) {
   return s
@@ -26,12 +36,13 @@ function deaccent(s) {
 // Đọc số tiền VND từ chuỗi: "200k"/"200 nghìn"→200000, "2tr"/"2 triệu"→2000000,
 // "200000"→200000. Số trần (không đơn vị) phải ≥ 1000 mới coi là tiền (tránh nhầm ngày).
 function parseAmountVnd(s) {
-  const m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|k)?/)
+  const m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|lit|k)?/)
   if (!m) return null
   let n = Number(m[1].replace(/\./g, ''))
   if (!Number.isFinite(n) || n <= 0) return null
   const unit = m[2]
   if (unit === 'trieu' || unit === 'tr') n *= 1000000
+  else if (unit === 'lit') n *= 100000 // "lít" = trăm nghìn (2 lít = 200.000)
   else if (unit === 'nghin' || unit === 'ngan' || unit === 'k') n *= 1000
   else if (n < 1000) return null
   return Math.round(n)
@@ -203,6 +214,81 @@ function parseDeductionQuery(msg) {
   return { month: m ? Number(m[1]) : null, year: y ? Number(y[1]) : null }
 }
 
+// Yêu cầu THÊM thu nhập việc ngoài: keyword "thu nhập ngoài/việc ngoài" + số tiền.
+// Ngày tuỳ chọn (hiểu mai/thứ…); mặc định hôm nay. Mô tả lấy phần chữ còn lại.
+function parseExtraIncomeAdd(msg) {
+  const s = deaccent(msg)
+  if (!/(thu nhap (viec )?ngoai|viec ngoai|luong ngoai)/.test(s)) return null
+  const amount = parseAmountVnd(s)
+  if (!amount) return null
+  const date = resolveDate(msg) || localTodayStr()
+  const description = msg
+    .replace(/thu nhập việc ngoài|thu nhập ngoài|việc ngoài|lương ngoài/gi, ' ')
+    .replace(/\d[\d.,]*\s*(triệu|tr|nghìn|ngàn|k|đ|vnd)?/gi, ' ')
+    .replace(/ngày\s*\d{1,2}([/-]\d{1,2}([/-]\d{2,4})?)?/gi, ' ')
+    .replace(/\d{1,2}[/-]\d{1,2}([/-]\d{2,4})?/g, ' ')
+    .replace(/hôm nay|ngày mai|mai|mốt|thứ\s*\d|chủ nhật|tuần sau|tuần này/gi, ' ')
+    .replace(/(thêm|tạo|cho|với|mô tả|tôi|có)/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return { date, description, amount }
+}
+
+// Tìm SỐ TIỀN trong câu, BỎ QUA giờ ("14h"/"16:00"). Ưu tiên số có đơn vị tiền;
+// nếu không, số ≥ 4 chữ số (không phải giờ). Trả số nguyên VND hoặc null.
+function findMoney(s) {
+  let m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|lit|k)\b/)
+  if (m) {
+    let n = Number(m[1].replace(/\./g, ''))
+    const u = m[2]
+    if (u === 'trieu' || u === 'tr') n *= 1000000
+    else if (u === 'lit') n *= 100000
+    else n *= 1000
+    return Math.round(n)
+  }
+  m = s.match(/(\d{4,})(?!\s*[:h])/) // số lớn không theo sau bởi : hoặc h
+  if (m) return Number(m[1])
+  return null
+}
+
+// Lấy TẤT CẢ ngày dạng DD/MM (hoặc DD/MM/YYYY) trong câu → mảng "YYYY-MM-DD" (năm
+// nay nếu thiếu năm; KHÔNG lùi năm vì đây là ngày lịch). Trùng → bỏ; sắp tăng dần.
+function extractDates(msg) {
+  const [cy] = localTodayStr().split('-')
+  const out = []
+  const re = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/g
+  let m
+  while ((m = re.exec(msg))) {
+    const d = Number(m[1])
+    const mo = Number(m[2])
+    if (d < 1 || d > 31 || mo < 1 || mo > 12) continue
+    let y = m[3] ? Number(m[3]) : Number(cy)
+    if (y < 100) y += 2000
+    out.push(`${y}-${pad2(mo)}-${pad2(d)}`)
+  }
+  return [...new Set(out)].sort()
+}
+
+// Nhập HÀNG LOẠT việc ngoài: NHIỀU ngày (>=2) + một số tiền (mỗi buổi). vd:
+// "các ngày 12/6, 19/6, 26/6 làm AC mỗi buổi 200k". Mỗi ngày = 1 khoản cùng tiền.
+function parseExtraIncomeBatch(msg) {
+  const s = deaccent(msg)
+  if (/\btru\b|boi thuong|khau tru/.test(s)) return null // đó là khoản trừ, không phải việc ngoài
+  const dates = extractDates(msg)
+  if (dates.length < 2) return null
+  const amount = findMoney(s)
+  if (!amount || amount <= 0) return null
+  const description = msg
+    .replace(/\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/g, ' ')
+    .replace(/\d{1,2}\s*[:h]\s*\d{0,2}/gi, ' ')
+    .replace(/\d[\d.]*\s*(triệu|tr|nghìn|ngàn|lít|k|đ|vnd)?/gi, ' ')
+    .replace(/các ngày|mỗi buổi|mỗi ngày|mỗi lần|mỗi|buổi|làm|các|ngày|từ|đến/gi, ' ')
+    .replace(/[-,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return { dates, description, amount }
+}
+
 // Yêu cầu xem LỊCH DỰ KIẾN tuần này.
 function parsePlannedReq(msg) {
   const s = deaccent(msg)
@@ -216,10 +302,12 @@ function parsePlannedReq(msg) {
 // (chính xác) dựa trên số liệu lịch sử (snapshot). Bảng công / chi tiết ngày /
 // bồi thường / lịch dự kiến đều xử lý tại client từ dữ liệu (không gọi AI).
 export default function SalaryChat({
+  open = true,
   snapshot,
   shifts = [],
   deductions = [],
   onAddDeduction,
+  onAddExtraIncome,
   onAddShift,
   onOpenImport,
   onOpenReconcile,
@@ -232,13 +320,47 @@ export default function SalaryChat({
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState(null) // { date } đang chờ nhập giờ ca ngày
+  const [pos, setPos] = useState(null) // {x,y}; null = vị trí mặc định (góc dưới phải)
   const listRef = useRef(null)
+  const cardRef = useRef(null)
+  const dragRef = useRef(null) // { dx, dy } khi đang kéo
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  // Kéo cửa sổ chat (nổi như bong bóng). Lắng nghe toàn cục, chỉ hoạt động khi
+  // đang kéo (dragRef đã set ở startDrag).
+  useEffect(() => {
+    function move(e) {
+      if (!dragRef.current) return
+      const w = cardRef.current?.offsetWidth || 320
+      let x = e.clientX - dragRef.current.dx
+      let y = e.clientY - dragRef.current.dy
+      x = Math.max(4, Math.min(x, window.innerWidth - w))
+      y = Math.max(4, Math.min(y, window.innerHeight - 48))
+      setPos({ x, y })
+    }
+    function up() {
+      dragRef.current = null
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+  }, [])
+
+  // Bắt đầu kéo từ thanh tiêu đề (bỏ qua khi bấm nút đóng).
+  function startDrag(e) {
+    if (e.target.closest('.modal-close')) return
+    const rect = cardRef.current.getBoundingClientRect()
+    dragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top }
+    if (!pos) setPos({ x: rect.left, y: rect.top })
+  }
 
   useEffect(() => {
     listRef.current?.scrollTo(0, listRef.current.scrollHeight)
@@ -395,13 +517,13 @@ export default function SalaryChat({
             <div className="chat-choice-btns">
               <button
                 type="button"
-                onClick={() => handleAddShift({ date, start: '06:00', end: '14:00' })}
+                onClick={() => pushShiftConfirm({ date, start: '06:00', end: '14:00' })}
               >
                 06:00–14:00
               </button>
               <button
                 type="button"
-                onClick={() => handleAddShift({ date, start: '14:00', end: '22:00' })}
+                onClick={() => pushShiftConfirm({ date, start: '14:00', end: '22:00' })}
               >
                 14:00–22:00
               </button>
@@ -457,19 +579,52 @@ export default function SalaryChat({
       )
   }
 
-  // Hoàn tất 1 ý định thêm ca: đủ giờ → thêm; ca đêm → 22:00–06:00; ca ngày → hỏi
-  // chọn giờ; còn lại (thiếu giờ) → hỏi giờ vào/ra. (Đã có ngày tới đây.)
-  async function finalizeShift({ date, times, type }) {
+  // Hoàn tất 1 ý định thêm ca: đủ giờ → THẺ XÁC NHẬN; ca đêm → 22:00–06:00; ca ngày
+  // → hỏi chọn giờ; còn lại (thiếu giờ) → hỏi giờ vào/ra. (Đã có ngày tới đây.)
+  function finalizeShift({ date, times, type }) {
     if (times && times.length >= 2) {
-      await handleAddShift({ date, start: times[0], end: times[1] })
+      pushShiftConfirm({ date, start: times[0], end: times[1] })
     } else if (type === 'night') {
-      await handleAddShift({ date, start: '22:00', end: '06:00' })
+      pushShiftConfirm({ date, start: '22:00', end: '06:00' })
     } else if (type === 'day') {
       pushDayChoice(date)
     } else {
       setPending({ date, awaiting: 'times' })
       bot(t('chat.askTimes'))
     }
+  }
+
+  // Thẻ XÁC NHẬN ca trước khi ghi DB — đồng nhất với thu nhập việc ngoài. Ngày
+  // tương lai → ghi rõ "Ca dự kiến".
+  function pushShiftConfirm({ date, start, end }) {
+    const planned = date > localTodayStr()
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-confirm">
+            <div className="chat-confirm-line">
+              <strong>
+                {t(planned ? 'chat.confirmPlannedShift' : 'chat.confirmShift')}
+              </strong>
+              {` · ${dmy(date)} · ${start}–${end || '—'}`}
+            </div>
+            <div className="chat-choice-btns">
+              <button
+                type="button"
+                onClick={() => handleAddShift({ date, start, end })}
+              >
+                {t('chat.save')}
+              </button>
+              <button type="button" onClick={() => bot(t('chat.editPrompt'))}>
+                {t('chat.edit')}
+              </button>
+            </div>
+          </div>
+        ),
+      },
+    ])
   }
 
   // THÊM khoản trừ qua chat → ghi DB (period_key suy từ ngày bị trừ).
@@ -489,6 +644,103 @@ export default function SalaryChat({
           label: payPeriodLabel(key),
         })
       )
+  }
+
+  // THÊM thu nhập việc ngoài qua chat. Ngày tương lai → dự kiến (chưa nhận).
+  async function handleAddExtraIncome({ date, description, amount }) {
+    if (!onAddExtraIncome) return bot(t('chat.error'))
+    setBusy(true)
+    const err = await onAddExtraIncome({ date, description, amount })
+    setBusy(false)
+    if (err) return bot(t('chat.extraAddErr', { err }))
+    const planned = date > localTodayStr()
+    bot(
+      t(planned ? 'chat.extraAddedPlanned' : 'chat.extraAdded', {
+        amount: formatMoney(amount),
+        desc: description || '—',
+        date: dmy(date),
+      })
+    )
+  }
+
+  // Thẻ XÁC NHẬN việc ngoài trước khi ghi DB — để bắt lỗi phân loại nhầm / sai tiền.
+  function pushExtraConfirm({ date, description, amount }) {
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-confirm">
+            <div className="chat-confirm-line">
+              <strong>{t('extra.title')}</strong>
+              {` · ${dmy(date)} · ${description || '—'} · ${formatMoney(amount)}`}
+            </div>
+            <div className="chat-choice-btns">
+              <button
+                type="button"
+                onClick={() => handleAddExtraIncome({ date, description, amount })}
+              >
+                {t('chat.save')}
+              </button>
+              <button type="button" onClick={() => bot(t('chat.editPrompt'))}>
+                {t('chat.edit')}
+              </button>
+            </div>
+          </div>
+        ),
+      },
+    ])
+  }
+
+  // Ghi NHIỀU khoản việc ngoài (mỗi ngày 1 khoản, cùng tiền).
+  async function handleAddExtraBatch(dates, description, amount) {
+    if (!onAddExtraIncome) return bot(t('chat.error'))
+    setBusy(true)
+    let ok = 0
+    for (const date of dates) {
+      const err = await onAddExtraIncome({ date, description, amount })
+      if (!err) ok++
+    }
+    setBusy(false)
+    bot(t('chat.extraBatchDone', { ok, total: dates.length }))
+  }
+
+  // Thẻ XÁC NHẬN nhập HÀNG LOẠT: liệt kê tất cả ngày + tiền/buổi, Lưu một lần.
+  function pushExtraBatchConfirm({ dates, description, amount }) {
+    const today = localTodayStr()
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-confirm">
+            <div className="chat-confirm-line">
+              <strong>{t('extra.title')}</strong>
+              {` × ${dates.length} · ${description || '—'} · ${formatMoney(amount)}${t('chat.perTime')}`}
+            </div>
+            <ul className="chat-confirm-list">
+              {dates.map((d) => (
+                <li key={d}>
+                  {dmy(d)}
+                  {d > today ? ` · ${t('extra.plannedBadge')}` : ''}
+                </li>
+              ))}
+            </ul>
+            <div className="chat-choice-btns">
+              <button
+                type="button"
+                onClick={() => handleAddExtraBatch(dates, description, amount)}
+              >
+                {t('chat.saveAll')}
+              </button>
+              <button type="button" onClick={() => bot(t('chat.editPrompt'))}>
+                {t('chat.edit')}
+              </button>
+            </div>
+          </div>
+        ),
+      },
+    ])
   }
 
   // TRA CỨU khoản trừ của một kỳ: liệt kê + tổng + thực nhận sau trừ.
@@ -567,7 +819,7 @@ export default function SalaryChat({
       if (times.length >= 2) {
         const d = pending.date
         setPending(null)
-        await handleAddShift({ date: d, start: times[0], end: times[1] })
+        pushShiftConfirm({ date: d, start: times[0], end: times[1] })
         return
       }
       bot(t('chat.askDayTimesRetry'))
@@ -583,6 +835,13 @@ export default function SalaryChat({
     if (/doi chieu/.test(norm) && onOpenReconcile) {
       bot(t('chat.openReconcile'))
       onOpenReconcile()
+      return
+    }
+    // Nhập HÀNG LOẠT việc ngoài: nhiều ngày + 1 mức tiền/buổi (kiểm trước thêm-ca
+    // vì câu có cả giờ lẫn ngày).
+    const exBatch = parseExtraIncomeBatch(msg)
+    if (exBatch) {
+      pushExtraBatchConfirm(exBatch)
       return
     }
     // Thêm ca từ câu tự nhiên (keyword ngày/đêm hoặc 'thêm ca' + ngày/giờ). Tương
@@ -609,6 +868,13 @@ export default function SalaryChat({
       handleDeductionQuery(dedQ)
       return
     }
+    // Thu nhập việc ngoài: hiện thẻ xác nhận (tránh phân loại nhầm / sai tiền) rồi
+    // mới ghi khi bấm Lưu.
+    const exReq = parseExtraIncomeAdd(msg)
+    if (exReq) {
+      pushExtraConfirm(exReq)
+      return
+    }
     // Yêu cầu bảng công → xử lý tại client từ shifts, không gọi AI.
     const tsReq = parseTimesheetReq(msg)
     if (tsReq) {
@@ -630,9 +896,41 @@ export default function SalaryChat({
     setBusy(true)
     try {
       const { data, error } = await supabase.functions.invoke('salary-chat', {
-        body: { message: msg, lang, snapshot },
+        body: {
+          message: msg,
+          lang,
+          today: localTodayStr(),
+          snapshot,
+          guide: buildGuide(t),
+        },
       })
       if (error || data?.error) throw new Error(data?.error || error.message)
+
+      // AI phân loại ý định GHI NHẬN → xử lý ở client (validate + thẻ xác nhận).
+      const act = data.action
+      const isDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''))
+      const isTime = (x) => /^\d{1,2}:\d{2}$/.test(String(x || ''))
+      if (act && act.intent === 'viec_ngoai') {
+        const amount = Math.round(Number(act.amount) || 0)
+        if (!(amount > 0)) {
+          bot(t('chat.extraAskAmount'))
+          return
+        }
+        const date = isDate(act.date) ? act.date : localTodayStr()
+        pushExtraConfirm({ date, description: act.description || '', amount })
+        return
+      }
+      if (act && act.intent === 'ca') {
+        const times = [act.start, act.end].filter(isTime)
+        if (!isDate(act.date)) {
+          setPending({ awaiting: 'date', times, type: null })
+          bot(t('chat.askDate'))
+          return
+        }
+        await finalizeShift({ date: act.date, times, type: null })
+        return
+      }
+
       let text = data.reply || ''
       const target = parseInt(String(data.target || '').replace(/\D/g, ''), 10)
       if (Number.isFinite(target) && target > 0) {
@@ -646,50 +944,52 @@ export default function SalaryChat({
     }
   }
 
+  // Đóng chat = ẩn (component vẫn mount → giữ tin nhắn). Reload trang mới reset.
+  if (!open) return null
+
   return (
-    <div className="modal-overlay comp-fade" onClick={onClose}>
-      <div
-        className="modal-card chat-card comp-pop"
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-head">
-          <h2>🤖 {t('chat.title')}</h2>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label={t('common.close')}
+    <div
+      ref={cardRef}
+      className="chat-float comp-pop"
+      role="dialog"
+      aria-label={t('chat.title')}
+      style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined}
+    >
+      <div className="modal-head chat-drag" onPointerDown={startDrag}>
+        <h2>🤖 {t('chat.title')}</h2>
+        <button
+          type="button"
+          className="modal-close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="chat-list" ref={listRef}>
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            className={`chat-msg chat-${m.role}${m.wide ? ' chat-table' : ''}`}
           >
-            ×
-          </button>
-        </div>
+            {m.node || m.text}
+          </div>
+        ))}
+        {busy && <div className="chat-msg chat-bot chat-typing">…</div>}
+      </div>
 
-        <div className="chat-list" ref={listRef}>
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`chat-msg chat-${m.role}${m.wide ? ' chat-table' : ''}`}
-            >
-              {m.node || m.text}
-            </div>
-          ))}
-          {busy && <div className="chat-msg chat-bot chat-typing">…</div>}
-        </div>
-
-        <div className="chat-input">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
-            placeholder={t('chat.placeholder')}
-          />
-          <button type="button" onClick={send} disabled={busy || !input.trim()}>
-            {t('chat.send')}
-          </button>
-        </div>
+      <div className="chat-input">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && send()}
+          placeholder={t('chat.placeholder')}
+        />
+        <button type="button" onClick={send} disabled={busy || !input.trim()}>
+          {t('chat.send')}
+        </button>
       </div>
     </div>
   )

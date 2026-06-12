@@ -155,7 +155,9 @@ export const translations = {
     "extra.delAria": "Delete entry",
     "extra.sumShift": "Shift pay",
     "extra.sumExtra": "Extra income",
+    "extra.sumPlanned": "Expected (planned)",
     "extra.sumTotal": "Total",
+    "extra.plannedBadge": "Planned",
 
     // pay period page
     "pp.scopeHint": "Tap a period to see its charts and full timesheet.",
@@ -180,6 +182,8 @@ export const translations = {
     "pp.receivedPeriods": "Received periods",
     "pp.donut.salary": "Salary",
     "pp.donut.salaryCenter": "net",
+    "pp.donut.income": "Total income",
+    "pp.donut.incomeCenter": "total",
     "pp.donut.ded": "Compensation",
     "pp.donut.dedCenter": "total",
     "pp.donut.noDed": "No deductions.",
@@ -256,28 +260,28 @@ export const translations = {
     "welcome.start": "Get started",
     "welcome.step1.title": "Add a shift",
     "welcome.step1.desc":
-      'Pick a date, enter Check-in / Check-out (and a schedule if any) then press "Add shift".',
+      'Pick a date, enter Check-in / Check-out, then press "Add shift".',
     "welcome.step2.title": "Planned schedule",
     "welcome.step2.desc":
-      'Press "Import weekly schedule" to read a schedule from an image, or enter it manually. The app compares actual time with the schedule to compute lateness.',
+      'Open "Tools → Import weekly schedule" to read a roster from an image or type it manually. Future shifts get an amber "Planned" badge; a past day not clocked in shows a red "Overdue" warning.',
     "welcome.step3.title": "Automatic salary",
     "welcome.step3.desc":
       "Day hours (06–22h) and night hours (22–06h) use different rates. See the monthly total in the stats block.",
     "welcome.step4.title": "Compensation",
     "welcome.step4.desc":
-      'Press "Compensation" to add a period deduction (with a reason).',
-    "welcome.step5.title": "Pay period",
+      'Open "Tools → Compensation" to add a period deduction (with a reason).',
+    "welcome.step5.title": "Extra income",
     "welcome.step5.desc":
-      'Press "Pay period" to view monthly charts and mark salary as received.',
-    "welcome.step6.title": "Account",
+      'Open "Tools → Extra income" to log side jobs paid as a flat amount (not by the hour): date · description · amount. The summary shows Shift pay + Extra income + Total.',
+    "welcome.step6.title": "Pay period & timesheet",
     "welcome.step6.desc":
-      'Open "Account" to set your employee code (used for reading schedules) and payday.',
-    "welcome.step7.title": "Look up timesheet",
+      'Open the sidebar "Pay period": charts per month + a detailed timesheet (Excel-style, filter by week), and mark salary as received.',
+    "welcome.step7.title": "Salary assistant (chat)",
     "welcome.step7.desc":
-      'In "Pay period", tap any month to see its charts and a detailed timesheet (Excel-style, filter by week starting Monday).',
-    "welcome.step8.title": "Language",
+      'A draggable floating bubble. Ask about your salary, and RECORD by chatting: "night shift on Saturday", "extra income 500k repair", even several dates at once. A confirmation card appears before saving.',
+    "welcome.step8.title": "Account & language",
     "welcome.step8.desc":
-      "Pick a language from the flag menu. It's saved to your account, so the next login keeps the same language.",
+      'Open "Account" for your employee code and payday. Pick a language from the flag menu — it\'s saved to your account.',
 
     // schedule import
     "import.title": "Import weekly schedule from image",
@@ -387,6 +391,19 @@ export const translations = {
     "chat.dedAdded":
       "Added a deduction {amount} ({reason}) on {date} — period {label}.",
     "chat.dedAddErr": "Couldn't add the deduction: {err}",
+    "chat.extraAdded": "Added extra income {amount} ({desc}) on {date}.",
+    "chat.extraAddedPlanned":
+      "Added planned extra income {amount} ({desc}) on {date} (not received yet).",
+    "chat.extraAddErr": "Couldn't add the extra income: {err}",
+    "chat.save": "Save",
+    "chat.edit": "Edit",
+    "chat.editPrompt": "No problem — type it again, e.g. 'extra income 500k repair 12/6'.",
+    "chat.extraAskAmount": "How much was this extra income?",
+    "chat.confirmShift": "Shift",
+    "chat.confirmPlannedShift": "Planned shift",
+    "chat.perTime": "/session",
+    "chat.saveAll": "Save all",
+    "chat.extraBatchDone": "Saved {ok}/{total} extra-income entries.",
     "chat.dedNone": "{label}: no deductions.",
     "chat.dedHeader": "{label} — total deducted {total}:",
     "chat.dedLine": "• {date} {reason}: −{amount}",
@@ -581,7 +598,9 @@ export const translations = {
     "extra.delAria": "Xóa khoản",
     "extra.sumShift": "Lương ca",
     "extra.sumExtra": "Thu nhập việc ngoài",
+    "extra.sumPlanned": "Dự kiến (chưa nhận)",
     "extra.sumTotal": "Tổng cộng",
+    "extra.plannedBadge": "Dự kiến",
 
     // pay period page
     "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ và bảng công chi tiết.",
@@ -606,6 +625,8 @@ export const translations = {
     "pp.receivedPeriods": "Các kỳ đã nhận",
     "pp.donut.salary": "Lương",
     "pp.donut.salaryCenter": "thực nhận",
+    "pp.donut.income": "Tổng thu nhập",
+    "pp.donut.incomeCenter": "tổng",
     "pp.donut.ded": "Tiền bồi thường",
     "pp.donut.dedCenter": "tổng",
     "pp.donut.noDed": "Không có khoản trừ.",
@@ -682,28 +703,28 @@ export const translations = {
     "welcome.start": "Bắt đầu",
     "welcome.step1.title": "Nhập ca làm việc",
     "welcome.step1.desc":
-      'Chọn ngày, nhập Check-in / Check-out (và lịch dự kiến nếu có) rồi bấm "Thêm ca".',
+      'Chọn ngày, nhập Check-in / Check-out rồi bấm "Thêm ca".',
     "welcome.step2.title": "Lịch dự kiến",
     "welcome.step2.desc":
-      'Bấm "Nhập lịch tuần" để đọc lịch từ ảnh, hoặc nhập tay. Hệ thống so giờ thực tế với lịch để tính đi trễ.',
+      'Vào "Công cụ → Nhập lịch tuần" để đọc lịch từ ảnh hoặc nhập tay. Ca ở tương lai hiện badge "Dự kiến" (amber); ngày đã qua mà chưa chấm công hiện cảnh báo "Quá hạn" (đỏ).',
     "welcome.step3.title": "Lương tự động",
     "welcome.step3.desc":
       "Giờ ngày (06–22h) và giờ đêm (22–06h) tính theo đơn giá riêng. Xem tổng tháng ở khối thống kê.",
     "welcome.step4.title": "Tiền bồi thường",
     "welcome.step4.desc":
-      'Bấm "Tiền bồi thường" để thêm khoản bị trừ của kỳ (kèm lý do).',
-    "welcome.step5.title": "Kỳ lương",
+      'Vào "Công cụ → Tiền bồi thường" để thêm khoản bị trừ của kỳ (kèm lý do).',
+    "welcome.step5.title": "Thu nhập việc ngoài",
     "welcome.step5.desc":
-      'Bấm "Kỳ lương" để xem biểu đồ thống kê từng tháng và đánh dấu đã nhận lương.',
-    "welcome.step6.title": "Tài khoản",
+      'Vào "Công cụ → Thu nhập việc ngoài" để ghi tiền làm thêm trả CỐ ĐỊNH (không theo giờ): ngày · mô tả · số tiền. Tổng kết hiện Lương ca + Việc ngoài + Tổng cộng.',
+    "welcome.step6.title": "Kỳ lương & bảng công",
     "welcome.step6.desc":
-      'Vào "Tài khoản" để đặt mã nhân viên (dùng đọc lịch) và ngày nhận lương.',
-    "welcome.step7.title": "Tra cứu bảng công",
+      'Mở sidebar "Kỳ lương": biểu đồ từng tháng + bảng công chi tiết (kiểu Excel, lọc theo tuần) và đánh dấu đã nhận lương.',
+    "welcome.step7.title": "Trợ lý lương (chat)",
     "welcome.step7.desc":
-      'Trong "Kỳ lương", bấm vào một tháng để xem biểu đồ và bảng công chi tiết (kiểu Excel, lọc theo tuần bắt đầu Thứ 2).',
-    "welcome.step8.title": "Ngôn ngữ",
+      'Bong bóng chat nổi, kéo được. Hỏi về lương và GHI NHẬN bằng lời: "thứ 7 ca đêm", "việc ngoài 500k sửa máy", thậm chí nhiều ngày một lúc. Có thẻ xác nhận trước khi lưu.',
+    "welcome.step8.title": "Tài khoản & ngôn ngữ",
     "welcome.step8.desc":
-      "Chọn ngôn ngữ ở menu lá cờ. Ngôn ngữ được lưu theo tài khoản nên đăng nhập lại vẫn giữ nguyên.",
+      'Vào "Tài khoản" để đặt mã nhân viên và ngày nhận lương. Đổi ngôn ngữ ở menu lá cờ — lưu theo tài khoản.',
 
     // schedule import
     "import.title": "Nhập lịch tuần",
@@ -813,6 +834,19 @@ export const translations = {
     "chat.dedAdded":
       "Đã thêm khoản trừ {amount} ({reason}) ngày {date} — kỳ {label}.",
     "chat.dedAddErr": "Không thêm được khoản trừ: {err}",
+    "chat.extraAdded": "Đã thêm thu nhập việc ngoài {amount} ({desc}) ngày {date}.",
+    "chat.extraAddedPlanned":
+      "Đã thêm thu nhập việc ngoài DỰ KIẾN {amount} ({desc}) ngày {date} (chưa nhận).",
+    "chat.extraAddErr": "Không thêm được thu nhập việc ngoài: {err}",
+    "chat.save": "Lưu",
+    "chat.edit": "Sửa",
+    "chat.editPrompt": "Không sao — bạn nhập lại nhé, vd 'việc ngoài 500k sửa máy 12/6'.",
+    "chat.extraAskAmount": "Khoản việc ngoài này bao nhiêu tiền?",
+    "chat.confirmShift": "Ca",
+    "chat.confirmPlannedShift": "Ca dự kiến",
+    "chat.perTime": "/buổi",
+    "chat.saveAll": "Lưu tất cả",
+    "chat.extraBatchDone": "Đã lưu {ok}/{total} khoản việc ngoài.",
     "chat.dedNone": "{label}: không có khoản trừ nào.",
     "chat.dedHeader": "{label} — tổng bị trừ {total}:",
     "chat.dedLine": "• {date} {reason}: −{amount}",
