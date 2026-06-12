@@ -417,13 +417,13 @@ export default function SalaryChat({
             <div className="chat-choice-btns">
               <button
                 type="button"
-                onClick={() => handleAddShift({ date, start: '06:00', end: '14:00' })}
+                onClick={() => pushShiftConfirm({ date, start: '06:00', end: '14:00' })}
               >
                 06:00–14:00
               </button>
               <button
                 type="button"
-                onClick={() => handleAddShift({ date, start: '14:00', end: '22:00' })}
+                onClick={() => pushShiftConfirm({ date, start: '14:00', end: '22:00' })}
               >
                 14:00–22:00
               </button>
@@ -479,19 +479,52 @@ export default function SalaryChat({
       )
   }
 
-  // Hoàn tất 1 ý định thêm ca: đủ giờ → thêm; ca đêm → 22:00–06:00; ca ngày → hỏi
-  // chọn giờ; còn lại (thiếu giờ) → hỏi giờ vào/ra. (Đã có ngày tới đây.)
-  async function finalizeShift({ date, times, type }) {
+  // Hoàn tất 1 ý định thêm ca: đủ giờ → THẺ XÁC NHẬN; ca đêm → 22:00–06:00; ca ngày
+  // → hỏi chọn giờ; còn lại (thiếu giờ) → hỏi giờ vào/ra. (Đã có ngày tới đây.)
+  function finalizeShift({ date, times, type }) {
     if (times && times.length >= 2) {
-      await handleAddShift({ date, start: times[0], end: times[1] })
+      pushShiftConfirm({ date, start: times[0], end: times[1] })
     } else if (type === 'night') {
-      await handleAddShift({ date, start: '22:00', end: '06:00' })
+      pushShiftConfirm({ date, start: '22:00', end: '06:00' })
     } else if (type === 'day') {
       pushDayChoice(date)
     } else {
       setPending({ date, awaiting: 'times' })
       bot(t('chat.askTimes'))
     }
+  }
+
+  // Thẻ XÁC NHẬN ca trước khi ghi DB — đồng nhất với thu nhập việc ngoài. Ngày
+  // tương lai → ghi rõ "Ca dự kiến".
+  function pushShiftConfirm({ date, start, end }) {
+    const planned = date > localTodayStr()
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-confirm">
+            <div className="chat-confirm-line">
+              <strong>
+                {t(planned ? 'chat.confirmPlannedShift' : 'chat.confirmShift')}
+              </strong>
+              {` · ${dmy(date)} · ${start}–${end || '—'}`}
+            </div>
+            <div className="chat-choice-btns">
+              <button
+                type="button"
+                onClick={() => handleAddShift({ date, start, end })}
+              >
+                {t('chat.save')}
+              </button>
+              <button type="button" onClick={() => bot(t('chat.editPrompt'))}>
+                {t('chat.edit')}
+              </button>
+            </div>
+          </div>
+        ),
+      },
+    ])
   }
 
   // THÊM khoản trừ qua chat → ghi DB (period_key suy từ ngày bị trừ).
@@ -635,7 +668,7 @@ export default function SalaryChat({
       if (times.length >= 2) {
         const d = pending.date
         setPending(null)
-        await handleAddShift({ date: d, start: times[0], end: times[1] })
+        pushShiftConfirm({ date: d, start: times[0], end: times[1] })
         return
       }
       bot(t('chat.askDayTimesRetry'))
