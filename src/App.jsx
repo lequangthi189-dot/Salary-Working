@@ -355,6 +355,7 @@ export default function App() {
                 shifts={shifts}
                 payrolls={payrolls}
                 deductions={deductions}
+                extraIncome={extraIncome}
                 payday={profile?.payday}
                 onMarkReceived={markReceived}
                 onUnmark={unmarkReceived}

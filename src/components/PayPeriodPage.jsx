@@ -6,6 +6,7 @@ import {
   localTodayStr,
   sumDeductions,
 } from '../lib/payPeriod.js'
+import { sumExtraIncome } from '../lib/extraIncome.js'
 import PayPeriodPanel from './PayPeriodPanel.jsx'
 import TimesheetTable from './TimesheetTable.jsx'
 import { useI18n } from '../lib/i18n.jsx'
@@ -147,7 +148,7 @@ function pct(a, b) {
 const DED_COLORS = ['#ff9f43', '#c084fc', '#22d3ee', '#f472b6', '#facc15', '#fb923c']
 
 // Biểu đồ thống kê gọn (4 donut, lưới 2×2) của một kỳ — vừa trong popup.
-function StatsCharts({ st, deductions = [], hasNightShift = true }) {
+function StatsCharts({ st, deductions = [], extraTotal = 0, hasNightShift = true }) {
   const { t } = useI18n()
   const dedTotal = sumDeductions(deductions)
   const dedsSorted = [...deductions]
@@ -196,6 +197,31 @@ function StatsCharts({ st, deductions = [], hasNightShift = true }) {
         segments={moneySegments}
         centerValue={pct(net, st.idealPay)}
         centerLabel={t('pp.donut.salaryCenter')}
+      />
+    )
+  }
+  // Tổng thu nhập = lương ca + việc ngoài — CHỈ hiện khi có thu nhập việc ngoài.
+  if (extraTotal > 0) {
+    blocks.push(
+      <DonutBlock
+        key="income"
+        title={t('pp.donut.income')}
+        segments={[
+          {
+            label: t('extra.sumShift'),
+            value: Math.max(0, st.pay),
+            color: C.good,
+            display: formatMoney(st.pay),
+          },
+          {
+            label: t('extra.sumExtra'),
+            value: extraTotal,
+            color: C.day,
+            display: formatMoney(extraTotal),
+          },
+        ]}
+        centerValue={formatMoney(st.pay + extraTotal)}
+        centerLabel={t('pp.donut.incomeCenter')}
       />
     )
   }
@@ -307,7 +333,15 @@ function StatsCharts({ st, deductions = [], hasNightShift = true }) {
 
 // Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng). Bảng công chi tiết là 1 NÚT
 // → bấm mở popup riêng (TimesheetModal).
-function StatsModal({ title, st, shifts = [], deductions, hasNightShift = true, onClose }) {
+function StatsModal({
+  title,
+  st,
+  shifts = [],
+  deductions,
+  extraTotal = 0,
+  hasNightShift = true,
+  onClose,
+}) {
   const { t } = useI18n()
   const [showSheet, setShowSheet] = useState(false)
   return (
@@ -329,7 +363,12 @@ function StatsModal({ title, st, shifts = [], deductions, hasNightShift = true, 
             ×
           </button>
         </div>
-        <StatsCharts st={st} deductions={deductions} hasNightShift={hasNightShift} />
+        <StatsCharts
+          st={st}
+          deductions={deductions}
+          extraTotal={extraTotal}
+          hasNightShift={hasNightShift}
+        />
         <button
           type="button"
           className="account-btn full detail-sheet-btn"
@@ -384,6 +423,7 @@ export default function PayPeriodPage({
   shifts,
   payrolls,
   deductions = [],
+  extraIncome = [],
   payday,
   onMarkReceived,
   onUnmark,
@@ -403,6 +443,14 @@ export default function PayPeriodPage({
     scope === 'all'
       ? shifts
       : shifts.filter((s) => payPeriodKeyOf(s.work_date) === scope)
+
+  // Tổng thu nhập việc ngoài theo scope (kỳ hoặc tổng).
+  const extraTotalOf = (scope) =>
+    sumExtraIncome(
+      scope === 'all'
+        ? extraIncome
+        : extraIncome.filter((x) => payPeriodKeyOf(x.date) === scope)
+    )
 
   const openTitle =
     openScope === 'all' ? t('pp.allPeriods') : payPeriodLabel(openScope || '')
@@ -489,6 +537,7 @@ export default function PayPeriodPage({
           ? deductions
           : deductions.filter((d) => d.period_key === openScope)
       }
+      extraTotal={extraTotalOf(openScope)}
       hasNightShift={hasNightShift}
       onClose={() => setOpenScope(null)}
     />
