@@ -2324,6 +2324,14 @@ input.t-out {
 .extra-actions .edit:hover {
   color: var(--accent);
 }
+/* Khoản việc ngoài DỰ KIẾN (ngày tương lai) — amber, chưa tính thực nhận */
+.extra-item.planned {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.1);
+}
+.extra-summary-row.planned-line strong {
+  color: var(--checkin);
+}
 .extra-item.editing {
   flex-direction: column;
   align-items: stretch;

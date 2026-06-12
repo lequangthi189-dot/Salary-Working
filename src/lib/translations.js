@@ -155,7 +155,9 @@ export const translations = {
     "extra.delAria": "Delete entry",
     "extra.sumShift": "Shift pay",
     "extra.sumExtra": "Extra income",
+    "extra.sumPlanned": "Expected (planned)",
     "extra.sumTotal": "Total",
+    "extra.plannedBadge": "Planned",
 
     // pay period page
     "pp.scopeHint": "Tap a period to see its charts and full timesheet.",
@@ -583,7 +585,9 @@ export const translations = {
     "extra.delAria": "Xóa khoản",
     "extra.sumShift": "Lương ca",
     "extra.sumExtra": "Thu nhập việc ngoài",
+    "extra.sumPlanned": "Dự kiến (chưa nhận)",
     "extra.sumTotal": "Tổng cộng",
+    "extra.plannedBadge": "Dự kiến",
 
     // pay period page
     "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ và bảng công chi tiết.",

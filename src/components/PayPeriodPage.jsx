@@ -444,13 +444,16 @@ export default function PayPeriodPage({
       ? shifts
       : shifts.filter((s) => payPeriodKeyOf(s.work_date) === scope)
 
-  // Tổng thu nhập việc ngoài theo scope (kỳ hoặc tổng).
-  const extraTotalOf = (scope) =>
-    sumExtraIncome(
+  // Tổng thu nhập việc ngoài ĐÃ THỰC NHẬN (ngày <= hôm nay) theo scope; khoản dự
+  // kiến (ngày tương lai) không tính vào biểu đồ thu nhập.
+  const extraTotalOf = (scope) => {
+    const today = localTodayStr()
+    const scoped =
       scope === 'all'
         ? extraIncome
         : extraIncome.filter((x) => payPeriodKeyOf(x.date) === scope)
-    )
+    return sumExtraIncome(scoped.filter((x) => x.date <= today))
+  }
 
   const openTitle =
     openScope === 'all' ? t('pp.allPeriods') : payPeriodLabel(openScope || '')
