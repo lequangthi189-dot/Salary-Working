@@ -94,6 +94,10 @@ create table if not exists public.profiles (
   holiday_night_pct integer,
   has_night_shift boolean not null default true,
   lang text,
+  -- Kỳ lương theo từng người: ngày bắt đầu / ngày chốt (kết thúc) tính công.
+  -- Mặc định 26 → 25 (kỳ vắt qua 2 tháng). Việc gom ca vào kỳ phụ thuộc ngày chốt.
+  period_start_day smallint not null default 26,
+  period_end_day smallint not null default 25,
   email_confirmed boolean not null default false,
   phone_confirmed boolean not null default false,
   created_at timestamptz not null default now()
@@ -113,6 +117,9 @@ alter table public.profiles add column if not exists email_confirmed boolean not
 alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
 -- Ngôn ngữ ưa thích của người dùng (vi/en/us/au) — đăng nhập lại giữ đúng ngôn ngữ.
 alter table public.profiles add column if not exists lang text;
+-- Kỳ lương theo từng người (ngày bắt đầu / chốt tính công). Mặc định 26 / 25.
+alter table public.profiles add column if not exists period_start_day smallint not null default 26;
+alter table public.profiles add column if not exists period_end_day smallint not null default 25;
 
 alter table public.profiles enable row level security;
 
