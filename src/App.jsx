@@ -264,12 +264,6 @@ export default function App() {
                   >
                     {t('nav.deductions')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => openFromTitle(setShowChat)}
-                  >
-                    {t('chat.title')}
-                  </button>
                 </div>
               </>
             )}
