@@ -13,6 +13,7 @@ import {
   localTodayStr,
   sumDeductions,
 } from '../lib/payPeriod.js'
+import { sumExtraIncome } from '../lib/extraIncome.js'
 
 // Gom toàn bộ HƯỚNG DẪN dùng app (từ các bước WelcomeGuide) thành text, theo đúng
 // ngôn ngữ hiện tại. Gửi cho AI để trả lời câu "cách dùng" — CHỈ dựa vào đây.
@@ -214,6 +215,16 @@ function parseDeductionQuery(msg) {
   return { month: m ? Number(m[1]) : null, year: y ? Number(y[1]) : null }
 }
 
+// Yêu cầu TRA CỨU thu nhập việc ngoài của một kỳ (tháng). Keyword việc ngoài +
+// KHÔNG có số tiền để thêm (câu hỏi). Không tháng → kỳ hiện tại.
+function parseExtraIncomeQuery(msg) {
+  const s = deaccent(msg)
+  if (!/(thu nhap (viec )?ngoai|viec ngoai|luong ngoai)/.test(s)) return null
+  const m = s.match(/thang\s*(\d{1,2})/)
+  const y = s.match(/(20\d{2})/)
+  return { month: m ? Number(m[1]) : null, year: y ? Number(y[1]) : null }
+}
+
 // Yêu cầu THÊM thu nhập việc ngoài: keyword "thu nhập ngoài/việc ngoài" + số tiền.
 // Ngày tuỳ chọn (hiểu mai/thứ…); mặc định hôm nay. Mô tả lấy phần chữ còn lại.
 function parseExtraIncomeAdd(msg) {
@@ -306,6 +317,7 @@ export default function SalaryChat({
   snapshot,
   shifts = [],
   deductions = [],
+  extraIncome = [],
   onAddDeduction,
   onAddExtraIncome,
   onAddShift,
@@ -771,6 +783,35 @@ export default function SalaryChat({
     bot(lines.join('\n'))
   }
 
+  // TRA CỨU thu nhập việc ngoài của một kỳ: liệt kê + tổng thực nhận + dự kiến.
+  function handleExtraIncomeQuery({ month, year }) {
+    const key = month
+      ? `${year || new Date().getFullYear()}-${pad2(month)}`
+      : payPeriodKeyOf(localTodayStr())
+    const label = payPeriodLabel(key)
+    const list = (extraIncome || []).filter(
+      (x) => payPeriodKeyOf(x.date) === key
+    )
+    if (list.length === 0) return bot(t('chat.extraNone', { label }))
+    const today = localTodayStr()
+    const sorted = [...list].sort((a, b) =>
+      String(a.date).localeCompare(String(b.date))
+    )
+    const realized = sumExtraIncome(list.filter((x) => x.date <= today))
+    const planned = sumExtraIncome(list.filter((x) => x.date > today))
+    const lines = [t('chat.extraHeader', { label, total: formatMoney(realized) })]
+    for (const x of sorted)
+      lines.push(
+        t('chat.extraLine', {
+          date: dmy(x.date),
+          desc: x.description || '—',
+          amount: formatMoney(x.amount),
+        }) + (x.date > today ? ` · ${t('extra.plannedBadge')}` : '')
+      )
+    if (planned > 0) lines.push(t('chat.extraPlannedLine', { amount: formatMoney(planned) }))
+    bot(lines.join('\n'))
+  }
+
   // LỊCH DỰ KIẾN tuần này (các ca có scheduled_*).
   function handlePlanned() {
     const mon = mondayOf(localTodayStr())
@@ -873,6 +914,12 @@ export default function SalaryChat({
     const exReq = parseExtraIncomeAdd(msg)
     if (exReq) {
       pushExtraConfirm(exReq)
+      return
+    }
+    // Thu nhập việc ngoài: tra cứu theo kỳ (câu hỏi, không có số tiền để thêm).
+    const exQ = parseExtraIncomeQuery(msg)
+    if (exQ) {
+      handleExtraIncomeQuery(exQ)
       return
     }
     // Yêu cầu bảng công → xử lý tại client từ shifts, không gọi AI.
