@@ -1,11 +1,45 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { formatMoney } from '../lib/shiftMath.js'
+import { payPeriodKeyOf, payPeriodLabel } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
+import TimesheetTable from './TimesheetTable.jsx'
+
+function pad2(n) {
+  return String(n).padStart(2, '0')
+}
+
+// Thứ 2 (đầu tuần) của tuần chứa ngày — giống TimesheetTable để đánh số tuần khớp.
+function mondayOf(dateStr) {
+  const [y, m, d] = String(dateStr).split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  const dow = (dt.getDay() + 6) % 7
+  dt.setDate(dt.getDate() - dow)
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
+}
+
+// Nhận diện yêu cầu xem BẢNG CÔNG theo tháng (và tuần tuỳ chọn). Bỏ dấu để khớp
+// "bảng công tháng 3 tuần 2" dù gõ có dấu hay không. Trả {month, week, year} hoặc null.
+function parseTimesheetReq(msg) {
+  const norm = msg
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+  if (!/(bang cong|bang cham cong|timesheet)/.test(norm)) return null
+  const m = norm.match(/thang\s*(\d{1,2})/)
+  if (!m) return null
+  const month = Number(m[1])
+  if (month < 1 || month > 12) return null
+  const w = norm.match(/tuan\s*(\d{1,2})/)
+  const y = norm.match(/(20\d{2})/)
+  return { month, week: w ? Number(w[1]) : null, year: y ? Number(y[1]) : null }
+}
 
 // Trợ lý lương: AI hiểu câu hỏi + diễn đạt; phép TÍNH số ca cần làm do CODE tính
-// (chính xác) dựa trên số liệu lịch sử (snapshot).
-export default function SalaryChat({ snapshot, onClose }) {
+// (chính xác) dựa trên số liệu lịch sử (snapshot). Riêng yêu cầu BẢNG CÔNG được
+// xử lý tại client từ `shifts` (không gọi AI).
+export default function SalaryChat({ snapshot, shifts = [], onClose }) {
   const { t, lang } = useI18n()
   const [messages, setMessages] = useState([
     { role: 'bot', text: t('chat.intro') },
@@ -62,11 +96,63 @@ export default function SalaryChat({ snapshot, onClose }) {
     return lines.join('\n')
   }
 
+  // Xuất bảng công cho 1 kỳ (tháng) hoặc 1 tuần trong kỳ — render TimesheetTable
+  // ngay trong khung chat. Tuần bắt đầu Thứ 2, đánh số theo ca đã chấm công.
+  function handleTimesheet({ month, week, year }) {
+    const key = `${year || new Date().getFullYear()}-${pad2(month)}`
+    const periodShifts = (shifts || []).filter(
+      (s) => payPeriodKeyOf(s.work_date) === key
+    )
+    const checkedIn = periodShifts.filter((s) => s.start_time)
+    if (checkedIn.length === 0) {
+      setMessages((m) => [
+        ...m,
+        { role: 'bot', text: t('chat.tsEmpty', { label: payPeriodLabel(key) }) },
+      ])
+      return
+    }
+    let chosen = periodShifts
+    let label = payPeriodLabel(key)
+    if (week) {
+      const mondays = [...new Set(checkedIn.map((s) => mondayOf(s.work_date)))].sort()
+      const mon = mondays[week - 1]
+      if (!mon) {
+        setMessages((m) => [
+          ...m,
+          { role: 'bot', text: t('chat.tsNoWeek', { week, label }) },
+        ])
+        return
+      }
+      chosen = periodShifts.filter((s) => mondayOf(s.work_date) === mon)
+      label = `${label} · ${t('tt.week', { n: week })}`
+    }
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-ts">
+            <div className="chat-ts-title">{t('chat.tsTitle', { label })}</div>
+            <TimesheetTable shifts={chosen} />
+          </div>
+        ),
+      },
+    ])
+  }
+
   async function send() {
     const msg = input.trim()
     if (!msg || busy) return
     setInput('')
     setMessages((m) => [...m, { role: 'user', text: msg }])
+
+    // Yêu cầu bảng công → xử lý tại client từ shifts, không gọi AI.
+    const tsReq = parseTimesheetReq(msg)
+    if (tsReq) {
+      handleTimesheet(tsReq)
+      return
+    }
+
     setBusy(true)
     try {
       const { data, error } = await supabase.functions.invoke('salary-chat', {
@@ -108,8 +194,11 @@ export default function SalaryChat({ snapshot, onClose }) {
 
         <div className="chat-list" ref={listRef}>
           {messages.map((m, i) => (
-            <div key={i} className={`chat-msg chat-${m.role}`}>
-              {m.text}
+            <div
+              key={i}
+              className={`chat-msg chat-${m.role}${m.node ? ' chat-table' : ''}`}
+            >
+              {m.node || m.text}
             </div>
           ))}
           {busy && <div className="chat-msg chat-bot chat-typing">…</div>}

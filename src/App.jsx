@@ -401,7 +401,11 @@ export default function App() {
       )}
 
       {showChat && (
-        <SalaryChat snapshot={chatSnapshot} onClose={() => setShowChat(false)} />
+        <SalaryChat
+          snapshot={chatSnapshot}
+          shifts={shifts}
+          onClose={() => setShowChat(false)}
+        />
       )}
 
       {showImport && (

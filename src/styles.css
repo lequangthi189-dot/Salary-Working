@@ -334,6 +334,16 @@ button[type='submit']:disabled {
   color: #fff;
   border-bottom-right-radius: 4px;
 }
+/* Message chứa bảng công: trải rộng hết khung chat */
+.chat-msg.chat-table {
+  max-width: 100%;
+  width: 100%;
+  align-self: stretch;
+}
+.chat-ts-title {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
 .chat-typing {
   color: var(--muted);
   letter-spacing: 0.15em;
