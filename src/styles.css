@@ -2227,8 +2227,8 @@ input.t-out {
   color: var(--green);
 }
 .extra-add {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
 }
@@ -2240,17 +2240,28 @@ input.t-out {
   padding: 0.5rem 0.6rem;
   color: var(--text);
   min-width: 0;
+  box-sizing: border-box;
+}
+/* Ô co giãn + xuống dòng khi hẹp → không vỡ layout */
+.extra-add input[type='date'],
+.extra-edit input[type='date'] {
+  flex: 1 1 8.5rem;
+}
+.extra-add input[type='text'],
+.extra-edit input[type='text'] {
+  flex: 1 1 7rem;
 }
 .extra-add input[type='date'],
 .extra-edit input[type='date'] {
   color-scheme: dark;
 }
 .extra-add-btn {
+  flex: 0 0 auto;
   background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 0 0.9rem;
+  padding: 0.5rem 0.9rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2318,18 +2329,13 @@ input.t-out {
   align-items: stretch;
 }
 .extra-edit {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
 }
 .extra-edit-actions {
   display: flex;
   gap: 0.3rem;
-}
-@media (max-width: 480px) {
-  .extra-add,
-  .extra-edit {
-    grid-template-columns: 1fr 1fr;
-  }
+  flex: 0 0 auto;
 }
