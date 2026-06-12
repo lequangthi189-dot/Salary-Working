@@ -85,7 +85,7 @@ function parseTimesheetReq(msg) {
 
 // Nhận diện yêu cầu hỏi MỘT NGÀY cụ thể: "10/6", "10-6-2026", hoặc "ngày 10 tháng 6".
 // Trả "YYYY-MM-DD" hoặc null. (Mặc định năm hiện tại nếu không ghi.)
-function parseDayReq(msg) {
+function parseDayReq(msg, adjustPast = true) {
   const norm = msg
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -99,13 +99,39 @@ function parseDayReq(msg) {
   let year = m[3] ? Number(m[3]) : null
   if (year && year < 100) year += 2000
   if (!year) {
-    // Không ghi năm → mặc định năm nay; nếu ngày suy ra ở TƯƠNG LAI thì hiểu là
-    // năm trước (lần gần nhất đã qua) — vd hôm nay 1/9 mà hỏi 10/12 → năm ngoái.
+    // Không ghi năm → mặc định năm nay. Với CÂU HỎI (adjustPast), nếu ngày suy ra
+    // ở TƯƠNG LAI thì hiểu là năm trước (lần gần nhất đã qua). Với THÊM CA thì giữ
+    // năm nay để ngày tương lai vẫn là tương lai (→ lịch dự kiến).
     const now = new Date()
     year = now.getFullYear()
-    if (new Date(year, month - 1, day) > now) year -= 1
+    if (adjustPast && new Date(year, month - 1, day) > now) year -= 1
   }
   return `${year}-${pad2(month)}-${pad2(day)}`
+}
+
+// Tìm tối đa 2 mốc giờ trong câu: "22:00", "22h", "22h30", "9h", "06:00".
+function findTimes(s) {
+  const re = /(\d{1,2})\s*(?::|h|gio)\s*(\d{2})?/g
+  const out = []
+  let m
+  while ((m = re.exec(s)) && out.length < 2) {
+    const hh = Number(m[1])
+    const mm = m[2] ? Number(m[2]) : 0
+    if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) out.push(`${pad2(hh)}:${pad2(mm)}`)
+  }
+  return out
+}
+
+// Yêu cầu THÊM CA: "thêm ca ngày 15/6 22:00 đến 06:00". Cần từ khoá + ngày + 2 mốc
+// giờ. Ngày tương lai → trả về để lưu thành lịch dự kiến.
+function parseAddShift(msg) {
+  const s = deaccent(msg)
+  if (!/(them ca|tao ca|them lich|dang ky ca|add shift)/.test(s)) return null
+  const date = parseDayReq(msg, false)
+  if (!date) return null
+  const times = findTimes(s)
+  if (times.length < 2) return null
+  return { date, start: times[0], end: times[1] }
 }
 
 // Yêu cầu THÊM khoản trừ: cần từ khoá "trừ/bồi thường" + số tiền (≥1000 hoặc có
@@ -149,6 +175,7 @@ export default function SalaryChat({
   shifts = [],
   deductions = [],
   onAddDeduction,
+  onAddShift,
   onOpenImport,
   onOpenReconcile,
   onClose,
@@ -309,6 +336,42 @@ export default function SalaryChat({
 
   const bot = (text) => setMessages((m) => [...m, { role: 'bot', text }])
 
+  // THÊM CA qua chat. Ngày TƯƠNG LAI → lưu lịch dự kiến (scheduled_*, chưa chấm
+  // công). Ngày hôm nay/quá khứ → lưu ca thực tế (start/end).
+  async function handleAddShift({ date, start, end }) {
+    if (!onAddShift) return bot(t('chat.error'))
+    const future = date > localTodayStr()
+    const shift = future
+      ? {
+          work_date: date,
+          start_time: null,
+          end_time: null,
+          scheduled_start: start,
+          scheduled_end: end,
+          is_holiday: false,
+        }
+      : {
+          work_date: date,
+          start_time: start,
+          end_time: end,
+          scheduled_start: null,
+          scheduled_end: null,
+          is_holiday: false,
+        }
+    setBusy(true)
+    const err = await onAddShift(shift)
+    setBusy(false)
+    if (err) bot(t('chat.addShiftErr', { err }))
+    else
+      bot(
+        t(future ? 'chat.addShiftPlanned' : 'chat.addShiftActual', {
+          date: dmy(date),
+          start,
+          end,
+        })
+      )
+  }
+
   // THÊM khoản trừ qua chat → ghi DB (period_key suy từ ngày bị trừ).
   async function handleAddDeduction({ amount, reason, date }) {
     if (!onAddDeduction) return bot(t('chat.error'))
@@ -391,6 +454,12 @@ export default function SalaryChat({
     if (/doi chieu/.test(norm) && onOpenReconcile) {
       bot(t('chat.openReconcile'))
       onOpenReconcile()
+      return
+    }
+    // Thêm ca (tương lai → lịch dự kiến) — trước hỏi-ngày vì câu có kèm ngày.
+    const addReq = parseAddShift(msg)
+    if (addReq) {
+      await handleAddShift(addReq)
       return
     }
     // Bồi thường: thêm khoản trừ (ưu tiên trước hỏi-ngày vì câu có thể kèm ngày).

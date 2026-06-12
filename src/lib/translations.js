@@ -376,6 +376,10 @@ export const translations = {
     "chat.plannedNone": "No planned schedule for this week yet.",
     "chat.plannedHeader": "Planned schedule this week:",
     "chat.plannedLine": "• {date}: {sched}",
+    "chat.addShiftPlanned":
+      "Added a planned shift on {date}: {start} – {end} (not checked in yet).",
+    "chat.addShiftActual": "Added a shift on {date}: {start} – {end}.",
+    "chat.addShiftErr": "Couldn't add the shift: {err}",
     "chat.estHeader":
       "🎯 Target {target}: you have {current}, {remaining} to go.",
     "chat.estDayLine":
@@ -771,6 +775,10 @@ export const translations = {
     "chat.plannedNone": "Tuần này chưa có lịch dự kiến.",
     "chat.plannedHeader": "Lịch dự kiến tuần này:",
     "chat.plannedLine": "• {date}: {sched}",
+    "chat.addShiftPlanned":
+      "Đã thêm lịch dự kiến ngày {date}: {start} – {end} (chưa chấm công).",
+    "chat.addShiftActual": "Đã thêm ca ngày {date}: {start} – {end}.",
+    "chat.addShiftErr": "Không thêm được ca: {err}",
     "chat.estHeader":
       "🎯 Mục tiêu {target}: bạn đang có {current}, còn thiếu {remaining}.",
     "chat.estDayLine": "• Làm ca NGÀY ({rate}/giờ): cần khoảng {hours} giờ.",

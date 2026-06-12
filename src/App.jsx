@@ -406,6 +406,7 @@ export default function App() {
           shifts={shifts}
           deductions={deductions}
           onAddDeduction={addDeduction}
+          onAddShift={addShift}
           onOpenImport={() => {
             setShowChat(false)
             setShowImport(true)
