@@ -26,12 +26,13 @@ function deaccent(s) {
 // Đọc số tiền VND từ chuỗi: "200k"/"200 nghìn"→200000, "2tr"/"2 triệu"→2000000,
 // "200000"→200000. Số trần (không đơn vị) phải ≥ 1000 mới coi là tiền (tránh nhầm ngày).
 function parseAmountVnd(s) {
-  const m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|k)?/)
+  const m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|lit|k)?/)
   if (!m) return null
   let n = Number(m[1].replace(/\./g, ''))
   if (!Number.isFinite(n) || n <= 0) return null
   const unit = m[2]
   if (unit === 'trieu' || unit === 'tr') n *= 1000000
+  else if (unit === 'lit') n *= 100000 // "lít" = trăm nghìn (2 lít = 200.000)
   else if (unit === 'nghin' || unit === 'ngan' || unit === 'k') n *= 1000
   else if (n < 1000) return null
   return Math.round(n)
@@ -529,6 +530,35 @@ export default function SalaryChat({
     )
   }
 
+  // Thẻ XÁC NHẬN việc ngoài trước khi ghi DB — để bắt lỗi phân loại nhầm / sai tiền.
+  function pushExtraConfirm({ date, description, amount }) {
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-confirm">
+            <div className="chat-confirm-line">
+              <strong>{t('extra.title')}</strong>
+              {` · ${dmy(date)} · ${description || '—'} · ${formatMoney(amount)}`}
+            </div>
+            <div className="chat-choice-btns">
+              <button
+                type="button"
+                onClick={() => handleAddExtraIncome({ date, description, amount })}
+              >
+                {t('chat.save')}
+              </button>
+              <button type="button" onClick={() => bot(t('chat.editPrompt'))}>
+                {t('chat.edit')}
+              </button>
+            </div>
+          </div>
+        ),
+      },
+    ])
+  }
+
   // TRA CỨU khoản trừ của một kỳ: liệt kê + tổng + thực nhận sau trừ.
   function handleDeductionQuery({ month, year }) {
     const key = month
@@ -647,10 +677,11 @@ export default function SalaryChat({
       handleDeductionQuery(dedQ)
       return
     }
-    // Thu nhập việc ngoài: thêm khoản.
+    // Thu nhập việc ngoài: hiện thẻ xác nhận (tránh phân loại nhầm / sai tiền) rồi
+    // mới ghi khi bấm Lưu.
     const exReq = parseExtraIncomeAdd(msg)
     if (exReq) {
-      await handleAddExtraIncome(exReq)
+      pushExtraConfirm(exReq)
       return
     }
     // Yêu cầu bảng công → xử lý tại client từ shifts, không gọi AI.

@@ -395,6 +395,9 @@ export const translations = {
     "chat.extraAddedPlanned":
       "Added planned extra income {amount} ({desc}) on {date} (not received yet).",
     "chat.extraAddErr": "Couldn't add the extra income: {err}",
+    "chat.save": "Save",
+    "chat.edit": "Edit",
+    "chat.editPrompt": "No problem — type it again, e.g. 'extra income 500k repair 12/6'.",
     "chat.dedNone": "{label}: no deductions.",
     "chat.dedHeader": "{label} — total deducted {total}:",
     "chat.dedLine": "• {date} {reason}: −{amount}",
@@ -829,6 +832,9 @@ export const translations = {
     "chat.extraAddedPlanned":
       "Đã thêm thu nhập việc ngoài DỰ KIẾN {amount} ({desc}) ngày {date} (chưa nhận).",
     "chat.extraAddErr": "Không thêm được thu nhập việc ngoài: {err}",
+    "chat.save": "Lưu",
+    "chat.edit": "Sửa",
+    "chat.editPrompt": "Không sao — bạn nhập lại nhé, vd 'việc ngoài 500k sửa máy 12/6'.",
     "chat.dedNone": "{label}: không có khoản trừ nào.",
     "chat.dedHeader": "{label} — tổng bị trừ {total}:",
     "chat.dedLine": "• {date} {reason}: −{amount}",

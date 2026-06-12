@@ -344,6 +344,11 @@ button[type='submit']:disabled {
   font-weight: 600;
   margin-bottom: 0.35rem;
 }
+/* Thẻ xác nhận (vd việc ngoài) trước khi ghi DB */
+.chat-confirm-line {
+  margin-bottom: 0.45rem;
+  overflow-wrap: anywhere;
+}
 /* Nút lựa chọn giờ ca ngày trong chat */
 .chat-choice-btns {
   display: flex;
