@@ -310,13 +310,47 @@ export default function SalaryChat({
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState(null) // { date } đang chờ nhập giờ ca ngày
+  const [pos, setPos] = useState(null) // {x,y}; null = vị trí mặc định (góc dưới phải)
   const listRef = useRef(null)
+  const cardRef = useRef(null)
+  const dragRef = useRef(null) // { dx, dy } khi đang kéo
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  // Kéo cửa sổ chat (nổi như bong bóng). Lắng nghe toàn cục, chỉ hoạt động khi
+  // đang kéo (dragRef đã set ở startDrag).
+  useEffect(() => {
+    function move(e) {
+      if (!dragRef.current) return
+      const w = cardRef.current?.offsetWidth || 320
+      let x = e.clientX - dragRef.current.dx
+      let y = e.clientY - dragRef.current.dy
+      x = Math.max(4, Math.min(x, window.innerWidth - w))
+      y = Math.max(4, Math.min(y, window.innerHeight - 48))
+      setPos({ x, y })
+    }
+    function up() {
+      dragRef.current = null
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+  }, [])
+
+  // Bắt đầu kéo từ thanh tiêu đề (bỏ qua khi bấm nút đóng).
+  function startDrag(e) {
+    if (e.target.closest('.modal-close')) return
+    const rect = cardRef.current.getBoundingClientRect()
+    dragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top }
+    if (!pos) setPos({ x: rect.left, y: rect.top })
+  }
 
   useEffect(() => {
     listRef.current?.scrollTo(0, listRef.current.scrollHeight)
@@ -898,49 +932,48 @@ export default function SalaryChat({
   if (!open) return null
 
   return (
-    <div className="modal-overlay comp-fade" onClick={onClose}>
-      <div
-        className="modal-card chat-card comp-pop"
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-head">
-          <h2>🤖 {t('chat.title')}</h2>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label={t('common.close')}
+    <div
+      ref={cardRef}
+      className="chat-float comp-pop"
+      role="dialog"
+      aria-label={t('chat.title')}
+      style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined}
+    >
+      <div className="modal-head chat-drag" onPointerDown={startDrag}>
+        <h2>🤖 {t('chat.title')}</h2>
+        <button
+          type="button"
+          className="modal-close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="chat-list" ref={listRef}>
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            className={`chat-msg chat-${m.role}${m.wide ? ' chat-table' : ''}`}
           >
-            ×
-          </button>
-        </div>
+            {m.node || m.text}
+          </div>
+        ))}
+        {busy && <div className="chat-msg chat-bot chat-typing">…</div>}
+      </div>
 
-        <div className="chat-list" ref={listRef}>
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`chat-msg chat-${m.role}${m.wide ? ' chat-table' : ''}`}
-            >
-              {m.node || m.text}
-            </div>
-          ))}
-          {busy && <div className="chat-msg chat-bot chat-typing">…</div>}
-        </div>
-
-        <div className="chat-input">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
-            placeholder={t('chat.placeholder')}
-          />
-          <button type="button" onClick={send} disabled={busy || !input.trim()}>
-            {t('chat.send')}
-          </button>
-        </div>
+      <div className="chat-input">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && send()}
+          placeholder={t('chat.placeholder')}
+        />
+        <button type="button" onClick={send} disabled={busy || !input.trim()}>
+          {t('chat.send')}
+        </button>
       </div>
     </div>
   )

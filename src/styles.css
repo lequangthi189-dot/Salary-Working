@@ -304,6 +304,27 @@ button[type='submit']:disabled {
   flex-direction: column;
   height: min(70vh, 560px);
 }
+/* Cửa sổ chat NỔI, kéo được như bong bóng trò chuyện (mặc định góc dưới phải) */
+.chat-float {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  width: min(92vw, 380px);
+  height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+}
+.chat-drag {
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
 .chat-list {
   flex: 1;
   min-height: 0;
