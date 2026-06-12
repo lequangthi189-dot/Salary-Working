@@ -353,12 +353,17 @@ export const translations = {
     // salary chatbot
     "chat.title": "Salary assistant",
     "chat.intro":
-      'Hi! Ask me, e.g. "How many shifts to reach 3,000,000?" or "timesheet for month 3" / "week 2 month 3".',
+      'Hi! Ask me, e.g. "How many shifts to reach 3,000,000?", "timesheet for month 3" / "week 2 month 3", or "shift on 10/6?".',
     "chat.placeholder": "Ask about your salary…",
     "chat.send": "Send",
     "chat.tsTitle": "Timesheet {label}:",
     "chat.tsEmpty": "No checked-in shifts for {label} yet.",
     "chat.tsNoWeek": "There is no week {week} in {label}.",
+    "chat.dayNone": "On {date}: you have no shift.",
+    "chat.dayPlanned": "On {date}: planned {sched}, but not checked in yet.",
+    "chat.dayHeader": "On {date}: you worked.",
+    "chat.dayShiftLine": "• In {in} – out {out}: {hours} h · {pay}",
+    "chat.dayTotal": "Total: {hours} h · {pay}",
     "chat.estHeader":
       "🎯 Target {target}: you have {current}, {remaining} to go.",
     "chat.estDayLine":
@@ -731,12 +736,17 @@ export const translations = {
     // salary chatbot
     "chat.title": "Trợ lý lương",
     "chat.intro":
-      'Chào! Hỏi mình nhé, vd "Cần làm bao nhiêu ca để được 3.000.000?" hoặc "bảng công tháng 3" / "tuần 2 tháng 3".',
+      'Chào! Hỏi mình nhé, vd "Cần làm bao nhiêu ca để được 3.000.000?", "bảng công tháng 3" / "tuần 2 tháng 3", hoặc "ngày 10/6 có ca không?".',
     "chat.placeholder": "Hỏi về lương của bạn…",
     "chat.send": "Gửi",
     "chat.tsTitle": "Bảng công {label}:",
     "chat.tsEmpty": "Chưa có ca đã chấm công cho {label}.",
     "chat.tsNoWeek": "Không có tuần {week} trong {label}.",
+    "chat.dayNone": "Ngày {date}: bạn không có ca nào.",
+    "chat.dayPlanned": "Ngày {date}: có lịch dự kiến {sched} nhưng chưa chấm công.",
+    "chat.dayHeader": "Ngày {date}: bạn có đi làm.",
+    "chat.dayShiftLine": "• Vào {in} – ra {out}: {hours} giờ · {pay}",
+    "chat.dayTotal": "Tổng: {hours} giờ · {pay}",
     "chat.estHeader":
       "🎯 Mục tiêu {target}: bạn đang có {current}, còn thiếu {remaining}.",
     "chat.estDayLine": "• Làm ca NGÀY ({rate}/giờ): cần khoảng {hours} giờ.",

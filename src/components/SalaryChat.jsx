@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
-import { formatMoney } from '../lib/shiftMath.js'
+import {
+  formatMoney,
+  formatHours,
+  computeEffective,
+  hhmm,
+} from '../lib/shiftMath.js'
 import { payPeriodKeyOf, payPeriodLabel } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
 import TimesheetTable from './TimesheetTable.jsx'
@@ -34,6 +39,24 @@ function parseTimesheetReq(msg) {
   const w = norm.match(/tuan\s*(\d{1,2})/)
   const y = norm.match(/(20\d{2})/)
   return { month, week: w ? Number(w[1]) : null, year: y ? Number(y[1]) : null }
+}
+
+// Nhận diện yêu cầu hỏi MỘT NGÀY cụ thể: "10/6", "10-6-2026", hoặc "ngày 10 tháng 6".
+// Trả "YYYY-MM-DD" hoặc null. (Mặc định năm hiện tại nếu không ghi.)
+function parseDayReq(msg) {
+  const norm = msg
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+  let m = norm.match(/\b(\d{1,2})\s*[/-]\s*(\d{1,2})(?:\s*[/-]\s*(\d{2,4}))?\b/)
+  if (!m) m = norm.match(/ngay\s*(\d{1,2})\s*thang\s*(\d{1,2})(?:\D*?(\d{4}))?/)
+  if (!m) return null
+  const day = Number(m[1])
+  const month = Number(m[2])
+  if (day < 1 || day > 31 || month < 1 || month > 12) return null
+  let year = m[3] ? Number(m[3]) : new Date().getFullYear()
+  if (year < 100) year += 2000
+  return `${year}-${pad2(month)}-${pad2(day)}`
 }
 
 // Trợ lý lương: AI hiểu câu hỏi + diễn đạt; phép TÍNH số ca cần làm do CODE tính
@@ -140,6 +163,60 @@ export default function SalaryChat({ snapshot, shifts = [], onClose }) {
     ])
   }
 
+  // Trả lời chi tiết MỘT NGÀY: có ca không, giờ vào/ra, làm mấy giờ, lương.
+  function handleDay(date) {
+    const dmy = (d) => {
+      const [y, m, dd] = d.split('-')
+      return `${dd}/${m}/${y}`
+    }
+    const rows = (shifts || []).filter((s) => s.work_date === date)
+    if (rows.length === 0) {
+      setMessages((m) => [
+        ...m,
+        { role: 'bot', text: t('chat.dayNone', { date: dmy(date) }) },
+      ])
+      return
+    }
+    const worked = rows.filter((s) => s.start_time)
+    if (worked.length === 0) {
+      const s = rows.find((x) => x.scheduled_start) || rows[0]
+      const sched = `${hhmm(s.scheduled_start) || '—'} – ${hhmm(s.scheduled_end) || '—'}`
+      setMessages((m) => [
+        ...m,
+        { role: 'bot', text: t('chat.dayPlanned', { date: dmy(date), sched }) },
+      ])
+      return
+    }
+    const lines = [t('chat.dayHeader', { date: dmy(date) })]
+    let totH = 0
+    let totPay = 0
+    for (const s of worked) {
+      const eff = computeEffective(
+        hhmm(s.scheduled_start),
+        hhmm(s.scheduled_end),
+        hhmm(s.start_time),
+        hhmm(s.end_time),
+        !!s.is_holiday
+      )
+      totH += eff.decimalHours
+      totPay += eff.pay
+      lines.push(
+        t('chat.dayShiftLine', {
+          in: hhmm(s.start_time),
+          out: hhmm(s.end_time) || '—',
+          hours: formatHours(eff.decimalHours),
+          pay: formatMoney(eff.pay),
+        })
+      )
+    }
+    if (worked.length > 1) {
+      lines.push(
+        t('chat.dayTotal', { hours: formatHours(totH), pay: formatMoney(totPay) })
+      )
+    }
+    setMessages((m) => [...m, { role: 'bot', text: lines.join('\n') }])
+  }
+
   async function send() {
     const msg = input.trim()
     if (!msg || busy) return
@@ -150,6 +227,12 @@ export default function SalaryChat({ snapshot, shifts = [], onClose }) {
     const tsReq = parseTimesheetReq(msg)
     if (tsReq) {
       handleTimesheet(tsReq)
+      return
+    }
+    // Hỏi về một ngày cụ thể (có slash/dash) → trả lời chi tiết ngày đó.
+    const dayReq = parseDayReq(msg)
+    if (dayReq) {
+      handleDay(dayReq)
       return
     }
 
