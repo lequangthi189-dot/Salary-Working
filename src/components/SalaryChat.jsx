@@ -14,6 +14,16 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 
+// Gom toàn bộ HƯỚNG DẪN dùng app (từ các bước WelcomeGuide) thành text, theo đúng
+// ngôn ngữ hiện tại. Gửi cho AI để trả lời câu "cách dùng" — CHỈ dựa vào đây.
+function buildGuide(t) {
+  const lines = [t('welcome.subtitle')]
+  for (let i = 1; i <= 8; i++) {
+    lines.push(`${i}. ${t(`welcome.step${i}.title`)}: ${t(`welcome.step${i}.desc`)}`)
+  }
+  return lines.join('\n')
+}
+
 // Bỏ dấu + đ→d + thường hoá, để khớp lệnh dù gõ có dấu hay không.
 function deaccent(s) {
   return s
@@ -886,7 +896,13 @@ export default function SalaryChat({
     setBusy(true)
     try {
       const { data, error } = await supabase.functions.invoke('salary-chat', {
-        body: { message: msg, lang, today: localTodayStr(), snapshot },
+        body: {
+          message: msg,
+          lang,
+          today: localTodayStr(),
+          snapshot,
+          guide: buildGuide(t),
+        },
       })
       if (error || data?.error) throw new Error(data?.error || error.message)
 

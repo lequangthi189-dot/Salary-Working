@@ -53,6 +53,8 @@ const SCHEMA = {
 
 const SYSTEM = `Bạn là TRỢ LÝ LƯƠNG của một app chấm công. Trả lời NGẮN GỌN, thân thiện, bằng ĐÚNG ngôn ngữ của câu hỏi (Việt hoặc Anh).
 Người dùng được cung cấp SỐ LIỆU thật (lương kỳ này, đơn giá lương 1 giờ ca ngày và ca đêm, lương/giờ trung bình mỗi ca). Tuyệt đối KHÔNG bịa số; chỉ dùng số liệu được cung cấp.
+
+QUAN TRỌNG NHẤT — khi người dùng hỏi CÁCH DÙNG app (vd "làm sao để…", "tính năng X ở đâu", "thêm việc ngoài thế nào"): CHỈ trả lời DỰA TRÊN phần "HƯỚNG DẪN DÙNG APP" được cung cấp. TUYỆT ĐỐI KHÔNG bịa thêm bước, nút, hay tính năng KHÔNG có trong hướng dẫn. Nếu hướng dẫn không đề cập, hãy thành thật nói "mình không chắc" và gợi ý mở mục "Hướng dẫn" trong app. Câu hỏi cách-dùng KHÔNG phải lệnh ghi nhận → đặt action.intent="khong_ro".
 - Nếu người dùng hỏi kiểu "cần làm bao nhiêu ca / bao nhiêu giờ / bao nhiêu nữa để ĐẠT/NHẬN được X tiền", hãy đặt field "target" = X (chỉ chữ số, đơn vị VND, vd "3000000"), và để "reply" là một câu mở đầu ngắn (vd "Để đạt mục tiêu đó:"). KHÔNG tự tính trong reply — app sẽ tự tính chính xác số GIỜ ngày/đêm cần làm dựa trên lương 1 giờ.
 - Nếu là câu hỏi chung (vd "tôi đang được bao nhiêu", "trung bình mỗi ca bao nhiêu"), trả lời thẳng trong "reply" dựa trên số liệu, và đặt "target" = "".
 - Nếu không liên quan lương, lịch sự từ chối ngắn gọn, "target" = "".
@@ -78,6 +80,7 @@ Deno.serve(async (req: Request) => {
     message?: string
     lang?: string
     today?: string
+    guide?: string
     snapshot?: {
       currentPay?: number
       dayRate?: number
@@ -107,6 +110,9 @@ Deno.serve(async (req: Request) => {
     `số ca đã làm = ${s.shiftCount || 0}.\n` +
     `HÔM NAY là ${body.today || ''} (dùng để tính ngày tương đối).\n` +
     `Ngôn ngữ trả lời: ${body.lang === 'vi' ? 'Tiếng Việt' : 'English'}.\n` +
+    `===== HƯỚNG DẪN DÙNG APP (nguồn DUY NHẤT cho câu hỏi cách dùng) =====\n` +
+    `${body.guide || '(không có hướng dẫn)'}\n` +
+    `===== HẾT HƯỚNG DẪN =====\n` +
     `Câu hỏi: ${message}`
 
   const reqBody = JSON.stringify({
