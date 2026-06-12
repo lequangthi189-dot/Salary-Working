@@ -391,6 +391,10 @@ export const translations = {
     "chat.dedAdded":
       "Added a deduction {amount} ({reason}) on {date} — period {label}.",
     "chat.dedAddErr": "Couldn't add the deduction: {err}",
+    "chat.extraAdded": "Added extra income {amount} ({desc}) on {date}.",
+    "chat.extraAddedPlanned":
+      "Added planned extra income {amount} ({desc}) on {date} (not received yet).",
+    "chat.extraAddErr": "Couldn't add the extra income: {err}",
     "chat.dedNone": "{label}: no deductions.",
     "chat.dedHeader": "{label} — total deducted {total}:",
     "chat.dedLine": "• {date} {reason}: −{amount}",
@@ -821,6 +825,10 @@ export const translations = {
     "chat.dedAdded":
       "Đã thêm khoản trừ {amount} ({reason}) ngày {date} — kỳ {label}.",
     "chat.dedAddErr": "Không thêm được khoản trừ: {err}",
+    "chat.extraAdded": "Đã thêm thu nhập việc ngoài {amount} ({desc}) ngày {date}.",
+    "chat.extraAddedPlanned":
+      "Đã thêm thu nhập việc ngoài DỰ KIẾN {amount} ({desc}) ngày {date} (chưa nhận).",
+    "chat.extraAddErr": "Không thêm được thu nhập việc ngoài: {err}",
     "chat.dedNone": "{label}: không có khoản trừ nào.",
     "chat.dedHeader": "{label} — tổng bị trừ {total}:",
     "chat.dedLine": "• {date} {reason}: −{amount}",

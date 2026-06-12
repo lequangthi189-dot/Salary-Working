@@ -203,6 +203,26 @@ function parseDeductionQuery(msg) {
   return { month: m ? Number(m[1]) : null, year: y ? Number(y[1]) : null }
 }
 
+// Yêu cầu THÊM thu nhập việc ngoài: keyword "thu nhập ngoài/việc ngoài" + số tiền.
+// Ngày tuỳ chọn (hiểu mai/thứ…); mặc định hôm nay. Mô tả lấy phần chữ còn lại.
+function parseExtraIncomeAdd(msg) {
+  const s = deaccent(msg)
+  if (!/(thu nhap (viec )?ngoai|viec ngoai|luong ngoai)/.test(s)) return null
+  const amount = parseAmountVnd(s)
+  if (!amount) return null
+  const date = resolveDate(msg) || localTodayStr()
+  const description = msg
+    .replace(/thu nhập việc ngoài|thu nhập ngoài|việc ngoài|lương ngoài/gi, ' ')
+    .replace(/\d[\d.,]*\s*(triệu|tr|nghìn|ngàn|k|đ|vnd)?/gi, ' ')
+    .replace(/ngày\s*\d{1,2}([/-]\d{1,2}([/-]\d{2,4})?)?/gi, ' ')
+    .replace(/\d{1,2}[/-]\d{1,2}([/-]\d{2,4})?/g, ' ')
+    .replace(/hôm nay|ngày mai|mai|mốt|thứ\s*\d|chủ nhật|tuần sau|tuần này/gi, ' ')
+    .replace(/(thêm|tạo|cho|với|mô tả|tôi|có)/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return { date, description, amount }
+}
+
 // Yêu cầu xem LỊCH DỰ KIẾN tuần này.
 function parsePlannedReq(msg) {
   const s = deaccent(msg)
@@ -220,6 +240,7 @@ export default function SalaryChat({
   shifts = [],
   deductions = [],
   onAddDeduction,
+  onAddExtraIncome,
   onAddShift,
   onOpenImport,
   onOpenReconcile,
@@ -491,6 +512,23 @@ export default function SalaryChat({
       )
   }
 
+  // THÊM thu nhập việc ngoài qua chat. Ngày tương lai → dự kiến (chưa nhận).
+  async function handleAddExtraIncome({ date, description, amount }) {
+    if (!onAddExtraIncome) return bot(t('chat.error'))
+    setBusy(true)
+    const err = await onAddExtraIncome({ date, description, amount })
+    setBusy(false)
+    if (err) return bot(t('chat.extraAddErr', { err }))
+    const planned = date > localTodayStr()
+    bot(
+      t(planned ? 'chat.extraAddedPlanned' : 'chat.extraAdded', {
+        amount: formatMoney(amount),
+        desc: description || '—',
+        date: dmy(date),
+      })
+    )
+  }
+
   // TRA CỨU khoản trừ của một kỳ: liệt kê + tổng + thực nhận sau trừ.
   function handleDeductionQuery({ month, year }) {
     const key = month
@@ -607,6 +645,12 @@ export default function SalaryChat({
     const dedQ = parseDeductionQuery(msg)
     if (dedQ) {
       handleDeductionQuery(dedQ)
+      return
+    }
+    // Thu nhập việc ngoài: thêm khoản.
+    const exReq = parseExtraIncomeAdd(msg)
+    if (exReq) {
+      await handleAddExtraIncome(exReq)
       return
     }
     // Yêu cầu bảng công → xử lý tại client từ shifts, không gọi AI.

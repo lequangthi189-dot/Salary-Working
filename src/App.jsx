@@ -412,6 +412,7 @@ export default function App() {
           shifts={shifts}
           deductions={deductions}
           onAddDeduction={addDeduction}
+          onAddExtraIncome={addExtraIncome}
           onAddShift={addShift}
           onOpenImport={() => {
             setShowChat(false)
