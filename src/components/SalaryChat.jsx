@@ -170,9 +170,7 @@ function parseShiftShorthand(msg) {
   const [ty, tm, td] = today.split('-').map(Number)
   const todayDow = new Date(ty, tm - 1, td).getDay()
   const date = addDaysStr(today, (wd - todayDow + 7) % 7)
-  return night
-    ? { date, start: '22:00', end: '06:00' }
-    : { date, start: '06:00', end: '14:00' }
+  return { date, night }
 }
 
 // Yêu cầu THÊM khoản trừ: cần từ khoá "trừ/bồi thường" + số tiền (≥1000 hoặc có
@@ -227,6 +225,7 @@ export default function SalaryChat({
   ])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [pending, setPending] = useState(null) // { date } đang chờ nhập giờ ca ngày
   const listRef = useRef(null)
 
   useEffect(() => {
@@ -311,6 +310,7 @@ export default function SalaryChat({
       ...m,
       {
         role: 'bot',
+        wide: true,
         node: (
           <div className="chat-ts">
             <div className="chat-ts-title">{t('chat.tsTitle', { label })}</div>
@@ -376,6 +376,44 @@ export default function SalaryChat({
   }
 
   const bot = (text) => setMessages((m) => [...m, { role: 'bot', text }])
+
+  // Ca ngày không ghi giờ → hỏi chọn: 6–14, 14–22, hoặc Giờ khác (tự nhập).
+  function pushDayChoice(date) {
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-choice">
+            <div>{t('chat.askDayTimes', { date: dmy(date) })}</div>
+            <div className="chat-choice-btns">
+              <button
+                type="button"
+                onClick={() => handleAddShift({ date, start: '06:00', end: '14:00' })}
+              >
+                06:00–14:00
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAddShift({ date, start: '14:00', end: '22:00' })}
+              >
+                14:00–22:00
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPending({ date })
+                  bot(t('chat.askDayCustom'))
+                }}
+              >
+                {t('chat.otherHours')}
+              </button>
+            </div>
+          </div>
+        ),
+      },
+    ])
+  }
 
   // THÊM CA qua chat. Ngày TƯƠNG LAI → lưu lịch dự kiến (scheduled_*, chưa chấm
   // công). Ngày hôm nay/quá khứ → lưu ca thực tế (start/end).
@@ -486,6 +524,24 @@ export default function SalaryChat({
     setMessages((m) => [...m, { role: 'user', text: msg }])
     const norm = deaccent(msg)
 
+    // Đang chờ nhập giờ cho ca ngày (sau khi bấm "Giờ khác").
+    if (pending) {
+      if (/huy|cancel|thoi|bo qua/.test(norm)) {
+        setPending(null)
+        bot(t('chat.cancelled'))
+        return
+      }
+      const times = findTimes(norm)
+      if (times.length >= 2) {
+        const d = pending.date
+        setPending(null)
+        await handleAddShift({ date: d, start: times[0], end: times[1] })
+        return
+      }
+      bot(t('chat.askDayTimesRetry'))
+      return
+    }
+
     // Mở công cụ cần ảnh.
     if (/nhap lich/.test(norm) && onOpenImport) {
       bot(t('chat.openImport'))
@@ -506,7 +562,11 @@ export default function SalaryChat({
     // Nói tắt: thứ + loại ca, vd "thứ 7 tôi có 1 ca đêm".
     const shReq = parseShiftShorthand(msg)
     if (shReq) {
-      await handleAddShift(shReq)
+      if (shReq.night) {
+        await handleAddShift({ date: shReq.date, start: '22:00', end: '06:00' })
+      } else {
+        pushDayChoice(shReq.date) // ca ngày → hỏi chọn giờ
+      }
       return
     }
     // Bồi thường: thêm khoản trừ (ưu tiên trước hỏi-ngày vì câu có thể kèm ngày).
@@ -582,7 +642,7 @@ export default function SalaryChat({
           {messages.map((m, i) => (
             <div
               key={i}
-              className={`chat-msg chat-${m.role}${m.node ? ' chat-table' : ''}`}
+              className={`chat-msg chat-${m.role}${m.wide ? ' chat-table' : ''}`}
             >
               {m.node || m.text}
             </div>

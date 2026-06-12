@@ -380,6 +380,11 @@ export const translations = {
       "Added a planned shift on {date}: {start} – {end} (not checked in yet).",
     "chat.addShiftActual": "Added a shift on {date}: {start} – {end}.",
     "chat.addShiftErr": "Couldn't add the shift: {err}",
+    "chat.askDayTimes": "Day shift on {date}: which hours?",
+    "chat.otherHours": "Other hours",
+    "chat.askDayCustom": "Type the hours (in – out), e.g. 8h-17h.",
+    "chat.askDayTimesRetry": "Please type the hours, e.g. 8h-17h (or 'cancel').",
+    "chat.cancelled": "Cancelled.",
     "chat.estHeader":
       "🎯 Target {target}: you have {current}, {remaining} to go.",
     "chat.estDayLine":
@@ -779,6 +784,11 @@ export const translations = {
       "Đã thêm lịch dự kiến ngày {date}: {start} – {end} (chưa chấm công).",
     "chat.addShiftActual": "Đã thêm ca ngày {date}: {start} – {end}.",
     "chat.addShiftErr": "Không thêm được ca: {err}",
+    "chat.askDayTimes": "Ca ngày {date} từ mấy giờ?",
+    "chat.otherHours": "Giờ khác",
+    "chat.askDayCustom": "Nhập giờ vào–ra, vd 8h-17h.",
+    "chat.askDayTimesRetry": "Vui lòng nhập giờ, vd 8h-17h (hoặc 'huỷ').",
+    "chat.cancelled": "Đã huỷ.",
     "chat.estHeader":
       "🎯 Mục tiêu {target}: bạn đang có {current}, còn thiếu {remaining}.",
     "chat.estDayLine": "• Làm ca NGÀY ({rate}/giờ): cần khoảng {hours} giờ.",

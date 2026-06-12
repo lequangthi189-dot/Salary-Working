@@ -344,6 +344,27 @@ button[type='submit']:disabled {
   font-weight: 600;
   margin-bottom: 0.35rem;
 }
+/* Nút lựa chọn giờ ca ngày trong chat */
+.chat-choice-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+.chat-choice-btns button {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chat-choice-btns button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .chat-typing {
   color: var(--muted);
   letter-spacing: 0.15em;
