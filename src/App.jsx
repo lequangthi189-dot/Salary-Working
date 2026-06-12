@@ -412,6 +412,7 @@ export default function App() {
         snapshot={chatSnapshot}
         shifts={shifts}
         deductions={deductions}
+        extraIncome={extraIncome}
         onAddDeduction={addDeduction}
         onAddExtraIncome={addExtraIncome}
         onAddShift={addShift}
