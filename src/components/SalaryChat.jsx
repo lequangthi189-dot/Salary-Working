@@ -54,8 +54,15 @@ function parseDayReq(msg) {
   const day = Number(m[1])
   const month = Number(m[2])
   if (day < 1 || day > 31 || month < 1 || month > 12) return null
-  let year = m[3] ? Number(m[3]) : new Date().getFullYear()
-  if (year < 100) year += 2000
+  let year = m[3] ? Number(m[3]) : null
+  if (year && year < 100) year += 2000
+  if (!year) {
+    // Không ghi năm → mặc định năm nay; nếu ngày suy ra ở TƯƠNG LAI thì hiểu là
+    // năm trước (lần gần nhất đã qua) — vd hôm nay 1/9 mà hỏi 10/12 → năm ngoái.
+    const now = new Date()
+    year = now.getFullYear()
+    if (new Date(year, month - 1, day) > now) year -= 1
+  }
   return `${year}-${pad2(month)}-${pad2(day)}`
 }
 
