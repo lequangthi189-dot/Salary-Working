@@ -292,6 +292,7 @@ function parsePlannedReq(msg) {
 // (chính xác) dựa trên số liệu lịch sử (snapshot). Bảng công / chi tiết ngày /
 // bồi thường / lịch dự kiến đều xử lý tại client từ dữ liệu (không gọi AI).
 export default function SalaryChat({
+  open = true,
   snapshot,
   shifts = [],
   deductions = [],
@@ -892,6 +893,9 @@ export default function SalaryChat({
       setBusy(false)
     }
   }
+
+  // Đóng chat = ẩn (component vẫn mount → giữ tin nhắn). Reload trang mới reset.
+  if (!open) return null
 
   return (
     <div className="modal-overlay comp-fade" onClick={onClose}>

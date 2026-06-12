@@ -406,25 +406,25 @@ export default function App() {
         />
       )}
 
-      {showChat && (
-        <SalaryChat
-          snapshot={chatSnapshot}
-          shifts={shifts}
-          deductions={deductions}
-          onAddDeduction={addDeduction}
-          onAddExtraIncome={addExtraIncome}
-          onAddShift={addShift}
-          onOpenImport={() => {
-            setShowChat(false)
-            setShowImport(true)
-          }}
-          onOpenReconcile={() => {
-            setShowChat(false)
-            setShowReconcile(true)
-          }}
-          onClose={() => setShowChat(false)}
-        />
-      )}
+      {/* Luôn mount để GIỮ tin nhắn khi đóng/mở; chỉ reset khi reload trang. */}
+      <SalaryChat
+        open={showChat}
+        snapshot={chatSnapshot}
+        shifts={shifts}
+        deductions={deductions}
+        onAddDeduction={addDeduction}
+        onAddExtraIncome={addExtraIncome}
+        onAddShift={addShift}
+        onOpenImport={() => {
+          setShowChat(false)
+          setShowImport(true)
+        }}
+        onOpenReconcile={() => {
+          setShowChat(false)
+          setShowReconcile(true)
+        }}
+        onClose={() => setShowChat(false)}
+      />
 
       {showImport && (
         <ScheduleImportModal
