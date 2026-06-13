@@ -22,9 +22,24 @@ let _holidayDayPct = 100
 let _holidayNightPct = 100
 // Cửa hàng có ca đêm không. false → KHÔNG có phụ cấp đêm: mọi giờ tính lương thường.
 let _hasNightShift = true
+// Cửa sổ đêm THEO TỪNG NGƯỜI DÙNG (phút trong ngày). Mặc định 22:00–06:00; có thể
+// vắt qua nửa đêm (start > end) hoặc nằm trong ngày (start < end).
+let _nightStartMin = NIGHT_START_HOUR * 60
+let _nightEndMin = NIGHT_END_HOUR * 60
 
 const toNum = (v, fallback) =>
   Number.isFinite(Number(v)) ? Number(v) : fallback
+
+// "HH:MM" (hoặc "HH:MM:SS" từ Postgres time) → phút trong ngày; null nếu sai dạng.
+function parseHHMM(v) {
+  if (typeof v !== 'string') return null
+  const m = v.match(/^(\d{1,2}):(\d{2})/)
+  if (!m) return null
+  const h = Number(m[1])
+  const mm = Number(m[2])
+  if (h < 0 || h > 23 || mm < 0 || mm > 59) return null
+  return h * 60 + mm
+}
 
 export function setRates(cfg = {}) {
   _dayRate = toNum(cfg.dayRate, _dayRate)
@@ -32,6 +47,18 @@ export function setRates(cfg = {}) {
   _holidayDayPct = toNum(cfg.holidayDayPct, _holidayDayPct)
   _holidayNightPct = toNum(cfg.holidayNightPct, _holidayNightPct)
   if (cfg.hasNightShift !== undefined) _hasNightShift = !!cfg.hasNightShift
+  const ns = parseHHMM(cfg.nightStart)
+  if (ns != null) _nightStartMin = ns
+  const ne = parseHHMM(cfg.nightEnd)
+  if (ne != null) _nightEndMin = ne
+}
+
+// Cửa sổ đêm (phút trong ngày) — dùng cho việc tách giờ ngày/đêm ở shiftMath.
+export function getNightStartMin() {
+  return _nightStartMin
+}
+export function getNightEndMin() {
+  return _nightEndMin
 }
 
 // Làm tròn để tránh sai số dấu phẩy động (vd 25500×1.3).

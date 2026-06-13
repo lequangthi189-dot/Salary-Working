@@ -4,8 +4,8 @@ import {
   getHolidayDayRate,
   getHolidayNightRate,
   getHasNightShift,
-  NIGHT_START_HOUR,
-  NIGHT_END_HOUR,
+  getNightStartMin,
+  getNightEndMin,
 } from './rates.js'
 import { getLang, translate } from './i18n.jsx'
 import { getRate } from './currency.jsx'
@@ -18,8 +18,6 @@ function ratesFor(isHoliday) {
 }
 
 const MINUTES_PER_DAY = 1440
-const NIGHT_START_MIN = NIGHT_START_HOUR * 60 // 22:00 -> 1320
-const NIGHT_END_MIN = NIGHT_END_HOUR * 60 // 06:00 -> 360
 
 // Parse an "HH:MM" string into minutes since midnight.
 export function parseTime(hhmm) {
@@ -27,10 +25,16 @@ export function parseTime(hhmm) {
   return h * 60 + m
 }
 
-// Is the minute-of-day (0..1439) inside the night window 22:00–06:00?
+// Is the minute-of-day (0..1439) inside the night window? Cửa sổ đêm lấy từ hồ sơ
+// (mặc định 22:00–06:00); có thể vắt qua nửa đêm (start > end) hoặc nằm gọn trong
+// ngày (start < end).
 function isNightMinute(minuteOfDay) {
   const m = ((minuteOfDay % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY
-  return m >= NIGHT_START_MIN || m < NIGHT_END_MIN
+  const start = getNightStartMin()
+  const end = getNightEndMin()
+  if (start === end) return false // cửa sổ rỗng → không có giờ đêm
+  if (start < end) return m >= start && m < end
+  return m >= start || m < end // vắt qua nửa đêm (vd 22:00–06:00)
 }
 
 /**

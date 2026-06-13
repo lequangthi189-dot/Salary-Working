@@ -275,3 +275,27 @@ describe('lương lễ (holiday pay)', () => {
     expect(s.pay).toBe(8 * HOLIDAY_DAY_RATE) // tổng lương dùng giá lễ
   })
 })
+
+// Cửa sổ đêm theo từng người (nightStart/nightEnd). Mặc định 22:00–06:00; có thể
+// đổi qua hồ sơ và việc tách giờ ngày/đêm phải theo cửa sổ mới.
+describe('cửa sổ đêm tuỳ chỉnh (nightStart/nightEnd)', () => {
+  afterEach(() => {
+    // Trả lại cửa sổ mặc định 22:00–06:00 cho các test khác.
+    setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: '22:00', nightEnd: '06:00' })
+  })
+
+  it('cửa sổ 21:00–05:00: ca 20:00–06:00 → 1h ngày + 9h đêm', () => {
+    setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: '21:00', nightEnd: '05:00' })
+    const r = computeShift('20:00', '06:00')
+    expect(r.dayHours).toBe(2) // 20:00–21:00 và 05:00–06:00
+    expect(r.nightHours).toBe(8) // 21:00–05:00
+    expect(r.pay).toBe(2 * DAY_RATE + 8 * NIGHT_RATE)
+  })
+
+  it('cửa sổ trong ngày 00:00–06:00 (start < end): ca 22:00–06:00 → 2h ngày + 6h đêm', () => {
+    setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: '00:00', nightEnd: '06:00' })
+    const r = computeShift('22:00', '06:00')
+    expect(r.dayHours).toBe(2) // 22:00–00:00 không còn là đêm
+    expect(r.nightHours).toBe(6) // 00:00–06:00
+  })
+})

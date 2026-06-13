@@ -32,6 +32,8 @@ export function updateEmployeeInfo(userId, info) {
       holiday_day_pct: info.holidayDayPct,
       holiday_night_pct: info.holidayNightPct,
       has_night_shift: info.hasNightShift,
+      night_start: info.nightStart,
+      night_end: info.nightEnd,
       period_start_day: info.periodStartDay,
       period_end_day: info.periodEndDay,
     })

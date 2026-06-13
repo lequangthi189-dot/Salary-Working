@@ -24,6 +24,8 @@ function applyRates(p) {
     holidayDayPct: p.holiday_day_pct,
     holidayNightPct: p.holiday_night_pct,
     hasNightShift: p.has_night_shift !== false,
+    nightStart: p.night_start,
+    nightEnd: p.night_end,
   })
 }
 
