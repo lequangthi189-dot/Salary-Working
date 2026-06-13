@@ -122,6 +122,8 @@ alter table public.profiles add column if not exists email_confirmed boolean not
 alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
 -- Ngôn ngữ ưa thích của người dùng (vi/en/us/au) — đăng nhập lại giữ đúng ngôn ngữ.
 alter table public.profiles add column if not exists lang text;
+-- Phong cách giao diện ưa thích (dark/glass/neumorph) — lưu theo tài khoản.
+alter table public.profiles add column if not exists theme text;
 -- Kỳ lương theo từng người (ngày bắt đầu / chốt tính công). Mặc định 26 / 25.
 alter table public.profiles add column if not exists period_start_day smallint not null default 26;
 alter table public.profiles add column if not exists period_end_day smallint not null default 25;

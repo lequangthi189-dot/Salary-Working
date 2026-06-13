@@ -1,0 +1,32 @@
+/* Nút gạt 1 núc xoay vòng phong cách (header, cạnh nút chatbot): ô màu preview của
+   theme hiện tại + tên, bấm để xoay sang theme kế tiếp. */
+.theme-cycle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 32px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  flex: none;
+  transition: background 0.2s, transform 0.1s;
+}
+.theme-cycle:hover {
+  background: var(--panel);
+}
+.theme-cycle:active {
+  transform: scale(0.96);
+}
+.theme-cycle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.theme-cycle .theme-swatch {
+  flex: none;
+}

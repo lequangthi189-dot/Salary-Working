@@ -198,7 +198,11 @@
   box-shadow: var(--nm-inset);
 }
 
-[data-theme='neumorph'] :is(input, select, textarea) {
+/* Loại checkbox/radio khỏi style ô nhập neumorph: bóng chìm + nền var(--bg) làm
+   checkbox "Ngày lễ" biến thành ô lõm dài như thanh trượt. Cho chúng dùng checkbox
+   mặc định của trình duyệt (giống các theme khác). */
+[data-theme='neumorph']
+  :is(input:not([type='checkbox']):not([type='radio']), select, textarea) {
   background: var(--bg);
   border: none;
   box-shadow: var(--nm-inset);

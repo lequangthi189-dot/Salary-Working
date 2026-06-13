@@ -16,6 +16,7 @@ import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import WelcomeGuide from './components/WelcomeGuide.jsx'
 import NavBar from './components/NavBar.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
 import ToolsSheet from './components/ToolsSheet.jsx'
 import { FLAGS } from './components/LangToggle.jsx'
 import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
@@ -62,8 +63,8 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
   const [showPayPeriod, setShowPayPeriod] = useState(false) // popup Kỳ lương
-  const [theme, setThemeSt] = useState(getTheme()) // phong cách hiện tại (cho navbar)
   const [showToolsSheet, setShowToolsSheet] = useState(false) // bottom sheet Công cụ
+  const [theme, setThemeSt] = useState(getTheme()) // phong cách hiện tại (cho ThemeToggle)
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
@@ -147,6 +148,23 @@ export default function App() {
   function changeLang(code) {
     setLang(code)
     if (profile) saveProfileFields({ lang: code })
+  }
+
+  // Khi hồ sơ nạp xong, áp dụng phong cách đã lưu theo tài khoản (giữ qua các máy).
+  useEffect(() => {
+    const saved = profile?.theme
+    if (saved && THEMES.includes(saved) && saved !== theme) {
+      setTheme(saved)
+      setThemeSt(saved)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.theme])
+
+  // Đổi phong cách: áp tại chỗ (setTheme lưu localStorage) + lưu theo tài khoản.
+  function changeTheme(key) {
+    setTheme(key)
+    setThemeSt(key)
+    if (profile) saveProfileFields({ theme: key })
   }
 
   // Đánh dấu kỳ đang chờ nhận = đã nhận (ngày nhận = hôm nay).
@@ -234,16 +252,13 @@ export default function App() {
     profile?.employee_code || session.user.user_metadata?.employee_code || ''
 
   // Mục điều hướng cho NavBar pill: 3 mục từ sidebar cũ (Kỳ lương / Tài khoản /
-  // Hướng dẫn) + 2 mục tiện ích có MENU chọn ngược lên: Ngôn ngữ & Phong cách.
+  // Hướng dẫn) + Công cụ + Ngôn ngữ (menu chọn ngược lên). Phong cách đã chuyển ra
+  // thanh gạt ThemeToggle ở header (cạnh chatbot).
   const LANG_NAMES = {
     vi: 'Tiếng Việt',
     en: 'English (UK)',
     us: 'English (US)',
     au: 'English (AU)',
-  }
-  function pickTheme(key) {
-    setTheme(key)
-    setThemeSt(key)
   }
   // 4 công cụ (trước nằm trong dropdown "Công cụ") → mở bottom sheet, mỗi ô gọi
   // đúng hàm/mở đúng modal như cũ.
@@ -273,18 +288,6 @@ export default function App() {
         }
       }),
     },
-    {
-      key: 'theme',
-      icon: 'theme',
-      label: t('theme.label'),
-      menu: THEMES.map((key) => ({
-        key,
-        label: t(`theme.${key}`),
-        swatch: key,
-        active: theme === key,
-        onPick: () => pickTheme(key),
-      })),
-    },
   ]
   // App không dùng router → "route" = panel/modal đang mở. Suy ra mục active theo
   // KEY (không phụ thuộc chỉ số cứng); -1 = không mở gì (giữ vị trí indicator).
@@ -298,7 +301,7 @@ export default function App() {
           ? 'guide'
           : null
   const activeNav = activeKey ? navItems.findIndex((it) => it.key === activeKey) : -1
-  // Item thường mở modal/sheet tương ứng; Ngôn ngữ/Phong cách tự mở menu trong NavBar.
+  // Item thường mở modal/sheet tương ứng; Ngôn ngữ tự mở menu trong NavBar.
   function onNavSelect(i) {
     const key = navItems[i]?.key
     if (key === 'payPeriod') setShowPayPeriod(true)
@@ -315,6 +318,7 @@ export default function App() {
           <h1 className="app-title">Salary Working</h1>
         </div>
         <div className="header-actions">
+          <ThemeToggle theme={theme} onChange={changeTheme} />
           <button
             type="button"
             className="chat-avatar-btn"
