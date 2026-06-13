@@ -1,51 +1,29 @@
-import { useState } from 'react'
-import { useI18n } from '../lib/i18n.jsx'
-import { THEMES, getTheme, setTheme } from '../lib/theme.js'
+import { THEMES } from '../lib/theme.js'
+import './ThemeToggle.css'
 
-// Dropdown chọn phong cách giao diện (dark / glass / neumorph). Tái dùng style
-// dropdown của LangToggle (.lang-wrap/.lang-toggle/.lang-menu). up=true → mở lên.
-export default function ThemeToggle({ up = false }) {
-  const { t } = useI18n()
-  const [theme, setThemeState] = useState(getTheme())
-  const [open, setOpen] = useState(false)
+// Tên phong cách LUÔN hiển thị tiếng Anh (không đổi theo ngôn ngữ app).
+const THEME_NAMES = { dark: 'Sleek Dark', glass: 'Glassmorphism', neumorph: 'Soft UI' }
 
-  function pick(key) {
-    setTheme(key)
-    setThemeState(key)
-    setOpen(false)
+// Nút gạt 1 núc XOAY VÒNG phong cách: bấm để chuyển sang theme kế tiếp theo vòng
+// dark → glass → neumorph → dark. Controlled — App giữ `theme` (đồng bộ + lưu theo
+// tài khoản), nút chỉ hiển thị ô màu preview + tên rồi gọi onChange(theme kế tiếp).
+export default function ThemeToggle({ theme, onChange, className = '' }) {
+  function cycle() {
+    const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]
+    onChange(next)
   }
 
+  const name = THEME_NAMES[theme] || theme
   return (
-    <div className="lang-wrap theme-wrap">
-      <button
-        type="button"
-        className="lang-toggle"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="true"
-        aria-expanded={open}
-        title={t('theme.label')}
-      >
-        <span className={`theme-swatch theme-swatch-${theme}`} />
-        <span className="title-caret">▾</span>
-      </button>
-      {open && (
-        <>
-          <div className="dropdown-overlay" onClick={() => setOpen(false)} />
-          <div className={`lang-menu${up ? ' up' : ''}`} role="menu">
-            {THEMES.map((key) => (
-              <button
-                key={key}
-                type="button"
-                className={theme === key ? 'active' : ''}
-                onClick={() => pick(key)}
-              >
-                <span className={`theme-swatch theme-swatch-${key}`} />
-                {t(`theme.${key}`)}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <button
+      type="button"
+      className={`theme-cycle ${className}`.trim()}
+      onClick={cycle}
+      title="Theme"
+      aria-label={`Theme: ${name}`}
+    >
+      <span className={`theme-swatch theme-swatch-${theme}`} />
+      <span className="theme-cycle__name">{name}</span>
+    </button>
   )
 }
