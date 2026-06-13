@@ -73,7 +73,7 @@ const NAMES = {
   us: 'English (US)',
   au: 'English (AU)',
 }
-const ORDER = ['vi', 'en', 'us', 'au']
+const ORDER = ['vi', 'en']
 
 // Dropdown chọn ngôn ngữ: VI (₫) · English-UK (£) · English-US ($).
 // up=true → menu mở LÊN trên (dùng ở đáy sidebar).

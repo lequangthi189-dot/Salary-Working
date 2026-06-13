@@ -138,7 +138,7 @@ export default function App() {
   // vậy đăng nhập lại (kể cả máy khác) giữ đúng ngôn ngữ người dùng đã chọn.
   useEffect(() => {
     const saved = profile?.lang
-    if (saved && ['vi', 'en', 'us', 'au'].includes(saved) && saved !== lang) {
+    if (saved && ['vi', 'en'].includes(saved) && saved !== lang) {
       setLang(saved)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,8 +257,6 @@ export default function App() {
   const LANG_NAMES = {
     vi: 'Tiếng Việt',
     en: 'English (UK)',
-    us: 'English (US)',
-    au: 'English (AU)',
   }
   // 4 công cụ (trước nằm trong dropdown "Công cụ") → mở bottom sheet, mỗi ô gọi
   // đúng hàm/mở đúng modal như cũ.
@@ -277,7 +275,7 @@ export default function App() {
       key: 'lang',
       icon: 'lang',
       label: t('nav.language'),
-      menu: ['vi', 'en', 'us', 'au'].map((code) => {
+      menu: ['vi', 'en'].map((code) => {
         const Flag = FLAGS[code]
         return {
           key: code,
