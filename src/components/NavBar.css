@@ -1,11 +1,22 @@
 /* Animated pill navbar có indicator.
    - Thanh pill trắng bo góc, mỗi mục rộng 56px.
-   - Cục tròn accent trượt ngang: `left` do JS đo theo offsetLeft của ô active
-     (không hardcode chiều rộng); transition 0.5s.
+   - Cục tròn accent nhô lên (nửa trên khỏi thanh), trượt ngang: `left` do JS đo
+     theo offsetLeft của ô active (không hardcode chiều rộng); transition 0.5s.
    - Icon mục active nhấc lên (chỉ translateY) vào trong cục tròn + chuyển trắng.
    - Nhãn chữ fade + trượt lên ở dưới.
-   - Hai bên cục tròn "khoét cong" vào thanh bằng ::before/::after, box-shadow tô
-     bằng var(--bg) (màu nền trang) → BẮT BUỘC khớp nền để tạo vết lõm liền mạch. */
+   - "Vết khoét" quanh cục tròn KHÔNG tô màu nền nữa (cũ: viền/box-shadow = var(--bg)
+     → trên theme nền GRADIENT không có màu đặc để khớp → lòi viền tối). Thay bằng
+     MASK khoét LỖ THẬT trên thanh pill để NỀN TRANG THẬT (kể cả gradient) lộ qua,
+     tạo moat + scoop → hợp mọi theme. Tâm lỗ = --ind-cx (JS đo = tâm ô active),
+     trượt cùng nhịp cục tròn nhờ @property cho transition. */
+
+/* Đăng ký --ind-cx là <length> để TRANSITION được (vị trí tâm lỗ mask) → lỗ trượt
+   mượt cùng cục tròn thay vì nhảy giật. */
+@property --ind-cx {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: -100px;
+}
 .navbar {
   position: fixed;
   left: 50%;
@@ -28,9 +39,24 @@
   position: relative;
   display: flex;
   padding: 0 6px; /* để cục tròn không chạm mép bo của thanh */
+}
+
+/* Mặt phẳng TRẮNG của thanh tách riêng ra ::before để CHỈ nó bị mask khoét lỗ —
+   cục tròn + icon là con thật của <ul> nên KHÔNG bị clip (giữ được nhô lên).
+   ::before nằm dưới cùng (vẽ trước mọi con) nên ô/icon/cục tròn đều đè lên trên.
+   Khoét lỗ tròn ở mép TRÊN ngay dưới cục tròn để lộ NỀN TRANG THẬT (moat ~4px +
+   scoop). Tâm lỗ (--ind-cx) do JS đặt = tâm ô active; bán kính 28px (cục tròn
+   accent 24px → chừa 4px nền). Trượt mượt nhờ transition --ind-cx. */
+.navbar-list::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background: #ffffff;
   border-radius: 28px;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+  -webkit-mask: radial-gradient(circle 29px at var(--ind-cx) 0, transparent 28px, #000 29px);
+          mask: radial-gradient(circle 29px at var(--ind-cx) 0, transparent 28px, #000 29px);
+  transition: --ind-cx 0.5s;
 }
 
 .navbar-item {
@@ -96,41 +122,20 @@
 }
 
 /* Cục tròn indicator: `left` do JS đo (offsetLeft của ô active + căn giữa) — KHÔNG
-   dùng công thức 70px*index cố định. Viền dày tô bằng nền trang. */
+   dùng công thức 70px*index cố định. KHÔNG còn viền tô màu nền: moat/scoop nay do
+   lỗ mask trên .navbar-list lo (lộ nền thật), nên hợp cả theme nền gradient. */
 .navbar-indicator {
   position: absolute;
-  top: -24px; /* nửa cục tròn nhô lên khỏi thanh */
+  top: -24px; /* tâm cục tròn nằm đúng mép trên thanh → nửa trên nhô lên */
   left: 0;
   width: 48px;
   height: 48px;
   background: var(--accent);
   border-radius: 50%;
-  border: 5px solid var(--bg); /* khớp màu nền trang */
   transition: left 0.5s;
   /* Chỉ trang trí: KHÔNG chặn chuột, nếu không cú bấm đầu trúng indicator (nó nhô
-     xuống đè nút) làm phải bấm 2 lần. pointer-events kế thừa cho ::before/::after. */
+     xuống đè nút) làm phải bấm 2 lần. */
   pointer-events: none;
-}
-
-/* Hai vết khoét cong hai bên cục tròn (đổ bóng bằng màu nền trang). */
-.navbar-indicator::before,
-.navbar-indicator::after {
-  content: "";
-  position: absolute;
-  top: 54%;
-  width: 15px;
-  height: 15px;
-  background: transparent;
-}
-.navbar-indicator::before {
-  left: -16px;
-  border-top-right-radius: 16px;
-  box-shadow: 1px -8px 0 0 var(--bg);
-}
-.navbar-indicator::after {
-  right: -16px;
-  border-top-left-radius: 16px;
-  box-shadow: -1px -8px 0 0 var(--bg);
 }
 
 /* Popover chọn (ngôn ngữ / phong cách): neo NGAY TRÊN nút trong navbar, mở lên
