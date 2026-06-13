@@ -1,0 +1,71 @@
+.sw-loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.sw-loader {
+  position: relative;
+  width: 148px;
+  height: 100px;
+}
+
+/* Quả bóng nảy */
+.sw-loader::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  margin-left: -0.5em;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  background-color: var(--ball-color, #3aa0d8);
+  animation: sw-ball 1.2s infinite cubic-bezier(0.3, 0.06, 0.4, 1);
+}
+
+/* Bóng đổ dưới sàn */
+.sw-loader::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  margin-left: -0.5em;
+  width: 1em;
+  height: 0.25em;
+  border-radius: 50%;
+  background-color: var(--ball-color, #3aa0d8);
+  opacity: 0.3;
+  animation: sw-shadow 1.2s infinite cubic-bezier(0.3, 0.06, 0.4, 1);
+}
+
+.sw-loader-label {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+
+/* Phủ toàn màn hình */
+.sw-loader-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 25, 41, 0.85);
+  z-index: 9999;
+}
+
+@keyframes sw-ball {
+  0%   { top: 0; }
+  50%  { top: 60px; }
+  100% { top: 0; }
+}
+
+@keyframes sw-shadow {
+  0%   { transform: scale(1);   opacity: 0.3; }
+  50%  { transform: scale(0.5); opacity: 0.1; }
+  100% { transform: scale(1);   opacity: 0.3; }
+}

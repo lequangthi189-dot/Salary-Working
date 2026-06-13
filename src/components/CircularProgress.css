@@ -1,0 +1,72 @@
+/* Vòng tròn tiến độ. Track + lõi dùng var(--panel) (khớp bề mặt modal đang đặt)
+   để chỉ thấy cung accent → hình ring. Đăng ký --cprog-p để chuyển % mượt. */
+@property --cprog-p {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.cprog {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.cprog-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* Cung accent từ 0 → p%, phần còn lại = màu bề mặt (ẩn vào nền). */
+  background: conic-gradient(
+    from 0deg,
+    #3aa0d8 0%,
+    #7fd3f5 calc(var(--cprog-p, 0) * 1%),
+    var(--panel) calc(var(--cprog-p, 0) * 1%)
+  );
+  transition: --cprog-p 0.4s ease;
+}
+
+/* Indeterminate: cung accent xoay liên tục (bước không ước lượng được %). */
+.cprog-ring--spin {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(58, 160, 216, 0.25) 35%,
+    #3aa0d8 80%,
+    #7fd3f5 100%
+  );
+  animation: cprog-spin 0.9s linear infinite;
+}
+@keyframes cprog-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Lõi giữa che thành vòng ring; màu khớp bề mặt modal. */
+.cprog-core {
+  position: relative;
+  width: 72%;
+  height: 72%;
+  border-radius: 50%;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  padding: 0 6px;
+}
+.cprog-pct {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.cprog-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.15;
+}

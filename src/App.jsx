@@ -15,9 +15,12 @@ import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import WelcomeGuide from './components/WelcomeGuide.jsx'
-import LangToggle from './components/LangToggle.jsx'
+import NavBar from './components/NavBar.jsx'
+import ToolsSheet from './components/ToolsSheet.jsx'
+import { FLAGS } from './components/LangToggle.jsx'
 import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
 import WhatsNewModal from './components/WhatsNewModal.jsx'
+import Loader from './components/Loader.jsx'
 import ReconcileModal from './components/ReconcileModal.jsx'
 import { APP_VERSION, entriesSince } from './lib/changelog.js'
 import { useI18n } from './lib/i18n.jsx'
@@ -29,6 +32,7 @@ import { useExtraIncome } from './controllers/useExtraIncome.js'
 import { useProfile } from './controllers/useProfile.js'
 import { periodStats } from './lib/shiftMath.js'
 import { getDayRate, getNightRate } from './lib/rates.js'
+import { THEMES, getTheme, setTheme } from './lib/theme.js'
 import {
   pendingPeriodKey,
   visibleBoardShifts,
@@ -57,8 +61,9 @@ export default function App() {
   const [showChat, setShowChat] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [showTools, setShowTools] = useState(false) // dropdown Nhập lịch/Đối chiếu
+  const [showPayPeriod, setShowPayPeriod] = useState(false) // popup Kỳ lương
+  const [theme, setThemeSt] = useState(getTheme()) // phong cách hiện tại (cho navbar)
+  const [showToolsSheet, setShowToolsSheet] = useState(false) // bottom sheet Công cụ
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
@@ -95,11 +100,6 @@ export default function App() {
     setWhatsNew(null)
   }
 
-  // Mở một mục từ sidebar rồi đóng sidebar lại.
-  function openFromSidebar(setter) {
-    setShowSidebar(false)
-    setter(true)
-  }
 
   // Controllers (custom hooks): mỗi hook giữ state + thao tác của một loại dữ liệu.
   const {
@@ -156,7 +156,7 @@ export default function App() {
     setReminderDismissed(true)
   }
 
-  if (loading) return <div className="center">Loading…</div>
+  if (loading) return <Loader fullscreen label={t('common.loading')} />
   if (recovery)
     return (
       <div className="center">
@@ -233,78 +233,88 @@ export default function App() {
   const employeeCode =
     profile?.employee_code || session.user.user_metadata?.employee_code || ''
 
+  // Mục điều hướng cho NavBar pill: 3 mục từ sidebar cũ (Kỳ lương / Tài khoản /
+  // Hướng dẫn) + 2 mục tiện ích có MENU chọn ngược lên: Ngôn ngữ & Phong cách.
+  const LANG_NAMES = {
+    vi: 'Tiếng Việt',
+    en: 'English (UK)',
+    us: 'English (US)',
+    au: 'English (AU)',
+  }
+  function pickTheme(key) {
+    setTheme(key)
+    setThemeSt(key)
+  }
+  // 4 công cụ (trước nằm trong dropdown "Công cụ") → mở bottom sheet, mỗi ô gọi
+  // đúng hàm/mở đúng modal như cũ.
+  const toolItems = [
+    { key: 'import', icon: 'calendarPlus', label: t('nav.importWeek'), onClick: () => setShowImport(true) },
+    { key: 'reconcile', icon: 'clipboardCheck', label: t('reconcile.title'), onClick: () => setShowReconcile(true) },
+    { key: 'deductions', icon: 'coin', label: t('nav.deductions'), onClick: () => setShowDeductions(true) },
+    { key: 'extra', icon: 'briefcase', label: t('nav.extraIncome'), onClick: () => setShowExtraIncome(true) },
+  ]
+  const navItems = [
+    { key: 'payPeriod', icon: 'payPeriod', label: t('nav.payPeriod') },
+    { key: 'tools', icon: 'tools', label: t('nav.tools') },
+    { key: 'account', icon: 'account', label: t('nav.account') },
+    { key: 'guide', icon: 'guide', label: t('nav.guide') },
+    {
+      key: 'lang',
+      icon: 'lang',
+      label: t('nav.language'),
+      menu: ['vi', 'en', 'us', 'au'].map((code) => {
+        const Flag = FLAGS[code]
+        return {
+          key: code,
+          label: LANG_NAMES[code],
+          node: <Flag />,
+          active: lang === code,
+          onPick: () => changeLang(code),
+        }
+      }),
+    },
+    {
+      key: 'theme',
+      icon: 'theme',
+      label: t('theme.label'),
+      menu: THEMES.map((key) => ({
+        key,
+        label: t(`theme.${key}`),
+        swatch: key,
+        active: theme === key,
+        onPick: () => pickTheme(key),
+      })),
+    },
+  ]
+  // App không dùng router → "route" = panel/modal đang mở. Suy ra mục active theo
+  // KEY (không phụ thuộc chỉ số cứng); -1 = không mở gì (giữ vị trí indicator).
+  const activeKey = showPayPeriod
+    ? 'payPeriod'
+    : showToolsSheet
+      ? 'tools'
+      : showProfile
+        ? 'account'
+        : showWelcome
+          ? 'guide'
+          : null
+  const activeNav = activeKey ? navItems.findIndex((it) => it.key === activeKey) : -1
+  // Item thường mở modal/sheet tương ứng; Ngôn ngữ/Phong cách tự mở menu trong NavBar.
+  function onNavSelect(i) {
+    const key = navItems[i]?.key
+    if (key === 'payPeriod') setShowPayPeriod(true)
+    else if (key === 'tools') setShowToolsSheet(true)
+    else if (key === 'account') setShowProfile(true)
+    else if (key === 'guide') setShowWelcome(true)
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <button
-            type="button"
-            className="menu-toggle"
-            onClick={() => setShowSidebar(true)}
-            aria-label={t('nav.openMenu')}
-          >
-            <img className="app-logo" src="/logo.svg" alt="Salary Working logo" />
-          </button>
+          <img className="app-logo" src="/logo.svg" alt="Salary Working logo" />
           <h1 className="app-title">Salary Working</h1>
         </div>
         <div className="header-actions">
-          <div className="title-menu">
-            <button
-              type="button"
-              className="account-btn header-import"
-              onClick={() => setShowTools((o) => !o)}
-              aria-haspopup="true"
-              aria-expanded={showTools}
-            >
-              {t('nav.tools')} <span className="title-caret">▾</span>
-            </button>
-            {showTools && (
-              <>
-                <div
-                  className="dropdown-overlay"
-                  onClick={() => setShowTools(false)}
-                />
-                <div className="dropdown-menu right" role="menu">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTools(false)
-                      setShowImport(true)
-                    }}
-                  >
-                    {t('nav.importWeek')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTools(false)
-                      setShowReconcile(true)
-                    }}
-                  >
-                    {t('reconcile.title')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTools(false)
-                      setShowDeductions(true)
-                    }}
-                  >
-                    {t('nav.deductions')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTools(false)
-                      setShowExtraIncome(true)
-                    }}
-                  >
-                    {t('nav.extraIncome')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
           <button
             type="button"
             className="chat-avatar-btn"
@@ -316,47 +326,6 @@ export default function App() {
           </button>
         </div>
       </header>
-
-      {showSidebar && (
-        <div className="sidebar-overlay" onClick={() => setShowSidebar(false)}>
-          <aside className="sidebar" onClick={(e) => e.stopPropagation()}>
-            <div className="sidebar-head">
-              <span className="sidebar-title">{t('nav.payPeriod')}</span>
-              <button
-                type="button"
-                className="sidebar-close"
-                onClick={() => setShowSidebar(false)}
-                aria-label={t('nav.closeMenu')}
-              >
-                ×
-              </button>
-            </div>
-            <div className="sidebar-scroll">
-              <PayPeriodPage
-                shifts={shifts}
-                payrolls={payrolls}
-                deductions={deductions}
-                extraIncome={extraIncome}
-                payday={profile?.payday}
-                onMarkReceived={markReceived}
-                onUnmark={unmarkReceived}
-                onAddDeduction={addDeduction}
-                onDeleteDeduction={deleteDeduction}
-                hasNightShift={hasNightShift}
-              />
-            </div>
-            <div className="sidebar-footer">
-              <button type="button" onClick={() => openFromSidebar(setShowProfile)}>
-                {t('nav.account')}
-              </button>
-              <button type="button" onClick={() => openFromSidebar(setShowWelcome)}>
-                {t('nav.guide')}
-              </button>
-              <LangToggle up onPick={changeLang} />
-            </div>
-          </aside>
-        </div>
-      )}
 
       <main className="main-col">
         {/* Khối chính: Nhập ca (trái 40%) + Thống kê (phải 60%); 1 cột trên mobile */}
@@ -385,6 +354,47 @@ export default function App() {
           hasNightShift={hasNightShift}
         />
       </main>
+
+      <NavBar items={navItems} active={activeNav} onSelect={onNavSelect} />
+
+      {showToolsSheet && (
+        <ToolsSheet tools={toolItems} onClose={() => setShowToolsSheet(false)} />
+      )}
+
+      {showPayPeriod && (
+        <div className="modal-overlay" onClick={() => setShowPayPeriod(false)}>
+          <div
+            className="modal-card wide"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-head">
+              <h2>{t('nav.payPeriod')}</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setShowPayPeriod(false)}
+                aria-label={t('common.close')}
+              >
+                ×
+              </button>
+            </div>
+            <PayPeriodPage
+              shifts={shifts}
+              payrolls={payrolls}
+              deductions={deductions}
+              extraIncome={extraIncome}
+              payday={profile?.payday}
+              onMarkReceived={markReceived}
+              onUnmark={unmarkReceived}
+              onAddDeduction={addDeduction}
+              onDeleteDeduction={deleteDeduction}
+              hasNightShift={hasNightShift}
+            />
+          </div>
+        </div>
+      )}
 
       {showDeductions && (
         <CompensationModal

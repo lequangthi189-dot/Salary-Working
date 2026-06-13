@@ -33,7 +33,8 @@ const GEMINI_MODELS = (Deno.env.get('GEMINI_MODEL') ||
   .filter(Boolean)
 
 // responseSchema theo định dạng OpenAPI của Gemini (type viết HOA).
-const SCHEMA = {
+// CHẾ ĐỘ TUẦN: trả về 7 thứ Mon..Sun.
+const SCHEMA_WEEK = {
   type: 'OBJECT',
   properties: {
     is_roster: { type: 'BOOLEAN' },
@@ -59,7 +60,33 @@ const SCHEMA = {
   required: ['is_roster', 'doc_type', 'found', 'matched_code', 'days'],
 }
 
-const SYSTEM = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
+// CHẾ ĐỘ THÁNG: trả về MẢNG NGÀY (entries) theo ngày tháng, không ràng buộc thứ.
+const SCHEMA_MONTH = {
+  type: 'OBJECT',
+  properties: {
+    is_roster: { type: 'BOOLEAN' },
+    doc_type: { type: 'STRING', enum: ['schedule', 'timesheet', 'other'] },
+    found: { type: 'BOOLEAN' },
+    matched_code: { type: 'STRING' },
+    entries: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          date: { type: 'STRING' },
+          start: { type: 'STRING' },
+          end: { type: 'STRING' },
+          off: { type: 'BOOLEAN' },
+          raw: { type: 'STRING' },
+        },
+        required: ['date', 'start', 'end', 'off', 'raw'],
+      },
+    },
+  },
+  required: ['is_roster', 'doc_type', 'found', 'matched_code', 'entries'],
+}
+
+const SYSTEM_WEEK = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
 Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
 0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, doc_type="other", found=false, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp.
 0b. Phân loại doc_type:
@@ -76,6 +103,18 @@ Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhi
    dựa trên "Tuần bắt đầu" được cung cấp. Nếu ảnh KHÔNG ghi ngày thì để date="".
 4. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
 Chỉ trả JSON đúng schema, không thêm chữ.`
+
+const SYSTEM_MONTH = `Bạn là công cụ đọc BẢNG CÔNG / BẢNG PHÂN CA cả THÁNG từ ảnh.
+Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
+0. Xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không. Nếu KHÔNG phải thì is_roster=false, doc_type="other", found=false, entries=[] rồi dừng. Nếu phải thì is_roster=true.
+0b. Phân loại doc_type: "schedule" = lịch phân ca (giờ vào–ra dự kiến); "timesheet" = bảng công đã làm (tổng giờ/ngày hoặc giờ check-in/out). Chọn loại khớp nhất.
+1. Tìm DÒNG/Ô ứng với nhân viên khớp nhất theo bất kỳ thông tin nào (ưu tiên mã, rồi họ tên, rồi SĐT). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu. Không khớp → found=false, entries=[].
+2. Đọc TẤT CẢ CÁC NGÀY có công của người đó TRONG THÁNG. Mỗi ngày trả về MỘT entry:
+   - "date" dạng "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra theo "Tháng cần đọc" được cung cấp.
+   - "start"/"end": chuẩn hoá "HH:MM" 24 giờ (vd "9h"->"09:00"). Nếu ảnh chỉ ghi TỔNG GIỜ (vd "7.55") thì để start="" end="" và ghi số đó vào "raw".
+   - Ngày nghỉ/trống/"OFF"/"X" → off=true, start="", end="".
+3. CHỈ trả các ngày THỰC SỰ có trong ảnh cho người đó; KHÔNG bịa ngày, KHÔNG cần liệt kê ngày không xuất hiện.
+4. Không bịa giờ khi không chắc (off=true). Chỉ trả JSON đúng schema, không thêm chữ.`
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -103,13 +142,17 @@ Deno.serve(async (req: Request) => {
     fullName?: string
     phone?: string
     weekStart?: string
+    scope?: string
+    month?: string
   }
   try {
     body = await req.json()
   } catch {
     return json({ error: 'Body JSON không hợp lệ' }, 400)
   }
-  const { image, mediaType, employeeCode, fullName, phone, weekStart } = body
+  const { image, mediaType, employeeCode, fullName, phone, weekStart, scope, month } =
+    body
+  const isMonth = scope === 'month'
   const hasId = [employeeCode, fullName, phone].some(
     (v) => v && String(v).trim()
   )
@@ -121,28 +164,33 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const idText =
+      'Thông tin nhận dạng nhân viên cần lấy lịch:' +
+      (employeeCode ? ` Mã: "${employeeCode}".` : '') +
+      (fullName ? ` Họ tên: "${fullName}".` : '') +
+      (phone ? ` SĐT: "${phone}".` : '')
+    const userText = isMonth
+      ? idText +
+        ' Trả về TẤT CẢ ngày có công trong tháng (mỗi ngày một entry).' +
+        (month ? ` Tháng cần đọc: ${month}.` : '')
+      : idText +
+        ' Trả về ca từng thứ Mon..Sun.' +
+        (weekStart ? ` Tuần bắt đầu (Thứ 2) khoảng: ${weekStart}.` : '')
+
     const reqBody = JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
+      systemInstruction: { parts: [{ text: isMonth ? SYSTEM_MONTH : SYSTEM_WEEK }] },
       contents: [
         {
           role: 'user',
           parts: [
             { inline_data: { mime_type: mediaType, data: image } },
-            {
-              text:
-                'Thông tin nhận dạng nhân viên cần lấy lịch:' +
-                (employeeCode ? ` Mã: "${employeeCode}".` : '') +
-                (fullName ? ` Họ tên: "${fullName}".` : '') +
-                (phone ? ` SĐT: "${phone}".` : '') +
-                ' Trả về ca từng thứ Mon..Sun.' +
-                (weekStart ? ` Tuần bắt đầu (Thứ 2) khoảng: ${weekStart}.` : ''),
-            },
+            { text: userText },
           ],
         },
       ],
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: SCHEMA,
+        responseSchema: isMonth ? SCHEMA_MONTH : SCHEMA_WEEK,
         temperature: 0,
         // Đủ rộng để JSON không bị cắt (model flash mới tốn token cho "thinking").
         maxOutputTokens: 8192,

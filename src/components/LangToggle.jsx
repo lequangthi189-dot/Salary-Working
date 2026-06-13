@@ -65,7 +65,8 @@ function FlagAU() {
   )
 }
 
-const FLAGS = { vi: FlagVN, en: FlagGB, us: FlagUS, au: FlagAU }
+// Export để các nơi khác (vd menu Ngôn ngữ trong NavBar) tái dùng đúng bộ cờ.
+export const FLAGS = { vi: FlagVN, en: FlagGB, us: FlagUS, au: FlagAU }
 const NAMES = {
   vi: 'Tiếng Việt',
   en: 'English (UK)',
