@@ -17,8 +17,8 @@ import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import WelcomeGuide from './components/WelcomeGuide.jsx'
 import NavBar from './components/NavBar.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
+import LangCycle from './components/LangCycle.jsx'
 import ToolsSheet from './components/ToolsSheet.jsx'
-import { FLAGS } from './components/LangToggle.jsx'
 import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
 import WhatsNewModal from './components/WhatsNewModal.jsx'
 import Loader from './components/Loader.jsx'
@@ -252,12 +252,8 @@ export default function App() {
     profile?.employee_code || session.user.user_metadata?.employee_code || ''
 
   // Mục điều hướng cho NavBar pill: 3 mục từ sidebar cũ (Kỳ lương / Tài khoản /
-  // Hướng dẫn) + Công cụ + Ngôn ngữ (menu chọn ngược lên). Phong cách đã chuyển ra
-  // thanh gạt ThemeToggle ở header (cạnh chatbot).
-  const LANG_NAMES = {
-    vi: 'Tiếng Việt',
-    en: 'English (UK)',
-  }
+  // Hướng dẫn) + Công cụ. Phong cách & Ngôn ngữ đã chuyển ra thanh gạt
+  // ThemeToggle/LangCycle ở header (cạnh chatbot).
   // 4 công cụ (trước nằm trong dropdown "Công cụ") → mở bottom sheet, mỗi ô gọi
   // đúng hàm/mở đúng modal như cũ.
   const toolItems = [
@@ -271,21 +267,6 @@ export default function App() {
     { key: 'tools', icon: 'tools', label: t('nav.tools') },
     { key: 'account', icon: 'account', label: t('nav.account') },
     { key: 'guide', icon: 'guide', label: t('nav.guide') },
-    {
-      key: 'lang',
-      icon: 'lang',
-      label: t('nav.language'),
-      menu: ['vi', 'en'].map((code) => {
-        const Flag = FLAGS[code]
-        return {
-          key: code,
-          label: LANG_NAMES[code],
-          node: <Flag />,
-          active: lang === code,
-          onPick: () => changeLang(code),
-        }
-      }),
-    },
   ]
   // App không dùng router → "route" = panel/modal đang mở. Suy ra mục active theo
   // KEY (không phụ thuộc chỉ số cứng); -1 = không mở gì (giữ vị trí indicator).
@@ -299,7 +280,7 @@ export default function App() {
           ? 'guide'
           : null
   const activeNav = activeKey ? navItems.findIndex((it) => it.key === activeKey) : -1
-  // Item thường mở modal/sheet tương ứng; Ngôn ngữ tự mở menu trong NavBar.
+  // Item thường mở modal/sheet tương ứng.
   function onNavSelect(i) {
     const key = navItems[i]?.key
     if (key === 'payPeriod') setShowPayPeriod(true)
@@ -317,6 +298,7 @@ export default function App() {
         </div>
         <div className="header-actions">
           <ThemeToggle theme={theme} onChange={changeTheme} />
+          <LangCycle onChange={changeLang} />
           <button
             type="button"
             className="chat-avatar-btn"

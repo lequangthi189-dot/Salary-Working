@@ -30,6 +30,14 @@
 .theme-cycle .theme-swatch {
   flex: none;
 }
+/* Cờ (dùng ở LangCycle) — kích thước chữ nhật cân với ô màu vuông của theme. */
+.theme-cycle .flag {
+  width: 22px;
+  height: 15px;
+  border-radius: 2px;
+  flex: none;
+  display: block;
+}
 
 /* Mobile: ẩn chữ tên theme, chỉ còn ô màu preview. Chữ ("Glassmorphism" dài nhất)
    làm .header-actions rộng quá → thanh gạt + chatbot bị xuống hàng dưới tiêu đề.
