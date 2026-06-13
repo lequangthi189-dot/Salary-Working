@@ -56,17 +56,20 @@ export default function NavBar({ items, active = 0, onSelect }) {
   const itemRefs = useRef([])
   const indicatorRef = useRef(null)
 
-  // Hiện navbar khi cuộn XUỐNG, ẩn khi cuộn LÊN (hoặc đang ở đỉnh trang).
+  // Hiện navbar khi ĐANG cuộn (bất kể hướng); ngừng cuộn ~1.2s thì tự ẩn. Mỗi lần
+  // cuộn: hiện + đặt lại timer ẩn → không cuộn thì không hiện.
   useEffect(() => {
-    let lastY = window.scrollY
+    let hideTimer
     function onScroll() {
-      const y = window.scrollY
-      if (y > lastY + 4) setVisible(true)
-      else if (y < lastY - 4 || y <= 0) setVisible(false)
-      lastY = y
+      setVisible(true)
+      clearTimeout(hideTimer)
+      hideTimer = setTimeout(() => setVisible(false), 1200)
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      clearTimeout(hideTimer)
+    }
   }, [])
 
   // Đồng bộ với view hiện tại: app không dùng router nên "route" = trạng thái mở
