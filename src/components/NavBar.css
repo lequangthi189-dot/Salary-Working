@@ -1,0 +1,204 @@
+/* Animated pill navbar có indicator.
+   - Thanh pill trắng bo góc, mỗi mục rộng 56px.
+   - Cục tròn accent trượt ngang: `left` do JS đo theo offsetLeft của ô active
+     (không hardcode chiều rộng); transition 0.5s.
+   - Icon mục active nhấc lên (chỉ translateY) vào trong cục tròn + chuyển trắng.
+   - Nhãn chữ fade + trượt lên ở dưới.
+   - Hai bên cục tròn "khoét cong" vào thanh bằng ::before/::after, box-shadow tô
+     bằng var(--bg) (màu nền trang) → BẮT BUỘC khớp nền để tạo vết lõm liền mạch. */
+.navbar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  z-index: 45; /* dưới modal-overlay(50)/sidebar(60) → mở panel sẽ phủ lên navbar */
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+/* Mặc định ẩn: trượt xuống dưới mép màn hình + mờ. Cuộn xuống → bỏ class này. */
+.navbar--hidden {
+  transform: translateX(-50%) translateY(calc(100% + 28px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.navbar-list {
+  position: relative;
+  display: flex;
+  padding: 0 6px; /* để cục tròn không chạm mép bo của thanh */
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+}
+
+.navbar-item {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  z-index: 1;
+  list-style: none;
+}
+
+.navbar-item button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* Icon: mặc định màu navy đậm, nhấc lên + trắng khi active. */
+.navbar-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #2c3e50;
+  transition: transform 0.5s, color 0.5s;
+}
+.navbar-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.navbar-item.active .navbar-icon {
+  transform: translateY(-28px); /* CHỈ dịch dọc → lọt giữa cục tròn */
+  color: #ffffff;
+}
+
+/* Nhãn chữ: ẩn dưới, fade + trượt lên khi active. */
+.navbar-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s, transform 0.5s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.navbar-item.active .navbar-text {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Cục tròn indicator: `left` do JS đo (offsetLeft của ô active + căn giữa) — KHÔNG
+   dùng công thức 70px*index cố định. Viền dày tô bằng nền trang. */
+.navbar-indicator {
+  position: absolute;
+  top: -24px; /* nửa cục tròn nhô lên khỏi thanh */
+  left: 0;
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 5px solid var(--bg); /* khớp màu nền trang */
+  transition: left 0.5s;
+  /* Chỉ trang trí: KHÔNG chặn chuột, nếu không cú bấm đầu trúng indicator (nó nhô
+     xuống đè nút) làm phải bấm 2 lần. pointer-events kế thừa cho ::before/::after. */
+  pointer-events: none;
+}
+
+/* Hai vết khoét cong hai bên cục tròn (đổ bóng bằng màu nền trang). */
+.navbar-indicator::before,
+.navbar-indicator::after {
+  content: "";
+  position: absolute;
+  top: 54%;
+  width: 15px;
+  height: 15px;
+  background: transparent;
+}
+.navbar-indicator::before {
+  left: -16px;
+  border-top-right-radius: 16px;
+  box-shadow: 1px -8px 0 0 var(--bg);
+}
+.navbar-indicator::after {
+  right: -16px;
+  border-top-left-radius: 16px;
+  box-shadow: -1px -8px 0 0 var(--bg);
+}
+
+/* Popover chọn (ngôn ngữ / phong cách): neo NGAY TRÊN nút trong navbar, mở lên
+   trên, canh mép phải để không tràn ra ngoài màn hình. Đặt trong .navbar-item
+   (đã position: relative) nên toạ độ tính theo chính nút đó. */
+.navbar-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 44; /* dưới navbar(45) → vẫn bấm được item khác để chuyển menu */
+}
+/* Nâng z-index ô đang mở menu để popover đè lên các ô lân cận. */
+.navbar-item.menu-open {
+  z-index: 5;
+}
+.navbar-menu {
+  position: absolute;
+  bottom: calc(100% + 8px); /* mở lên trên nút, hở 8px */
+  right: 0; /* canh mép phải nút → menu xổ sang trái, không tràn phải */
+  z-index: 46;
+  width: 220px;
+  max-width: calc(100vw - 24px); /* hẹp màn hình thì tự thu */
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.3rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+}
+/* Caret nhỏ ở đáy menu trỏ xuống nút quả địa cầu (canh gần tâm nút ~28px từ phải). */
+.navbar-menu::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 22px;
+  border: 7px solid transparent;
+  border-top-color: var(--panel);
+}
+.navbar-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.94rem;
+  font-weight: 600;
+  text-align: left;
+}
+.navbar-menu button:hover {
+  background: var(--panel-2);
+}
+.navbar-menu button.active {
+  color: var(--accent);
+}
+.navbar-menu-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.navbar-menu .flag {
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+  display: block;
+}

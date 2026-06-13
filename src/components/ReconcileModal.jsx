@@ -9,6 +9,7 @@ import {
 } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
+import CircularProgress from './CircularProgress.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -27,6 +28,7 @@ function mondayOfThisWeek() {
   const offset = dow === 0 ? -6 : 1 - dow
   return addDays(today, offset)
 }
+
 function readImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -65,9 +67,15 @@ export default function ReconcileModal({
   const { t } = useI18n()
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
-  // Tuần cần đối chiếu (mặc định tuần này) — dùng khi ảnh không ghi ngày cụ thể.
+  // Chế độ đối chiếu: 'week' (1 tuần) | 'month' (cả tháng).
+  const [scope, setScope] = useState('week')
+  // Tuần bắt đầu (Thứ 2) cho chế độ tuần — dùng khi ảnh không ghi ngày cụ thể.
   const [weekStart, setWeekStart] = useState(mondayOfThisWeek())
+  // Tháng cần đối chiếu ("YYYY-MM", mặc định tháng này) cho chế độ tháng.
+  const [month, setMonth] = useState(localTodayStr().slice(0, 7))
   const [loading, setLoading] = useState(false)
+  // Tiến độ thật. indeterminate khi chờ Gemini; ẩn trong finally để không kẹt khi lỗi.
+  const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
   const [error, setError] = useState(null)
   const [rows, setRows] = useState(null)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
@@ -112,8 +120,13 @@ export default function ReconcileModal({
     if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
       return setError(t('import.errNoCode'))
     setLoading(true)
+    setProgress({ pct: 10, label: t('import.stageUpload'), indeterminate: false })
     try {
+      // 1) Đọc & mã hoá ảnh.
       const { base64, mediaType } = await readImage(file)
+      setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
+      // 2) Gọi Gemini đọc bảng công — indeterminate (không biết bao lâu).
+      setProgress({ pct: 25, label: t('import.stageAI'), indeterminate: true })
       const { data, error: fnErr } = await supabase.functions.invoke(
         'extract-schedule',
         {
@@ -123,10 +136,13 @@ export default function ReconcileModal({
             employeeCode: employeeCode.trim(),
             fullName,
             phone,
-            weekStart,
+            // Tháng → gửi scope:'month'+month; Tuần → để mặc định + weekStart.
+            ...(scope === 'month' ? { scope: 'month', month } : { weekStart }),
           },
         }
       )
+      // 3) Có phản hồi → chuẩn bị đối chiếu.
+      setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (fnErr) {
         let detail = fnErr.message
         try {
@@ -159,23 +175,46 @@ export default function ReconcileModal({
         setRows(null)
         return
       }
-      const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
+      // 4) Đối chiếu công (planned/actual vs ảnh) — mốc thật, tính ở client.
+      setProgress({ pct: 85, label: t('reconcile.stageCompare'), indeterminate: false })
       const isoRe = /^\d{4}-\d{2}-\d{2}$/
-      const compared = WEEKDAYS.map((wd, i) => {
-        const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
-        // Ngày: ưu tiên NGÀY ĐỌC TỪ ẢNH; ảnh không có ngày thì mới theo Tuần bắt đầu.
-        const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
-
-        // Giờ công theo ẢNH: nếu có giờ vào–ra thì lấy thời lượng, nếu ảnh ghi giờ
-        // thô (vd "7.55") thì đọc trực tiếp. Ngày nghỉ → 0.
-        const imgHours = d.off
-          ? 0
-          : d.start && d.end
-            ? durationHours(d.start, d.end)
-            : parseHours(d.raw)
-
-        // Giờ THỰC TẾ = giờ công hiệu dụng đúng như thẻ workshift hiển thị
-        // (computeEffective: kẹp theo lịch dự kiến nếu có).
+      // Giờ công theo ẢNH gom theo NGÀY + danh sách ngày cần đối chiếu (tuỳ chế độ).
+      const imgByDate = new Map()
+      let dateList = []
+      if (scope === 'month') {
+        // Tháng: đọc mảng entries; mỗi ngày một entry, nhiều ca/ngày → cộng dồn.
+        for (const e of data.entries || []) {
+          if (!isoRe.test(e.date || '') || e.date.slice(0, 7) !== month) continue
+          const h = e.off
+            ? 0
+            : e.start && e.end
+              ? durationHours(e.start, e.end)
+              : parseHours(e.raw)
+          imgByDate.set(e.date, (imgByDate.get(e.date) || 0) + h)
+        }
+        // Tập ngày = ngày có trong ảnh ∪ ngày có ca trong tháng.
+        const shiftDates = shifts
+          .map((s) => s.work_date)
+          .filter((d) => String(d).slice(0, 7) === month)
+        dateList = [...new Set([...imgByDate.keys(), ...shiftDates])].sort()
+      } else {
+        // Tuần: đọc 7 thứ; ngày ưu tiên đọc từ ảnh, thiếu thì suy theo weekStart.
+        const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
+        dateList = WEEKDAYS.map((wd, i) => {
+          const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
+          const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
+          const h = d.off
+            ? 0
+            : d.start && d.end
+              ? durationHours(d.start, d.end)
+              : parseHours(d.raw)
+          imgByDate.set(date, h)
+          return date
+        })
+      }
+      const compared = dateList.map((date) => {
+        const imgHours = imgByDate.get(date) || 0
+        // Giờ THỰC TẾ = giờ công hiệu dụng như thẻ workshift (kẹp theo lịch dự kiến).
         const aS = actualByDate.get(date)
         const actualHours = aS
           ? computeEffective(
@@ -190,9 +229,7 @@ export default function ReconcileModal({
         const schedHours = sS
           ? durationHours(hhmm(sS.scheduled_start), hhmm(sS.scheduled_end))
           : 0
-
         return {
-          weekday: wd,
           date,
           imgHours,
           actualHours,
@@ -201,8 +238,10 @@ export default function ReconcileModal({
           statusActual: cmpHours(imgHours, actualHours),
         }
       })
+      setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
       setRows(compared)
     } catch (e) {
+      // Lỗi (Gemini quota/timeout…) → báo lỗi; finally ẩn vòng tròn, không kẹt.
       setError(String(e.message || e))
     } finally {
       setLoading(false)
@@ -241,13 +280,31 @@ export default function ReconcileModal({
             <input type="file" accept="image/*" onChange={pickFile} />
           </label>
           <label className="import-week">
-            <span>{t('import.weekStart')}</span>
-            <input
-              type="date"
-              value={weekStart}
-              onChange={(e) => setWeekStart(e.target.value)}
-            />
+            <span>{t('reconcile.scope')}</span>
+            <select value={scope} onChange={(e) => setScope(e.target.value)}>
+              <option value="week">{t('reconcile.scopeWeek')}</option>
+              <option value="month">{t('reconcile.scopeMonth')}</option>
+            </select>
           </label>
+          {scope === 'month' ? (
+            <label className="import-week">
+              <span>{t('reconcile.month')}</span>
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+              />
+            </label>
+          ) : (
+            <label className="import-week">
+              <span>{t('import.weekStart')}</span>
+              <input
+                type="date"
+                value={weekStart}
+                onChange={(e) => setWeekStart(e.target.value)}
+              />
+            </label>
+          )}
         </div>
         <p className="import-empcode">
           {t('import.empcodeFrom')}
@@ -272,6 +329,16 @@ export default function ReconcileModal({
             {loading ? t('import.reading') : t('reconcile.check')}
           </button>
         </div>
+
+        {loading && (
+          <div className="import-progress">
+            <CircularProgress
+              value={progress.pct}
+              label={progress.label}
+              indeterminate={progress.indeterminate}
+            />
+          </div>
+        )}
 
         {error && (
           <p className="msg error" style={{ whiteSpace: 'pre-wrap' }}>
@@ -304,7 +371,7 @@ export default function ReconcileModal({
                 </thead>
                 <tbody>
                   {visibleRows.map((r) => (
-                    <tr key={r.weekday}>
+                    <tr key={r.date}>
                       <td>{dmShort(r.date)}</td>
                       <td
                         className={`rec-${r.statusActual}`}

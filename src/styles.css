@@ -21,6 +21,17 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* ===== Thanh cuộn ẨN HẲN (CÁCH 2: không thấy gì nhưng VẪN cuộn được) =====
+   Áp cho mọi vùng cuộn (trang + .chat-list + .modal-overlay/.modal-card +
+   .import-table-wrap + .tt-wrap…). Chỉ ẩn hình thức — KHÔNG tắt cuộn. */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/old Edge */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chrome/Edge/Safari */
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -138,6 +149,8 @@ button[type='submit']:disabled {
 }
 .forgot-link {
   color: var(--danger);
+  align-self: flex-start; /* canh TRÁI trong form (flex column) */
+  text-align: left;
 }
 
 .msg {
@@ -746,6 +759,19 @@ button[type='submit']:disabled {
   justify-content: flex-end;
   margin-bottom: 0.5rem;
 }
+/* Hàng trên cùng form đăng nhập: nút Hủy (trái) + đổi ngôn ngữ (phải). */
+.auth-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.auth-top .auth-lang {
+  margin-left: auto; /* luôn đẩy nút ngôn ngữ sang phải, kể cả khi không có Hủy */
+  margin-bottom: 0;
+}
+.auth-cancel {
+  margin-top: 0; /* .link mặc định margin-top:1rem → bỏ để nằm sát đầu form */
+}
 
 /* ---- Header trái: nút mở menu + tiêu đề ---- */
 .header-left {
@@ -1256,6 +1282,11 @@ button[type='submit']:disabled {
   justify-content: flex-end;
   gap: 0.6rem;
   margin: 0.6rem 0;
+}
+.import-progress {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
 }
 .import-table {
   width: 100%;

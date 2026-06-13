@@ -1,0 +1,245 @@
+/* =========================================================================
+   THEMES — 3 phong cách giao diện, đổi qua data-theme trên <html>.
+   - dark (mặc định): dùng nguyên :root trong styles.css, không cần override.
+   - glass: kính mờ trong suốt + backdrop blur, nền gradient.
+   - neumorph: Soft UI, nền sáng, bóng mềm nổi/chìm, không viền.
+   Danh sách bề mặt dùng chung cho cả glass & neumorph (giữ đồng bộ).
+   ========================================================================= */
+
+/* ---------- Sleek Dark Mode & Minimalist ----------
+   Nền navy gần đen (#0a1929), phẳng tối giản, nhiều khoảng trắng, viền mảnh, chữ
+   trắng tương phản cao. Màu nhấn (xanh #3aa0d8 + mint) chỉ dùng cho điểm nhấn. */
+[data-theme='dark'] {
+  --bg: #0a1929;
+  --panel: #0f2334;
+  --panel-2: #14293c;
+  --text: #f3f8fd;
+  --muted: #90a4ba;
+  --accent: #3aa0d8;
+  --green: #4fd6a0;
+  --danger: #f0676b;
+  --border: #1c3346;
+  --checkin: #ff9f43;
+  --checkout: #3aa0d8;
+}
+
+/* Phẳng tối giản: thẻ thống kê & ô lương dùng nền/viền mảnh theo palette (bỏ màu
+   cứng + viền dày cũ). Điểm nhấn để dành cho biểu đồ / trạng thái active. */
+[data-theme='dark'] .stats-panel .info-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+[data-theme='dark'] .stats-panel .salary-hero {
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+/* ---------- Modern Glassmorphism ----------
+   Nền gradient nhiều màu mờ ảo (tím/hồng/xanh/cyan/teal), panel kính mờ trong
+   suốt + viền phát sáng mỏng, bo góc lớn, thẻ thống kê gradient rực rỡ. */
+[data-theme='glass'] {
+  --bg: #0f1430;
+  --panel: rgba(255, 255, 255, 0.1);
+  --panel-2: rgba(255, 255, 255, 0.16);
+  --text: #f6f8ff;
+  --muted: #d3dcf2;
+  --accent: #7cc4ff;
+  --green: #5ff0a8;
+  --danger: #ff7d97;
+  --border: rgba(255, 255, 255, 0.28);
+  --checkin: #ffc36b;
+  --checkout: #8fd0ff;
+  --surface-blur: blur(18px) saturate(150%);
+}
+
+/* Nền: các "đốm" màu blur mềm trên nền xanh đậm → trong trẻo, nhiều màu, airy. */
+[data-theme='glass'] body {
+  background:
+    radial-gradient(42% 50% at 14% 18%, rgba(168, 85, 247, 0.5), transparent 70%),
+    radial-gradient(46% 54% at 86% 14%, rgba(34, 211, 238, 0.45), transparent 70%),
+    radial-gradient(50% 52% at 78% 88%, rgba(20, 184, 166, 0.45), transparent 70%),
+    radial-gradient(46% 48% at 18% 92%, rgba(236, 72, 153, 0.45), transparent 70%),
+    linear-gradient(135deg, #0f1430 0%, #141a3c 100%);
+  background-attachment: fixed;
+}
+
+/* Bề mặt kính mờ: trong suốt + blur, viền sáng mỏng, bo góc lớn, ánh nội viền. */
+[data-theme='glass']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .sidebar,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .stats-panel,
+    .lang-menu,
+    .account-btn
+  ) {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 18px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+}
+
+[data-theme='glass'] :is(input, select, textarea) {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--text);
+}
+
+/* Thẻ thống kê: gradient rực rỡ theo tông (tím→hồng, xanh→cyan, teal→green). */
+[data-theme='glass'] .stats-panel .info-card {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+[data-theme='glass'] .stats-panel .info-card .info-card__label,
+[data-theme='glass'] .stats-panel .info-card .info-card__value {
+  color: #fff;
+}
+[data-theme='glass'] .stats-panel .info-card:has(.tone-orange) {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+}
+[data-theme='glass'] .stats-panel .info-card:has(.tone-blue) {
+  background: linear-gradient(135deg, #3b82f6, #22d3ee);
+}
+[data-theme='glass'] .stats-panel .info-card:has(.tone-green) {
+  background: linear-gradient(135deg, #14b8a6, #22c55e);
+}
+[data-theme='glass'] .stats-panel .info-card:has(.tone-red) {
+  background: linear-gradient(135deg, #f43f5e, #fb923c);
+}
+
+/* Ô lương lớn: gradient tím→hồng nổi bật, viền sáng, đổ bóng màu. */
+[data-theme='glass'] .stats-panel .salary-hero {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(236, 72, 153, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 18px;
+  box-shadow:
+    0 10px 34px rgba(168, 85, 247, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* ---------- Soft UI / Neumorphism ---------- */
+[data-theme='neumorph'] {
+  --bg: #e0e5ec;
+  --panel: #e0e5ec;
+  --panel-2: #e8edf3;
+  --text: #4a5468;
+  --muted: #8b95a8;
+  /* Accent pastel dịu: sky blue / mint / peach-coral. */
+  --accent: #8ab0e8;
+  --green: #7ed0b0;
+  --danger: #f0a79b;
+  --border: transparent;
+  --checkin: #f3c19a;
+  --checkout: #8ab0e8;
+  /* Bóng mềm: sáng trên-trái, tối dưới-phải → cảm giác nổi khỏi nền. */
+  --nm-shadow: 6px 6px 14px #bcc3ce, -6px -6px 14px #ffffff;
+  --nm-inset: inset 3px 3px 7px #bcc3ce, inset -3px -3px 7px #ffffff;
+}
+
+[data-theme='neumorph']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .sidebar,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .stats-panel,
+    .lang-menu
+  ) {
+  background: var(--bg);
+  border: none;
+  border-radius: 20px;
+  box-shadow: var(--nm-shadow);
+}
+
+[data-theme='neumorph'] :is(.account-btn, .modal-card button, button.primary) {
+  background: var(--bg);
+  border: none;
+  box-shadow: 4px 4px 10px #bcc3ce, -4px -4px 10px #ffffff;
+}
+[data-theme='neumorph']
+  :is(.account-btn, .modal-card button, button.primary):active {
+  box-shadow: var(--nm-inset);
+}
+
+[data-theme='neumorph'] :is(input, select, textarea) {
+  background: var(--bg);
+  border: none;
+  box-shadow: var(--nm-inset);
+  color: var(--text);
+}
+
+/* Thẻ thống kê: nền pastel dịu (mint / sky / peach), nổi khối bằng bóng mềm, bo
+   góc tròn, không viền — chữ tối cho dễ đọc trên nền sáng. */
+[data-theme='neumorph'] .stats-panel .info-card {
+  border: none;
+  border-radius: 18px;
+  box-shadow: var(--nm-shadow);
+}
+[data-theme='neumorph'] .stats-panel .info-card .info-card__label,
+[data-theme='neumorph'] .stats-panel .info-card .info-card__value {
+  color: #4a5468;
+}
+[data-theme='neumorph'] .stats-panel .info-card:has(.tone-orange) {
+  background: #ffd9c2; /* peach */
+}
+[data-theme='neumorph'] .stats-panel .info-card:has(.tone-blue) {
+  background: #c6dcf5; /* sky blue */
+}
+[data-theme='neumorph'] .stats-panel .info-card:has(.tone-green) {
+  background: #bce7d4; /* mint */
+}
+[data-theme='neumorph'] .stats-panel .info-card:has(.tone-red) {
+  background: #f6cabf; /* soft coral */
+}
+
+/* Ô lương lớn: nền lavender pastel, nổi khối mềm, bo tròn, không viền. */
+[data-theme='neumorph'] .stats-panel .salary-hero {
+  background: #d8cbf2; /* lavender */
+  border: none;
+  border-radius: 20px;
+  box-shadow: var(--nm-shadow);
+}
+
+/* ---------- Nút chọn theme (ô màu xem trước) ---------- */
+.theme-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid rgba(127, 127, 127, 0.3);
+  flex: none;
+}
+.theme-swatch-dark {
+  background: linear-gradient(135deg, #14293c, #0a1929);
+}
+.theme-swatch-glass {
+  background: linear-gradient(135deg, #a855f7, #22d3ee 55%, #ec4899);
+}
+.theme-swatch-neumorph {
+  background: #e0e5ec;
+  box-shadow: inset 2px 2px 3px #bcc3ce, inset -2px -2px 3px #ffffff;
+}

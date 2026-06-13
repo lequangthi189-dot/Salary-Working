@@ -4,6 +4,7 @@ import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
 import ManualScheduleModal from './ManualScheduleModal.jsx'
+import CircularProgress from './CircularProgress.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -58,6 +59,9 @@ export default function ScheduleImportModal({
   // Tuần hiện tại làm DỰ PHÒNG khi ảnh không ghi ngày (không hiện trên UI).
   const weekStart = mondayOfThisWeek()
   const [loading, setLoading] = useState(false)
+  // Tiến độ thật của quá trình đọc lịch. indeterminate = đang chờ Gemini (không
+  // ước lượng được %). Reset/ẩn trong finally để KHÔNG kẹt khi lỗi.
+  const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [rows, setRows] = useState(null) // [{weekday,date,start,end,off}]
@@ -87,8 +91,13 @@ export default function ScheduleImportModal({
     if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
       return setError(t('import.errNoCode'))
     setLoading(true)
+    setProgress({ pct: 10, label: t('import.stageUpload'), indeterminate: false })
     try {
+      // 1) Đọc & mã hoá ảnh (mốc thật).
       const { base64, mediaType } = await readImage(file)
+      setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
+      // 2) Gọi Gemini — không biết bao lâu → vòng quay indeterminate.
+      setProgress({ pct: 25, label: t('import.stageAI'), indeterminate: true })
       const { data, error: fnErr } = await supabase.functions.invoke(
         'extract-schedule',
         {
@@ -102,6 +111,8 @@ export default function ScheduleImportModal({
           },
         }
       )
+      // 3) Có phản hồi → xử lý/map dữ liệu (mốc thật).
+      setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (fnErr) {
         // Lỗi non-2xx: thông điệp thật nằm trong error.context (Response).
         let detail = fnErr.message
@@ -150,11 +161,13 @@ export default function ScheduleImportModal({
           off: !!d.off || !d.start || !d.end,
         }
       })
+      setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
       setRows(mapped)
       setInfo(
         t('import.infoRead', { code: data.matched_code || employeeCode })
       )
     } catch (e) {
+      // Lỗi (vd Gemini hết quota/timeout) → báo lỗi; finally ẩn vòng tròn, không kẹt.
       setError(String(e.message || e))
     } finally {
       setLoading(false)
@@ -236,6 +249,16 @@ export default function ScheduleImportModal({
             {t('import.enterManual')}
           </button>
         </div>
+
+        {loading && (
+          <div className="import-progress">
+            <CircularProgress
+              value={progress.pct}
+              label={progress.label}
+              indeterminate={progress.indeterminate}
+            />
+          </div>
+        )}
 
         {info && <p className="msg info">{info}</p>}
         {error && <p className="msg error" style={{ whiteSpace: 'pre-wrap' }}>{error}</p>}

@@ -154,8 +154,19 @@ export default function LoginForm({ onCancel }) {
 
   return (
     <div className="auth-card">
-      <div className="auth-lang">
-        <LangToggle />
+      <div className="auth-top">
+        {onCancel && (
+          <button
+            type="button"
+            className="link auth-cancel"
+            onClick={onCancel}
+          >
+            ← {t("common.cancel")}
+          </button>
+        )}
+        <div className="auth-lang">
+          <LangToggle />
+        </div>
       </div>
       <h1>Salary Working</h1>
       <p className="subtitle">
@@ -300,12 +311,6 @@ export default function LoginForm({ onCancel }) {
       >
         {mode === "signin" ? t("auth.noAccount") : t("auth.haveAccount")}
       </button>
-
-      {onCancel && (
-        <button type="button" className="link" onClick={onCancel}>
-          ← {t("common.cancel")}
-        </button>
-      )}
     </div>
   );
 }
