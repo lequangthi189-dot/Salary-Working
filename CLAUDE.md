@@ -40,7 +40,7 @@ Toàn bộ phép tính nằm ở `src/lib/shiftMath.js` (đơn giá ở `src/lib
 3. `pay = (phút_ngày/60) * DAY_RATE + (phút_đêm/60) * NIGHT_RATE`.
 4. `DAY_RATE = 25500`, `NIGHT_RATE = 33150` (VND/giờ).
 
-Lương lễ (300%/390%) và giới hạn 8 giờ/ngày: nay đều ĐÃ được code — chi tiết và ví dụ biên xem `.claude/docs/pay_logic.md`.
+Chi tiết, ví dụ biên và các quy tắc chưa được code (lương lễ 300%/390%, giới hạn 8 giờ/ngày): xem `.claude/docs/pay_logic.md`.
 
 ## Key Constraints
 
@@ -51,9 +51,9 @@ Tuyệt đối KHÔNG được thay đổi hoặc tự ý giả định những 
 - **Quy ước qua nửa đêm**: `end <= start` nghĩa là ca kết thúc hôm sau. Đừng đổi sang yêu cầu ngày kết thúc riêng.
 - **Đơn vị tiền**: số nguyên VND, không dùng số thập phân tiền tệ; định dạng qua `formatMoney` (locale `vi-VN`).
 - **Bảo mật dữ liệu**: mọi truy vấn dựa vào Row Level Security của Supabase (`auth.uid() = user_id`). Không tự thêm filter `user_id` ở client để thay thế RLS, và không tắt RLS.
-- **Lương lễ và giới hạn 8 giờ/ngày ĐÃ được implement** (lễ: cột `shifts.is_holiday` + phụ cấp `holiday_*_pct` trong hồ sơ, đơn giá qua `getHolidayDayRate()/getHolidayNightRate()`; 8h: validation khi thêm/sửa ca). Chi tiết ở `.claude/docs/pay_logic.md`. Khi đổi hệ số/logic lễ phải cập nhật test trong `shiftMath.test.js`.
+- **Lương lễ và giới hạn 8 giờ/ngày hiện CHƯA được implement**. Đừng giả định chúng đã có; nếu cần thêm, đọc `.claude/docs/pay_logic.md` và xác nhận với chủ dự án trước.
 - Khi đổi logic tính toán, phải cập nhật và chạy `src/lib/shiftMath.test.js`.
-- **Branch Management**: Trước khi thêm bất kỳ tính năng nào hoặc sửa lỗi, luôn luôn làm việc trên một nhánh (branch) git mới. Không bao giờ commit trực tiếp trên nhánh main. Các nhánh sửa lỗi phải tuân theo quy ước đặt tên bug/[des], các nhánh tính năng phải tuân theo quy ước đặt tên feature/[desc].
+- **Branch Management**: Trước khi thêm bất kỳ tính năng nào hoặc sửa lỗi, luôn luôn làm việc trên một nhánh (branch) git mới. Không bao giờ commit trực tiếp trên nhánh master. Các nhánh sửa lỗi phải tuân theo quy ước đặt tên bug/[des], các nhánh tính năng phải tuân theo quy ước đặt tên feature/[desc].
 
 ## Additional Documentation
 
