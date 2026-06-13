@@ -30,3 +30,15 @@
 .theme-cycle .theme-swatch {
   flex: none;
 }
+
+/* Mobile: ẩn chữ tên theme, chỉ còn ô màu preview. Chữ ("Glassmorphism" dài nhất)
+   làm .header-actions rộng quá → thanh gạt + chatbot bị xuống hàng dưới tiêu đề.
+   Bỏ chữ giúp header-actions gọn lại, nằm cùng hàng với "Salary Working". */
+@media (max-width: 560px) {
+  .theme-cycle {
+    padding: 0 0.4rem;
+  }
+  .theme-cycle__name {
+    display: none;
+  }
+}
