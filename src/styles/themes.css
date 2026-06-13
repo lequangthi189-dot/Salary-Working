@@ -98,6 +98,19 @@
   color: var(--text);
 }
 
+/* Bỏ KHUNG bao ngoài cụm thẻ thống kê ở glass: .stats-panel vốn lọt vào danh sách
+   :is(...) bên trên nên bị thêm nền kính mờ + viền + bóng + blur → thành frame thừa
+   quanh toàn cụm. Tắt RIÊNG phần trang trí của wrapper (cho trong suốt, không viền),
+   GIỮ NGUYÊN layout (flex/gap/height ở MonthStats.css) và nền/viền của .info-card &
+   .salary-hero bên trong. Đặt SAU khối :is(...) để thắng nhờ thứ tự (cùng đặc hiệu). */
+[data-theme='glass'] .stats-panel {
+  background: none;
+  border: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 /* Thẻ thống kê: gradient rực rỡ theo tông (tím→hồng, xanh→cyan, teal→green). */
 [data-theme='glass'] .stats-panel .info-card {
   border: 1px solid rgba(255, 255, 255, 0.3);
