@@ -234,6 +234,7 @@ export const translations = {
 
     // profile
     "profile.title": "Account info",
+    "profile.jobInfo": "Employment info",
     "profile.empCode": "Employee code",
     "profile.payday": "Payday",
     "profile.dayN": "Day {n}",
@@ -350,6 +351,8 @@ export const translations = {
     "emp.firstName": "First name",
     "emp.hourlyRate": "Hourly wage ({cur})",
     "emp.nightPct": "Night allowance (%)",
+    "emp.nightStart": "Night shift starts at",
+    "emp.nightEnd": "Night shift ends at",
     "emp.holidayDayPct": "Holiday allowance — day shift (%)",
     "emp.holidayNightPct": "Holiday allowance — night shift (%)",
     "emp.hasNightShift": "Does your store have night shifts?",
@@ -369,6 +372,8 @@ export const translations = {
     "profile.holidayNightPct": "Holiday — night shift",
     "profile.editInfo": "Edit info",
     "profile.hasNightShift": "Store has night shifts",
+    "profile.nightStart": "Night shift starts at",
+    "profile.nightEnd": "Night shift ends at",
     "profile.periodStartDay": "Pay period start day",
     "profile.periodEndDay": "Pay period end day",
     "profile.switchAccount": "Switch account",
@@ -687,6 +692,7 @@ export const translations = {
 
     // profile
     "profile.title": "Thông tin tài khoản",
+    "profile.jobInfo": "Thông tin việc làm",
     "profile.empCode": "Mã nhân viên",
     "profile.payday": "Ngày nhận lương",
     "profile.dayN": "Ngày {n}",
@@ -803,6 +809,8 @@ export const translations = {
     "emp.firstName": "Tên",
     "emp.hourlyRate": "Lương 1 giờ ({cur})",
     "emp.nightPct": "Phụ cấp ca đêm (%)",
+    "emp.nightStart": "Ca đêm bắt đầu lúc",
+    "emp.nightEnd": "Ca đêm kết thúc lúc",
     "emp.holidayDayPct": "Phụ cấp ngày lễ — ca ngày (%)",
     "emp.holidayNightPct": "Phụ cấp ngày lễ — ca đêm (%)",
     "emp.hasNightShift": "Cửa hàng bạn đang làm có ca đêm không?",
@@ -822,6 +830,8 @@ export const translations = {
     "profile.holidayNightPct": "Lễ — ca đêm",
     "profile.editInfo": "Chỉnh thông tin",
     "profile.hasNightShift": "Cửa hàng có ca đêm",
+    "profile.nightStart": "Ca đêm bắt đầu lúc",
+    "profile.nightEnd": "Ca đêm kết thúc lúc",
     "profile.periodStartDay": "Ngày bắt đầu tính công",
     "profile.periodEndDay": "Ngày chốt tính công",
     "profile.switchAccount": "Chuyển tài khoản",

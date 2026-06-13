@@ -96,6 +96,13 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
   const [hasNightShift, setHasNightShift] = useState(
     pick('hasNightShift', initial.has_night_shift != null ? initial.has_night_shift : true)
   )
+  // Giờ bắt đầu/kết thúc ca đêm ("HH:MM"). DB trả "HH:MM:SS" → cắt còn "HH:MM".
+  const [nightStart, setNightStart] = useState(
+    pick('nightStart', (initial.night_start || '22:00').slice(0, 5))
+  )
+  const [nightEnd, setNightEnd] = useState(
+    pick('nightEnd', (initial.night_end || '06:00').slice(0, 5))
+  )
   const [periodStartDay, setPeriodStartDay] = useState(
     pick('periodStartDay', String(initial.period_start_day ?? 26))
   )
@@ -126,6 +133,8 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
       holidayDayPct,
       holidayNightPct,
       hasNightShift,
+      nightStart,
+      nightEnd,
       periodStartDay,
       periodEndDay,
     })
@@ -139,6 +148,8 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
     holidayDayPct,
     holidayNightPct,
     hasNightShift,
+    nightStart,
+    nightEnd,
     periodStartDay,
     periodEndDay,
   ])
@@ -176,6 +187,9 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
       holidayDayPct: pct(holidayDayPct),
       holidayNightPct: pct(holidayNightPct),
       hasNightShift,
+      // Chỉ lưu giờ ca đêm khi có ca đêm; không thì để mặc định 22:00–06:00.
+      nightStart: hasNightShift ? nightStart : '22:00',
+      nightEnd: hasNightShift ? nightEnd : '06:00',
       periodStartDay: clampDay(periodStartDay, 26),
       periodEndDay: clampDay(periodEndDay, 25),
     })
@@ -274,6 +288,28 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
               required
             />
           </label>
+        )}
+        {hasNightShift && (
+          <div className="emp-period">
+            <label>
+              {t('emp.nightStart')}
+              <input
+                type="time"
+                value={nightStart}
+                onChange={(e) => setNightStart(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              {t('emp.nightEnd')}
+              <input
+                type="time"
+                value={nightEnd}
+                onChange={(e) => setNightEnd(e.target.value)}
+                required
+              />
+            </label>
+          </div>
         )}
         <label>
           {t('emp.holidayDayPct')}

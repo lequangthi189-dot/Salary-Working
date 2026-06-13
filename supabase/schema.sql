@@ -93,6 +93,9 @@ create table if not exists public.profiles (
   holiday_day_pct integer,
   holiday_night_pct integer,
   has_night_shift boolean not null default true,
+  -- Cửa sổ ca đêm theo từng người (mặc định 22:00–06:00). Có thể vắt qua nửa đêm.
+  night_start time not null default '22:00',
+  night_end time not null default '06:00',
   lang text,
   -- Kỳ lương theo từng người: ngày bắt đầu / ngày chốt (kết thúc) tính công.
   -- Mặc định 26 → 25 (kỳ vắt qua 2 tháng). Việc gom ca vào kỳ phụ thuộc ngày chốt.
@@ -113,6 +116,8 @@ alter table public.profiles add column if not exists night_pct integer;
 alter table public.profiles add column if not exists holiday_day_pct integer;
 alter table public.profiles add column if not exists holiday_night_pct integer;
 alter table public.profiles add column if not exists has_night_shift boolean not null default true;
+alter table public.profiles add column if not exists night_start time not null default '22:00';
+alter table public.profiles add column if not exists night_end time not null default '06:00';
 alter table public.profiles add column if not exists email_confirmed boolean not null default false;
 alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
 -- Ngôn ngữ ưa thích của người dùng (vi/en/us/au) — đăng nhập lại giữ đúng ngôn ngữ.

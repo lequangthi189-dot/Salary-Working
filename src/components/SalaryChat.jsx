@@ -267,6 +267,7 @@ function findMoney(s) {
 function extractDates(msg) {
   const [cy] = localTodayStr().split('-')
   const out = []
+  // 1) Dạng DD/MM hoặc DD/MM/YYYY (mỗi ngày ghi rõ tháng).
   const re = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/g
   let m
   while ((m = re.exec(msg))) {
@@ -276,6 +277,19 @@ function extractDates(msg) {
     let y = m[3] ? Number(m[3]) : Number(cy)
     if (y < 100) y += 2000
     out.push(`${y}-${pad2(mo)}-${pad2(d)}`)
+  }
+  // 2) Dạng "ngày 12, 19, 26 tháng 6": danh sách NGÀY dùng chung một tháng. Lấy
+  // các số nằm giữa "ngày … tháng M" làm ngày, năm nay nếu không ghi.
+  const norm = deaccent(msg)
+  const tm = norm.match(/ngay\s+([\d,.\s&va]+?)\s*thang\s*(\d{1,2})/)
+  if (tm) {
+    const mo = Number(tm[2])
+    if (mo >= 1 && mo <= 12) {
+      for (const ds of tm[1].match(/\d{1,2}/g) || []) {
+        const d = Number(ds)
+        if (d >= 1 && d <= 31) out.push(`${cy}-${pad2(mo)}-${pad2(d)}`)
+      }
+    }
   }
   return [...new Set(out)].sort()
 }
@@ -594,13 +608,16 @@ export default function SalaryChat({
   // Hoàn tất 1 ý định thêm ca: đủ giờ → THẺ XÁC NHẬN; ca đêm → 22:00–06:00; ca ngày
   // → hỏi chọn giờ; còn lại (thiếu giờ) → hỏi giờ vào/ra. (Đã có ngày tới đây.)
   function finalizeShift({ date, times, type }) {
+    // Cửa hàng không có ca đêm (hồ sơ has_night_shift = false) → "ca đêm" vẫn coi là
+    // ca ngày: hỏi chọn giờ ngày thay vì mặc định 22:00–06:00.
+    if (type === 'night' && !snapshot?.hasNightShift) type = 'day'
     if (times && times.length >= 2) {
       pushShiftConfirm({ date, start: times[0], end: times[1] })
-    } else if (type === 'night') {
-      pushShiftConfirm({ date, start: '22:00', end: '06:00' })
     } else if (type === 'day') {
       pushDayChoice(date)
     } else {
+      // Ca đêm (hoặc chưa rõ loại) → KHÔNG cố định 22:00–06:00; hỏi giờ vào/ra để
+      // lấy dữ liệu thật của ca.
       setPending({ date, awaiting: 'times' })
       bot(t('chat.askTimes'))
     }
