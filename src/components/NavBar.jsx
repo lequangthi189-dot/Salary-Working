@@ -82,7 +82,10 @@ export default function NavBar({ items, active = 0, onSelect }) {
       const li = itemRefs.current[sel]
       const ind = indicatorRef.current
       if (!li || !ind) return
-      setIndicatorX(li.offsetLeft + (li.offsetWidth - ind.offsetWidth) / 2)
+      const center = li.offsetLeft + li.offsetWidth / 2
+      setIndicatorX(center - ind.offsetWidth / 2)
+      // Tâm lỗ mask trên thanh pill (xem .navbar-list) bám đúng tâm ô active.
+      ind.parentElement?.style.setProperty('--ind-cx', `${center}px`)
     }
     measure()
     window.addEventListener('resize', measure)
