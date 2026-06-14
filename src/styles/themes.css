@@ -14,13 +14,15 @@
   --panel: #0f2334;
   --panel-2: #14293c;
   --text: #f3f8fd;
-  --muted: #90a4ba;
-  --accent: #3aa0d8;
+  /* MINIMALIST: chữ phụ dịu hơn, màu nhấn bớt bão hòa → tông monochrome trầm. */
+  --muted: #8696aa;
+  --accent: #5b9ec6;
   --green: #4fd6a0;
   --danger: #f0676b;
-  --border: #1c3346;
+  /* MINIMALIST: viền hairline mảnh, dịu hơn cho ít nhiễu thị giác. */
+  --border: #1a2d40;
   --checkin: #ff9f43;
-  --checkout: #3aa0d8;
+  --checkout: #5b9ec6;
 }
 
 /* Phẳng tối giản: thẻ thống kê & ô lương dùng nền/viền mảnh theo palette (bỏ màu
@@ -32,6 +34,56 @@
 [data-theme='dark'] .stats-panel .salary-hero {
   background: var(--panel);
   border: 1px solid var(--border);
+}
+
+/* MINIMALIST — Bóng tối giản: bỏ đổ bóng nặng trên thẻ nội dung (chỉ giữ elevation
+   cho popover như .lang-menu / menu tài khoản). Phẳng, sạch, ít nhiễu. */
+[data-theme='dark']
+  :is(
+    .auth-card,
+    .emp-card,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .stats-panel .info-card,
+    .stats-panel .salary-hero
+  ) {
+  box-shadow: none;
+}
+
+/* MINIMALIST — Nhiều khoảng trắng: nới padding để thẻ thoáng, dễ thở hơn. */
+[data-theme='dark'] .shift-card:not(.editing) {
+  padding: 1.1rem 1.25rem;
+}
+[data-theme='dark'] .period-card {
+  padding: 1rem 1.15rem;
+}
+[data-theme='dark'] :is(.auth-card, .emp-card, .stat-card, .deduction-card) {
+  padding: 1.5rem;
+}
+
+/* MINIMALIST — Hover/focus tinh tế: chỉ đổi màu viền nhẹ, transition mượt, không
+   nhấc thẻ hay đổ bóng rực. */
+[data-theme='dark']
+  :is(.stat-card, .period-card, .shift-card:not(.editing), .deduction-card) {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+[data-theme='dark']
+  :is(.stat-card, .shift-card:not(.editing), .deduction-card):hover {
+  border-color: rgba(91, 158, 198, 0.55);
+}
+
+/* MINIMALIST — Focus ô nhập: viền accent dịu, không quầng sáng rực. */
+[data-theme='dark'] :is(input, select, textarea) {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+[data-theme='dark'] :is(input, select, textarea):focus,
+[data-theme='dark'] :is(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--accent);
 }
 
 /* ---------- Modern Glassmorphism ----------
@@ -52,7 +104,8 @@
   --surface-blur: blur(18px) saturate(150%);
 }
 
-/* Nền: các "đốm" màu blur mềm trên nền xanh đậm → trong trẻo, nhiều màu, airy. */
+/* Nền: các "đốm" màu blur mềm trên nền xanh đậm → trong trẻo, nhiều màu, airy.
+   MODERN: các đốm màu trôi/đảo nhẹ liên tục (aurora) cho cảm giác sống động. */
 [data-theme='glass'] body {
   background:
     radial-gradient(42% 50% at 14% 18%, rgba(168, 85, 247, 0.5), transparent 70%),
@@ -61,6 +114,20 @@
     radial-gradient(46% 48% at 18% 92%, rgba(236, 72, 153, 0.45), transparent 70%),
     linear-gradient(135deg, #0f1430 0%, #141a3c 100%);
   background-attachment: fixed;
+  background-size: 200% 200%;
+  animation: glass-aurora 28s ease-in-out infinite alternate;
+}
+
+@keyframes glass-aurora {
+  0% {
+    background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%;
+  }
+  50% {
+    background-position: 30% 20%, 70% 30%, 60% 70%, 30% 80%, 50% 50%;
+  }
+  100% {
+    background-position: 100% 100%, 0% 100%, 0% 0%, 100% 0%, 100% 100%;
+  }
 }
 
 /* Bề mặt kính mờ: trong suốt + blur, viền sáng mỏng, bo góc lớn, ánh nội viền. */
@@ -90,12 +157,126 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
   -webkit-backdrop-filter: var(--surface-blur);
   backdrop-filter: var(--surface-blur);
+  /* MODERN: chuyển động mượt khi hover/đổi trạng thái. */
+  position: relative;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+}
+
+/* MODERN — Viền gradient phát sáng: lớp ::before mỏng tô gradient (tím→cyan→hồng)
+   rồi dùng mask compositing để chỉ chừa lại viền, không che nội dung. Bo góc kế thừa
+   theo thẻ; không bắt sự kiện chuột. */
+[data-theme='glass']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .sidebar,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .lang-menu
+  )::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(34, 211, 238, 0.85) 50%, rgba(236, 72, 153, 0.9));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 0.28s ease;
+}
+
+/* MODERN — Hover nâng thẻ: nhấc nhẹ lên, đổ bóng sâu + ánh tím/cyan, viền gradient
+   rực hơn. (Bỏ qua .stats-panel để không nhấc cả cụm thống kê.) */
+[data-theme='glass']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .lang-menu
+  ):hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 16px 44px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 8px 28px rgba(124, 196, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+[data-theme='glass']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .lang-menu
+  ):hover::before {
+  opacity: 1;
 }
 
 [data-theme='glass'] :is(input, select, textarea) {
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: var(--text);
+  /* MODERN: chuyển màu/viền/glow mượt khi focus. */
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* MODERN — Focus glow cho ô nhập: viền accent + quầng sáng cyan mềm. */
+[data-theme='glass'] :is(input, select, textarea):focus,
+[data-theme='glass'] :is(input, select, textarea):focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(124, 196, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(124, 196, 255, 0.25);
+}
+
+/* MODERN — Micro-interaction nút: nhấc nhẹ + glow khi hover, lún khi nhấn. */
+[data-theme='glass'] :is(button, .account-btn) {
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+[data-theme='glass'] :is(button, .account-btn):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 22px rgba(124, 196, 255, 0.28);
+}
+[data-theme='glass'] :is(button, .account-btn):active {
+  transform: translateY(0);
+  filter: brightness(0.96);
 }
 
 /* Bỏ KHUNG bao ngoài cụm thẻ thống kê ở glass: .stats-panel vốn lọt vào danh sách
@@ -118,6 +299,17 @@
   box-shadow:
     0 6px 22px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease;
+}
+/* MODERN — Hover nâng thẻ thống kê: nhấc nhẹ + bóng sâu hơn. */
+[data-theme='glass'] .stats-panel .info-card:hover,
+[data-theme='glass'] .stats-panel .salary-hero:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 [data-theme='glass'] .stats-panel .info-card .info-card__label,
 [data-theme='glass'] .stats-panel .info-card .info-card__value {
@@ -144,6 +336,24 @@
   box-shadow:
     0 10px 34px rgba(168, 85, 247, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease;
+}
+
+/* MODERN — Tôn trọng người dùng giảm chuyển động: tắt hoạt ảnh nền & transform. */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme='glass'] body {
+    animation: none;
+  }
+  [data-theme='glass'] :is(
+    .auth-card, .emp-card, .modal-card, .comp-pop, .chat-float, .stat-card,
+    .period-card, .period-stat-card, .period-total, .deduction-card, .shift-card,
+    .lang-menu, .stats-panel .info-card, .stats-panel .salary-hero,
+    button, .account-btn
+  ):hover {
+    transform: none;
+  }
 }
 
 /* ---------- Soft UI / Neumorphism ---------- */
@@ -163,6 +373,10 @@
   /* Bóng mềm: sáng trên-trái, tối dưới-phải → cảm giác nổi khỏi nền. */
   --nm-shadow: 6px 6px 14px #bcc3ce, -6px -6px 14px #ffffff;
   --nm-inset: inset 3px 3px 7px #bcc3ce, inset -3px -3px 7px #ffffff;
+  /* Bóng nổi CAO hơn (dùng khi hover) → khối nhô lên rõ rệt. */
+  --nm-shadow-hover: 9px 9px 20px #b2b9c4, -9px -9px 20px #ffffff;
+  /* Gradient bề mặt lồi (convex): sáng trên, tối nhẹ dưới. */
+  --nm-convex: linear-gradient(145deg, #f0f4fa, #cdd3dd);
 }
 
 [data-theme='neumorph']
@@ -182,20 +396,83 @@
     .stats-panel,
     .lang-menu
   ) {
-  background: var(--bg);
+  /* SOFT UI — Bề mặt lồi (convex): gradient nội nhẹ cho khối có chiều sâu hơn. */
+  background: var(--nm-convex);
   border: none;
   border-radius: 20px;
   box-shadow: var(--nm-shadow);
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+
+/* SOFT UI — Hover nổi khối: bóng mềm sâu/rộng hơn → khối nhô cao dần.
+   (Bỏ .stats-panel & .sidebar để không "phồng" cả khung lớn.) */
+[data-theme='neumorph']
+  :is(
+    .auth-card,
+    .emp-card,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card
+  ):hover {
+  box-shadow: var(--nm-shadow-hover);
+}
+/* SOFT UI — Nhấn lún (pressed): thẻ bấm được chuyển sang bóng chìm khi nhấn. */
+[data-theme='neumorph']
+  :is(.period-card, .stat-card, .deduction-card):active {
+  box-shadow: var(--nm-inset);
 }
 
 [data-theme='neumorph'] :is(.account-btn, .modal-card button, button.primary) {
-  background: var(--bg);
+  /* SOFT UI — Nút lồi nhẹ + chuyển động press mượt. */
+  background: var(--nm-convex);
   border: none;
   box-shadow: 4px 4px 10px #bcc3ce, -4px -4px 10px #ffffff;
+  transition: box-shadow 0.18s ease, transform 0.1s ease;
+}
+[data-theme='neumorph']
+  :is(.account-btn, .modal-card button, button.primary):hover {
+  box-shadow: 6px 6px 14px #b2b9c4, -6px -6px 14px #ffffff;
 }
 [data-theme='neumorph']
   :is(.account-btn, .modal-card button, button.primary):active {
   box-shadow: var(--nm-inset);
+  transform: scale(0.985);
+}
+
+/* SOFT UI — Checkbox/radio neumorph: ô lõm mềm; khi chọn nổi lồi + dấu accent.
+   Tự vẽ appearance để có bóng nổi/chìm thay cho ô mặc định trình duyệt. */
+[data-theme='neumorph'] :is(input[type='checkbox'], input[type='radio']) {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  background: var(--bg);
+  box-shadow: var(--nm-inset);
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow 0.18s ease;
+}
+[data-theme='neumorph'] input[type='checkbox'] {
+  border-radius: 6px;
+}
+[data-theme='neumorph'] input[type='radio'] {
+  border-radius: 50%;
+}
+[data-theme='neumorph'] :is(input[type='checkbox'], input[type='radio']):checked {
+  box-shadow: var(--nm-shadow);
+}
+/* Dấu check: chấm accent mềm ở giữa khi đã chọn. */
+[data-theme='neumorph']
+  :is(input[type='checkbox'], input[type='radio']):checked::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: inherit;
+  background: var(--accent);
 }
 
 /* Loại checkbox/radio khỏi style ô nhập neumorph: bóng chìm + nền var(--bg) làm
@@ -215,6 +492,12 @@
   border: none;
   border-radius: 18px;
   box-shadow: var(--nm-shadow);
+  transition: box-shadow 0.22s ease;
+}
+/* SOFT UI — Hover nổi khối cho thẻ thống kê & ô lương. */
+[data-theme='neumorph'] .stats-panel .info-card:hover,
+[data-theme='neumorph'] .stats-panel .salary-hero:hover {
+  box-shadow: var(--nm-shadow-hover);
 }
 [data-theme='neumorph'] .stats-panel .info-card .info-card__label,
 [data-theme='neumorph'] .stats-panel .info-card .info-card__value {
@@ -239,6 +522,7 @@
   border: none;
   border-radius: 20px;
   box-shadow: var(--nm-shadow);
+  transition: box-shadow 0.22s ease;
 }
 
 /* ---------- Nút chọn theme (ô màu xem trước) ---------- */
