@@ -417,6 +417,8 @@ export const translations = {
     "chat.dayHeader": "On {date}: you worked.",
     "chat.dayShiftLine": "• In {in} – out {out}: {hours} h · {pay}",
     "chat.dayTotal": "Total: {hours} h · {pay}",
+    "chat.langMismatch":
+      "Please type in English — the app language you selected. Switch the language if you'd like to chat in another one.",
     "chat.openImport": "Opening Import weekly schedule…",
     "chat.openReconcile": "Opening Reconcile…",
     "chat.openDeductions": "Opening Compensation…",
@@ -921,6 +923,8 @@ export const translations = {
     "chat.dayHeader": "Ngày {date}: bạn có đi làm.",
     "chat.dayShiftLine": "• Vào {in} – ra {out}: {hours} giờ · {pay}",
     "chat.dayTotal": "Tổng: {hours} giờ · {pay}",
+    "chat.langMismatch":
+      "Vui lòng nhắn bằng tiếng Việt — ngôn ngữ bạn đang chọn. Muốn chat ngôn ngữ khác thì đổi ngôn ngữ ứng dụng nhé.",
     "chat.openImport": "Đang mở Nhập lịch tuần…",
     "chat.openReconcile": "Đang mở Đối chiếu công…",
     "chat.openDeductions": "Đang mở Tiền bồi thường…",
