@@ -355,7 +355,7 @@ export default function ReconcileModal({
             <input
               type="file"
               accept="image/*"
-              multiple={scope === 'weeks'}
+              multiple
               onChange={pickFile}
             />
           </label>
