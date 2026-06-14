@@ -14,13 +14,15 @@
   --panel: #0f2334;
   --panel-2: #14293c;
   --text: #f3f8fd;
-  --muted: #90a4ba;
-  --accent: #3aa0d8;
+  /* MINIMALIST: chữ phụ dịu hơn, màu nhấn bớt bão hòa → tông monochrome trầm. */
+  --muted: #8696aa;
+  --accent: #5b9ec6;
   --green: #4fd6a0;
   --danger: #f0676b;
-  --border: #1c3346;
+  /* MINIMALIST: viền hairline mảnh, dịu hơn cho ít nhiễu thị giác. */
+  --border: #1a2d40;
   --checkin: #ff9f43;
-  --checkout: #3aa0d8;
+  --checkout: #5b9ec6;
 }
 
 /* Phẳng tối giản: thẻ thống kê & ô lương dùng nền/viền mảnh theo palette (bỏ màu
@@ -32,6 +34,56 @@
 [data-theme='dark'] .stats-panel .salary-hero {
   background: var(--panel);
   border: 1px solid var(--border);
+}
+
+/* MINIMALIST — Bóng tối giản: bỏ đổ bóng nặng trên thẻ nội dung (chỉ giữ elevation
+   cho popover như .lang-menu / menu tài khoản). Phẳng, sạch, ít nhiễu. */
+[data-theme='dark']
+  :is(
+    .auth-card,
+    .emp-card,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .stats-panel .info-card,
+    .stats-panel .salary-hero
+  ) {
+  box-shadow: none;
+}
+
+/* MINIMALIST — Nhiều khoảng trắng: nới padding để thẻ thoáng, dễ thở hơn. */
+[data-theme='dark'] .shift-card:not(.editing) {
+  padding: 1.1rem 1.25rem;
+}
+[data-theme='dark'] .period-card {
+  padding: 1rem 1.15rem;
+}
+[data-theme='dark'] :is(.auth-card, .emp-card, .stat-card, .deduction-card) {
+  padding: 1.5rem;
+}
+
+/* MINIMALIST — Hover/focus tinh tế: chỉ đổi màu viền nhẹ, transition mượt, không
+   nhấc thẻ hay đổ bóng rực. */
+[data-theme='dark']
+  :is(.stat-card, .period-card, .shift-card:not(.editing), .deduction-card) {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+[data-theme='dark']
+  :is(.stat-card, .shift-card:not(.editing), .deduction-card):hover {
+  border-color: rgba(91, 158, 198, 0.55);
+}
+
+/* MINIMALIST — Focus ô nhập: viền accent dịu, không quầng sáng rực. */
+[data-theme='dark'] :is(input, select, textarea) {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+[data-theme='dark'] :is(input, select, textarea):focus,
+[data-theme='dark'] :is(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--accent);
 }
 
 /* ---------- Modern Glassmorphism ----------
