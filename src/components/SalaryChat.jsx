@@ -35,6 +35,43 @@ function deaccent(s) {
     .toLowerCase()
 }
 
+// Ký tự có dấu đặc trưng tiếng Việt (gồm ă â đ ê ô ơ ư và mọi nguyên âm có dấu).
+const VI_DIACRITIC =
+  /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i
+
+// Từ ĐẶC TRƯNG để đoán ngôn ngữ khi câu KHÔNG có dấu (đã bỏ dấu, thường hoá).
+// Chỉ chứa từ ít trùng giữa hai ngôn ngữ để hạn chế đoán sai.
+const VI_WORDS = new Set([
+  'toi', 'minh', 'thang', 'tuan', 'luong', 'lam', 'nhieu', 'ngay', 'dem', 'them',
+  'tao', 'thuong', 'boi', 'viec', 'ngoai', 'gio', 'khong', 'duoc', 'muon', 'hom',
+  'nay', 'mai', 'lich', 'kien', 'bang', 'cong', 'cua', 'voi', 'thu', 'chu', 'nhat',
+  'bao', 'cham', 'doi', 'chieu', 'nhap', 'huong', 'dan', 'ho', 'so', 'tru', 'kip',
+])
+const EN_WORDS = new Set([
+  'the', 'you', 'your', 'how', 'much', 'many', 'what', 'when', 'is', 'are', 'do',
+  'does', 'shift', 'shifts', 'month', 'week', 'need', 'make', 'salary', 'this',
+  'reach', 'work', 'working', 'hours', 'hour', 'add', 'want', 'today', 'tomorrow',
+  'schedule', 'pay', 'open', 'show', 'and', 'for', 'with', 'night', 'day', 'next',
+])
+
+// Đoán ngôn ngữ của câu: trả 'vi' | 'en' | null (null = trung tính/không chắc).
+// Có dấu tiếng Việt → 'vi'. Không dấu → đếm từ đặc trưng; hơn hẳn bên nào thì theo
+// bên đó, hoà/không có từ nào (vd chỉ số "200k", giờ "22h") → null để KHÔNG chặn.
+function detectLang(msg) {
+  if (VI_DIACRITIC.test(msg)) return 'vi'
+  const tokens = deaccent(msg).match(/[a-z]+/g) || []
+  if (!tokens.length) return null
+  let vi = 0
+  let en = 0
+  for (const w of tokens) {
+    if (VI_WORDS.has(w)) vi++
+    if (EN_WORDS.has(w)) en++
+  }
+  if (vi > en) return 'vi'
+  if (en > vi) return 'en'
+  return null
+}
+
 // Đọc số tiền VND từ chuỗi: "200k"/"200 nghìn"→200000, "2tr"/"2 triệu"→2000000,
 // "200000"→200000. Số trần (không đơn vị) phải ≥ 1000 mới coi là tiền (tránh nhầm ngày).
 function parseAmountVnd(s) {
@@ -1047,6 +1084,18 @@ export default function SalaryChat({
     if (!msg || busy) return
     setInput('')
     setMessages((m) => [...m, { role: 'user', text: msg }])
+
+    // VALIDATION ngôn ngữ: chỉ cho nhắn đúng ngôn ngữ đang chọn. Chỉ chặn khi đoán
+    // chắc chắn lệch (câu trung tính như số tiền/giờ vẫn cho qua). Đang chờ bổ sung
+    // (giờ/ngày) thì bỏ qua để không cản các câu ngắn.
+    if (!pending) {
+      const detected = detectLang(msg)
+      if (detected && detected !== lang) {
+        bot(t('chat.langMismatch'))
+        return
+      }
+    }
+
     const norm = deaccent(msg)
 
     // Đang chờ bổ sung thông tin còn thiếu (giờ vào/ra hoặc ngày).
