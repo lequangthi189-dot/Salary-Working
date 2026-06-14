@@ -52,7 +52,8 @@
   --surface-blur: blur(18px) saturate(150%);
 }
 
-/* Nền: các "đốm" màu blur mềm trên nền xanh đậm → trong trẻo, nhiều màu, airy. */
+/* Nền: các "đốm" màu blur mềm trên nền xanh đậm → trong trẻo, nhiều màu, airy.
+   MODERN: các đốm màu trôi/đảo nhẹ liên tục (aurora) cho cảm giác sống động. */
 [data-theme='glass'] body {
   background:
     radial-gradient(42% 50% at 14% 18%, rgba(168, 85, 247, 0.5), transparent 70%),
@@ -61,6 +62,20 @@
     radial-gradient(46% 48% at 18% 92%, rgba(236, 72, 153, 0.45), transparent 70%),
     linear-gradient(135deg, #0f1430 0%, #141a3c 100%);
   background-attachment: fixed;
+  background-size: 200% 200%;
+  animation: glass-aurora 28s ease-in-out infinite alternate;
+}
+
+@keyframes glass-aurora {
+  0% {
+    background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%;
+  }
+  50% {
+    background-position: 30% 20%, 70% 30%, 60% 70%, 30% 80%, 50% 50%;
+  }
+  100% {
+    background-position: 100% 100%, 0% 100%, 0% 0%, 100% 0%, 100% 100%;
+  }
 }
 
 /* Bề mặt kính mờ: trong suốt + blur, viền sáng mỏng, bo góc lớn, ánh nội viền. */
@@ -90,12 +105,126 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
   -webkit-backdrop-filter: var(--surface-blur);
   backdrop-filter: var(--surface-blur);
+  /* MODERN: chuyển động mượt khi hover/đổi trạng thái. */
+  position: relative;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+}
+
+/* MODERN — Viền gradient phát sáng: lớp ::before mỏng tô gradient (tím→cyan→hồng)
+   rồi dùng mask compositing để chỉ chừa lại viền, không che nội dung. Bo góc kế thừa
+   theo thẻ; không bắt sự kiện chuột. */
+[data-theme='glass']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .sidebar,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .lang-menu
+  )::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(34, 211, 238, 0.85) 50%, rgba(236, 72, 153, 0.9));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 0.28s ease;
+}
+
+/* MODERN — Hover nâng thẻ: nhấc nhẹ lên, đổ bóng sâu + ánh tím/cyan, viền gradient
+   rực hơn. (Bỏ qua .stats-panel để không nhấc cả cụm thống kê.) */
+[data-theme='glass']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .lang-menu
+  ):hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 16px 44px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 8px 28px rgba(124, 196, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+[data-theme='glass']
+  :is(
+    .auth-card,
+    .emp-card,
+    .modal-card,
+    .comp-pop,
+    .chat-float,
+    .stat-card,
+    .period-card,
+    .period-stat-card,
+    .period-total,
+    .deduction-card,
+    .shift-card,
+    .lang-menu
+  ):hover::before {
+  opacity: 1;
 }
 
 [data-theme='glass'] :is(input, select, textarea) {
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: var(--text);
+  /* MODERN: chuyển màu/viền/glow mượt khi focus. */
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* MODERN — Focus glow cho ô nhập: viền accent + quầng sáng cyan mềm. */
+[data-theme='glass'] :is(input, select, textarea):focus,
+[data-theme='glass'] :is(input, select, textarea):focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(124, 196, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(124, 196, 255, 0.25);
+}
+
+/* MODERN — Micro-interaction nút: nhấc nhẹ + glow khi hover, lún khi nhấn. */
+[data-theme='glass'] :is(button, .account-btn) {
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+[data-theme='glass'] :is(button, .account-btn):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 22px rgba(124, 196, 255, 0.28);
+}
+[data-theme='glass'] :is(button, .account-btn):active {
+  transform: translateY(0);
+  filter: brightness(0.96);
 }
 
 /* Bỏ KHUNG bao ngoài cụm thẻ thống kê ở glass: .stats-panel vốn lọt vào danh sách
@@ -118,6 +247,17 @@
   box-shadow:
     0 6px 22px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease;
+}
+/* MODERN — Hover nâng thẻ thống kê: nhấc nhẹ + bóng sâu hơn. */
+[data-theme='glass'] .stats-panel .info-card:hover,
+[data-theme='glass'] .stats-panel .salary-hero:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 [data-theme='glass'] .stats-panel .info-card .info-card__label,
 [data-theme='glass'] .stats-panel .info-card .info-card__value {
@@ -144,6 +284,24 @@
   box-shadow:
     0 10px 34px rgba(168, 85, 247, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease;
+}
+
+/* MODERN — Tôn trọng người dùng giảm chuyển động: tắt hoạt ảnh nền & transform. */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme='glass'] body {
+    animation: none;
+  }
+  [data-theme='glass'] :is(
+    .auth-card, .emp-card, .modal-card, .comp-pop, .chat-float, .stat-card,
+    .period-card, .period-stat-card, .period-total, .deduction-card, .shift-card,
+    .lang-menu, .stats-panel .info-card, .stats-panel .salary-hero,
+    button, .account-btn
+  ):hover {
+    transform: none;
+  }
 }
 
 /* ---------- Soft UI / Neumorphism ---------- */
