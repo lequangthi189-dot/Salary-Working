@@ -340,7 +340,7 @@ export const translations = {
     "reconcile.scopeMonth": "Month",
     "reconcile.firstWeekStart": "First week start (Monday)",
     "reconcile.weeksHint":
-      "Pick one image per week. They are read in order: the 1st image is the week of the date above, the 2nd is the next week, and so on.",
+      "Pick one image per week, in any order — weeks are sorted automatically by the dates printed in each image. The date above is only a fallback for images that don't show dates.",
     "reconcile.weekLabel": "Week {start} – {end}",
     "reconcile.stageCompare": "Comparing hours…",
     "reconcile.colImage": "From image",
@@ -846,7 +846,7 @@ export const translations = {
     "reconcile.scopeMonth": "Tháng",
     "reconcile.firstWeekStart": "Tuần đầu bắt đầu (Thứ 2)",
     "reconcile.weeksHint":
-      "Chọn mỗi tuần một ảnh. Các ảnh được đọc theo thứ tự: ảnh 1 là tuần của ngày ở trên, ảnh 2 là tuần kế tiếp, …",
+      "Chọn mỗi tuần một ảnh, theo thứ tự nào cũng được — các tuần tự sắp xếp theo ngày tháng in trong từng ảnh. Ngày ở trên chỉ dùng dự phòng cho ảnh không ghi ngày.",
     "reconcile.weekLabel": "Tuần {start} – {end}",
     "reconcile.stageCompare": "Đang đối chiếu công…",
     "reconcile.colImage": "Theo ảnh",
