@@ -401,7 +401,7 @@ export const translations = {
     // salary chatbot
     "chat.title": "Salary assistant",
     "chat.intro":
-      'Hi! Ask me, e.g. "How many shifts to reach 3,000,000?", "timesheet for month 3" / "week 2 month 3", or "shift on 10/6?".',
+      'Hi! Ask me, e.g. "How many shifts to reach 3,000,000?", "can I make 5,000,000 this month?", "timesheet for month 3" / "week 2 month 3", or "shift on 10/6?".',
     "chat.placeholder": "Ask about your salary…",
     "chat.send": "Send",
     "chat.tsTitle": "Timesheet {label}:",
@@ -464,6 +464,19 @@ export const translations = {
     "chat.alreadyReached": "You already reached {target}! 🎉",
     "chat.noRate":
       "You haven't set your hourly wage in your profile yet, so I can't estimate. Please update it and ask again.",
+    "chat.feasYes": "YES — {target} is reachable.",
+    "chat.feasNoTitle": "NO — {target} is hard to reach in time.",
+    "chat.feasHeader":
+      "You have {current}, {remaining} to go · deadline {deadline} ({days} days left).",
+    "chat.feasNeed":
+      "You'd need about {shifts} more shift(s) (~{hours}h at {rate}/h), i.e. ~{perDay}h per day.",
+    "chat.feasEasy": "✅ Comfortably doable — a light pace is enough.",
+    "chat.feasOk": "✅ Doable — you'll need nearly full working days.",
+    "chat.feasHard": "⚠️ Tight — you'd have to work overtime almost every day.",
+    "chat.feasNo":
+      "❌ Hardly realistic in this window — it needs ~{perDay}h/day, beyond a normal workload.",
+    "chat.feasEnded":
+      "The deadline has already passed — no days left to reach {target}. Try another target or date.",
     "chat.error": "Sorry, something went wrong. Please try again.",
 
     // lib: period label + lost breakdown
@@ -874,7 +887,7 @@ export const translations = {
     // salary chatbot
     "chat.title": "Trợ lý lương",
     "chat.intro":
-      'Chào! Hỏi mình nhé, vd "Cần làm bao nhiêu ca để được 3.000.000?", "bảng công tháng 3" / "tuần 2 tháng 3", hoặc "ngày 10/6 có ca không?".',
+      'Chào! Hỏi mình nhé, vd "Cần làm bao nhiêu ca để được 3.000.000?", "tháng này làm được 5 triệu không?", "bảng công tháng 3" / "tuần 2 tháng 3", hoặc "ngày 10/6 có ca không?".',
     "chat.placeholder": "Hỏi về lương của bạn…",
     "chat.send": "Gửi",
     "chat.tsTitle": "Bảng công {label}:",
@@ -936,6 +949,19 @@ export const translations = {
     "chat.alreadyReached": "Bạn đã đạt {target} rồi! 🎉",
     "chat.noRate":
       'Bạn chưa đặt "lương 1 giờ" trong hồ sơ nên mình chưa tính được. Hãy cập nhật rồi hỏi lại nhé.',
+    "chat.feasYes": "CÓ — đạt được {target}.",
+    "chat.feasNoTitle": "KHÔNG — khó đạt {target} kịp hạn.",
+    "chat.feasHeader":
+      "Bạn đang có {current}, còn thiếu {remaining} · hạn chót {deadline} (còn {days} ngày).",
+    "chat.feasNeed":
+      "Cần làm thêm khoảng {shifts} ca (~{hours} giờ với {rate}/giờ), tức ~{perDay} giờ/ngày.",
+    "chat.feasEasy": "✅ Khả thi thoải mái — làm nhẹ nhàng là đủ.",
+    "chat.feasOk": "✅ Khả thi — cần làm gần đủ ngày công.",
+    "chat.feasHard": "⚠️ Khá căng — gần như ngày nào cũng phải tăng ca.",
+    "chat.feasNo":
+      "❌ Gần như không khả thi trong khoảng này — cần ~{perDay} giờ/ngày, vượt sức làm bình thường.",
+    "chat.feasEnded":
+      "Hạn chót đã qua — không còn ngày nào để đạt {target}. Hãy đặt mục tiêu hoặc mốc khác nhé.",
     "chat.error": "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.",
 
     // lib: period label + lost breakdown

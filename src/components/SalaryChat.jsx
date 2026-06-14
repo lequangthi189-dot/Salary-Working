@@ -10,6 +10,7 @@ import {
 import {
   payPeriodKeyOf,
   payPeriodLabel,
+  payPeriodRange,
   localTodayStr,
   sumDeductions,
 } from '../lib/payPeriod.js'
@@ -323,6 +324,35 @@ function parsePlannedReq(msg) {
   return null
 }
 
+// Số ngày từ a→b (cùng "YYYY-MM-DD", theo lịch địa phương). b-a; âm nếu b trước a.
+function daysBetween(a, b) {
+  const [ay, am, ad] = String(a).split('-').map(Number)
+  const [by, bm, bd] = String(b).split('-').map(Number)
+  return Math.round(
+    (new Date(by, bm - 1, bd) - new Date(ay, am - 1, ad)) / 86400000
+  )
+}
+
+// XÉT TÍNH KHẢ THI của mục tiêu thu nhập: cần từ khoá khả thi/kịp/đạt được + số
+// tiền. Hạn chót tuỳ chọn: "trong N ngày" hoặc một ngày cụ thể; mặc định hết kỳ
+// hiện tại. Trả { target, withinDays, deadline } hoặc null.
+function parseFeasibilityReq(msg) {
+  const s = deaccent(msg)
+  if (!/(kha thi|co kip|kip khong|kip ko|dat duoc|co the dat|lieu co|co dat)/.test(s))
+    return null
+  let withinDays = null
+  const wd = s.match(/trong\s*(\d{1,3})\s*ngay/)
+  if (wd) withinDays = Number(wd[1])
+  const deadline = withinDays == null ? parseDayReq(msg, false) : null
+  // Bỏ phần "trong N ngày" và ngày hạn chót để không nhầm thành SỐ TIỀN.
+  const cleaned = s
+    .replace(/trong\s*\d{1,3}\s*ngay/g, ' ')
+    .replace(/\b\d{1,2}\s*[/-]\s*\d{1,2}(\s*[/-]\s*\d{2,4})?\b/g, ' ')
+  const target = parseAmountVnd(cleaned)
+  if (!target) return null
+  return { target, withinDays, deadline }
+}
+
 // Trợ lý lương: AI hiểu câu hỏi + diễn đạt; phép TÍNH số ca cần làm do CODE tính
 // (chính xác) dựa trên số liệu lịch sử (snapshot). Bảng công / chi tiết ngày /
 // bồi thường / lịch dự kiến đều xử lý tại client từ dữ liệu (không gọi AI).
@@ -427,6 +457,68 @@ export default function SalaryChat({
       )
       lines.push(t('chat.estMix'))
     }
+    return lines.join('\n')
+  }
+
+  // XÉT KHẢ THI: trả lời CÓ/KHÔNG đạt mục tiêu trước hạn chót, kèm số CA cần làm.
+  // CODE tính (không để AI tính): dựa trên lương 1 giờ + thời lượng ca trung bình
+  // của chính người dùng. Hạn chót mặc định = ngày chốt kỳ lương hiện tại.
+  function buildFeasibility({ target, withinDays, deadline }) {
+    const cur = snapshot.currentPay || 0
+    const remaining = Math.max(0, target - cur)
+    if (remaining <= 0)
+      return t('chat.alreadyReached', { target: formatMoney(target) })
+    const dayRate = snapshot.dayRate || 0
+    if (!dayRate) return t('chat.noRate')
+
+    const nightRate = snapshot.nightRate || 0
+    const hasNight = snapshot.hasNightShift && nightRate > dayRate
+    const bestRate = hasNight ? nightRate : dayRate // đêm trả cao hơn → cần ít giờ hơn
+
+    // Hạn chót: "trong N ngày" → cộng N ngày; ngày cụ thể → dùng luôn; mặc định →
+    // ngày chốt kỳ lương hiện tại.
+    const today = localTodayStr()
+    let endDate
+    if (withinDays != null) endDate = addDaysStr(today, withinDays)
+    else if (deadline) endDate = deadline
+    else endDate = payPeriodRange(payPeriodKeyOf(today)).end
+    const daysLeft = daysBetween(today, endDate) + 1 // kể cả hôm nay
+    if (daysLeft <= 0)
+      return t('chat.feasEnded', { target: formatMoney(target) })
+
+    const ceil1 = (h) => Math.ceil(h * 10) / 10
+    const hoursNeeded = ceil1(remaining / bestRate)
+    // Thời lượng ca điển hình của chính người dùng (fallback 8 giờ cho người mới).
+    const typicalShift =
+      snapshot.avgHoursPerShift > 0 ? snapshot.avgHoursPerShift : 8
+    const shiftsNeeded = Math.ceil(hoursNeeded / typicalShift)
+    const perDay = ceil1(hoursNeeded / daysLeft) // số giờ phải làm trung bình mỗi ngày
+
+    // Verdict theo SỐ GIỜ/NGÀY phải làm (so với 1 ngày công ~8 giờ): khả thi nếu
+    // không vượt quá sức làm thực tế trong số ngày còn lại.
+    const feasible = perDay <= 11 // tới ~11 giờ/ngày vẫn còn làm được (có tăng ca)
+    let verdict
+    if (perDay <= 6) verdict = t('chat.feasEasy')
+    else if (perDay <= 8) verdict = t('chat.feasOk')
+    else if (perDay <= 11) verdict = t('chat.feasHard')
+    else verdict = t('chat.feasNo', { perDay })
+
+    const lines = [
+      `${feasible ? '✅' : '❌'} ${t(feasible ? 'chat.feasYes' : 'chat.feasNoTitle', { target: formatMoney(target) })}`,
+      t('chat.feasHeader', {
+        current: formatMoney(cur),
+        remaining: formatMoney(remaining),
+        deadline: dmy(endDate),
+        days: daysLeft,
+      }),
+      t('chat.feasNeed', {
+        shifts: shiftsNeeded,
+        hours: hoursNeeded,
+        rate: formatMoney(bestRate),
+        perDay,
+      }),
+      verdict,
+    ]
     return lines.join('\n')
   }
 
@@ -954,6 +1046,13 @@ export default function SalaryChat({
     // Lịch dự kiến tuần này.
     if (parsePlannedReq(msg)) {
       handlePlanned()
+      return
+    }
+    // Xét tính khả thi của mục tiêu ("tháng này làm được 5 triệu không?") → CÓ/KHÔNG
+    // + số ca cần làm, tính tại client từ lương 1 giờ (không gọi AI).
+    const feasReq = parseFeasibilityReq(msg)
+    if (feasReq) {
+      bot(buildFeasibility(feasReq))
       return
     }
 
