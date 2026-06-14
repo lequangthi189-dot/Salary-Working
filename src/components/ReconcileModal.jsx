@@ -22,12 +22,26 @@ function addDays(dateStr, n) {
   const dt = new Date(Date.UTC(y, m - 1, d + n))
   return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`
 }
-function mondayOfThisWeek() {
-  const today = localTodayStr()
-  const [y, m, d] = today.split('-').map(Number)
+// Thứ 2 của tuần chứa dateStr ("YYYY-MM-DD").
+function mondayOf(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
   const dow = new Date(y, m - 1, d).getDay()
   const offset = dow === 0 ? -6 : 1 - dow
-  return addDays(today, offset)
+  return addDays(dateStr, offset)
+}
+function mondayOfThisWeek() {
+  return mondayOf(localTodayStr())
+}
+
+// Suy ra Thứ 2 của tuần từ NGÀY THÁNG mà AI đọc được trong ảnh (data.days[].date).
+// Lấy ngày hợp lệ nhỏ nhất → Thứ 2 của tuần đó. Trả null nếu ảnh không ghi ngày
+// (chỉ có thứ) → khi đó phải dựa vào thứ tự chọn ảnh như cũ.
+function detectWeekStart(data) {
+  const dates = (data?.days || [])
+    .map((d) => d.date)
+    .filter((d) => isoRe.test(d || ''))
+    .sort()
+  return dates.length ? mondayOf(dates[0]) : null
 }
 
 function readImage(file) {
@@ -257,12 +271,19 @@ export default function ReconcileModal({
             scheduleConfirmed = true
           }
           const issue = dataIssue(data)
-          result.push(
-            issue
-              ? { weekStart: wkStart, rows: [], error: issue }
-              : { weekStart: wkStart, rows: buildWeekRows(data, wkStart) }
-          )
+          if (issue) {
+            result.push({ weekStart: wkStart, rows: [], error: issue })
+          } else {
+            // TỰ SORT NGÀY: ưu tiên tuần suy từ ngày tháng đọc được trong ảnh,
+            // không phụ thuộc thứ tự chọn file. Ảnh không ghi ngày → dùng wkStart
+            // theo thứ tự như cũ làm fallback.
+            const realWeek = detectWeekStart(data) || wkStart
+            result.push({ weekStart: realWeek, rows: buildWeekRows(data, realWeek) })
+          }
         }
+        // Sắp xếp các nhóm theo tuần (tăng dần) để hiển thị đúng trình tự thời gian
+        // dù người dùng chọn ảnh lộn xộn.
+        result.sort((a, b) => a.weekStart.localeCompare(b.weekStart))
         setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
         setGroups(result)
         return
