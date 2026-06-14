@@ -323,8 +323,8 @@ button[type='submit']:disabled {
   right: 1rem;
   bottom: 1rem;
   z-index: 60;
-  width: min(92vw, 380px);
-  height: min(70vh, 560px);
+  width: min(88vw, 320px);
+  height: min(62vh, 460px);
   display: flex;
   flex-direction: column;
   background: var(--panel);
@@ -415,6 +415,36 @@ button[type='submit']:disabled {
 .chat-typing {
   color: var(--muted);
   letter-spacing: 0.15em;
+}
+/* Thanh tiêu đề chat: nút Chức năng + nút đóng */
+.chat-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.chat-menu-btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chat-menu-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Tiêu đề nhóm trong menu chức năng */
+.chat-menu-group {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 .chat-input {
   display: flex;

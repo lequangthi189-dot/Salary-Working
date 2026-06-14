@@ -421,6 +421,26 @@ export default function App() {
           setShowChat(false)
           setShowReconcile(true)
         }}
+        onOpenDeductions={() => {
+          setShowChat(false)
+          setShowDeductions(true)
+        }}
+        onOpenExtraIncome={() => {
+          setShowChat(false)
+          setShowExtraIncome(true)
+        }}
+        onOpenPayPeriod={() => {
+          setShowChat(false)
+          setShowPayPeriod(true)
+        }}
+        onOpenProfile={() => {
+          setShowChat(false)
+          setShowProfile(true)
+        }}
+        onOpenGuide={() => {
+          setShowChat(false)
+          setShowWelcome(true)
+        }}
         onClose={() => setShowChat(false)}
       />
 

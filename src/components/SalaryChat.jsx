@@ -353,6 +353,26 @@ function parseFeasibilityReq(msg) {
   return { target, withinDays, deadline }
 }
 
+// Nhận diện lệnh MỞ một công cụ/màn hình của web. Trả khoá công cụ hoặc null.
+// Các công cụ dễ trùng với thêm/tra cứu (bồi thường, việc ngoài, nhập lịch, đối
+// chiếu) chỉ mở khi có động từ "mở/xem/vào…" để không nuốt câu thêm/hỏi dữ liệu.
+function parseOpenTool(msg) {
+  const s = deaccent(msg)
+  // Nhập lịch / đối chiếu: giữ như cũ (không cần động từ "mở").
+  if (/nhap lich/.test(s)) return 'import'
+  if (/doi chieu/.test(s)) return 'reconcile'
+  // Còn lại CẦN động từ "mở/xem…" để không nuốt câu HỎI ("kỳ lương này bao nhiêu",
+  // "cách dùng …") hay câu THÊM/TRA CỨU (bồi thường, việc ngoài).
+  const open = /\b(mo|open|hien thi|hien|vao|toi|di toi)\b/.test(s)
+  if (!open) return null
+  if (/(ho so|tai khoan|profile|account)/.test(s)) return 'profile'
+  if (/(ky luong|chu ky luong|pay period)/.test(s)) return 'payPeriod'
+  if (/(huong dan|tro giup|\bhelp\b|\bguide\b)/.test(s)) return 'guide'
+  if (/(boi thuong|khoan tru|khau tru|den bu)/.test(s)) return 'deductions'
+  if (/(viec ngoai|thu nhap ngoai|luong ngoai|lam them)/.test(s)) return 'extra'
+  return null
+}
+
 // Trợ lý lương: AI hiểu câu hỏi + diễn đạt; phép TÍNH số ca cần làm do CODE tính
 // (chính xác) dựa trên số liệu lịch sử (snapshot). Bảng công / chi tiết ngày /
 // bồi thường / lịch dự kiến đều xử lý tại client từ dữ liệu (không gọi AI).
@@ -367,6 +387,11 @@ export default function SalaryChat({
   onAddShift,
   onOpenImport,
   onOpenReconcile,
+  onOpenDeductions,
+  onOpenExtraIncome,
+  onOpenPayPeriod,
+  onOpenProfile,
+  onOpenGuide,
   onClose,
 }) {
   const { t, lang } = useI18n()
@@ -412,7 +437,7 @@ export default function SalaryChat({
 
   // Bắt đầu kéo từ thanh tiêu đề (bỏ qua khi bấm nút đóng).
   function startDrag(e) {
-    if (e.target.closest('.modal-close')) return
+    if (e.target.closest('.modal-close, .chat-menu-btn')) return
     const rect = cardRef.current.getBoundingClientRect()
     dragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top }
     if (!pos) setPos({ x: rect.left, y: rect.top })
@@ -940,6 +965,83 @@ export default function SalaryChat({
     bot(lines.join('\n'))
   }
 
+  // MỞ một công cụ/màn hình của web từ chat (báo 1 dòng rồi gọi callback của App).
+  function openTool(key) {
+    const map = {
+      import: [onOpenImport, 'chat.openImport'],
+      reconcile: [onOpenReconcile, 'chat.openReconcile'],
+      deductions: [onOpenDeductions, 'chat.openDeductions'],
+      extra: [onOpenExtraIncome, 'chat.openExtra'],
+      payPeriod: [onOpenPayPeriod, 'chat.openPayPeriod'],
+      profile: [onOpenProfile, 'chat.openProfile'],
+      guide: [onOpenGuide, 'chat.openGuide'],
+    }
+    const [cb, msgKey] = map[key] || []
+    if (!cb) return bot(t('chat.error'))
+    bot(t(msgKey))
+    cb()
+  }
+
+  // "Xem nhanh" của kỳ/tuần hiện tại (chạy luôn các hàm tra cứu sẵn có).
+  function quickAction(key) {
+    const periodKey = payPeriodKeyOf(localTodayStr())
+    const [y, m] = periodKey.split('-').map(Number)
+    if (key === 'timesheet') handleTimesheet({ month: m, year: y, week: null })
+    else if (key === 'planned') handlePlanned()
+    else if (key === 'deductions') handleDeductionQuery({ month: m, year: y })
+    else if (key === 'extra') handleExtraIncomeQuery({ month: m, year: y })
+  }
+
+  // MENU "Chức năng": lưới nút mở công cụ + xem nhanh, ngay trong khung chat.
+  function pushMenu() {
+    const tools = [
+      { key: 'import', label: t('nav.importWeek') },
+      { key: 'reconcile', label: t('reconcile.title') },
+      { key: 'deductions', label: t('nav.deductions') },
+      { key: 'extra', label: t('nav.extraIncome') },
+      { key: 'payPeriod', label: t('nav.payPeriod') },
+      { key: 'profile', label: t('nav.account') },
+      { key: 'guide', label: t('nav.guide') },
+    ]
+    const quick = [
+      { key: 'timesheet', label: t('chat.qTimesheet') },
+      { key: 'planned', label: t('chat.qPlanned') },
+      { key: 'deductions', label: t('chat.qDeductions') },
+      { key: 'extra', label: t('chat.qExtra') },
+    ]
+    setMessages((m) => [
+      ...m,
+      {
+        role: 'bot',
+        node: (
+          <div className="chat-menu">
+            <div className="chat-confirm-line">{t('chat.menuTitle')}</div>
+            <div className="chat-menu-group">{t('chat.menuTools')}</div>
+            <div className="chat-choice-btns">
+              {tools.map((it) => (
+                <button key={it.key} type="button" onClick={() => openTool(it.key)}>
+                  {it.label}
+                </button>
+              ))}
+            </div>
+            <div className="chat-menu-group">{t('chat.menuQuick')}</div>
+            <div className="chat-choice-btns">
+              {quick.map((it) => (
+                <button
+                  key={it.key}
+                  type="button"
+                  onClick={() => quickAction(it.key)}
+                >
+                  {it.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ),
+      },
+    ])
+  }
+
   async function send() {
     const msg = input.trim()
     if (!msg || busy) return
@@ -976,15 +1078,16 @@ export default function SalaryChat({
       return
     }
 
-    // Mở công cụ cần ảnh.
-    if (/nhap lich/.test(norm) && onOpenImport) {
-      bot(t('chat.openImport'))
-      onOpenImport()
+    // Mở MENU chức năng.
+    if (/\b(chuc nang|menu|cong cu|ban lam duoc gi|giup gi|lam duoc gi)\b/.test(norm)) {
+      pushMenu()
       return
     }
-    if (/doi chieu/.test(norm) && onOpenReconcile) {
-      bot(t('chat.openReconcile'))
-      onOpenReconcile()
+    // Mở một công cụ/màn hình của web (nhập lịch, đối chiếu, bồi thường, việc ngoài,
+    // kỳ lương, hồ sơ, hướng dẫn).
+    const toolKey = parseOpenTool(msg)
+    if (toolKey) {
+      openTool(toolKey)
       return
     }
     // Nhập HÀNG LOẠT việc ngoài: nhiều ngày + 1 mức tiền/buổi (kiểm trước thêm-ca
@@ -1120,14 +1223,24 @@ export default function SalaryChat({
     >
       <div className="modal-head chat-drag" onPointerDown={startDrag}>
         <h2>🤖 {t('chat.title')}</h2>
-        <button
-          type="button"
-          className="modal-close"
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
-          ×
-        </button>
+        <div className="chat-head-actions">
+          <button
+            type="button"
+            className="chat-menu-btn"
+            onClick={pushMenu}
+            title={t('chat.menuBtn')}
+          >
+            ☰ {t('chat.menuBtn')}
+          </button>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       <div className="chat-list" ref={listRef}>
