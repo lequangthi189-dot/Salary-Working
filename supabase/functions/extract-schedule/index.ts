@@ -98,6 +98,10 @@ Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhi
    - Chuẩn hoá về "HH:MM" 24 giờ (vd "9h"->"09:00", "5pm"->"17:00", "9-17"-> start 09:00 end 17:00).
    - Nếu ô ghi nghỉ/trống/"OFF"/"X" thì off=true, start="" , end="".
    - Nếu ảnh không có thứ nào đó, vẫn trả về thứ đó với off=true.
+   - "raw": NẾU ảnh có in sẵn TỔNG GIỜ CÔNG của ngày đó (vd "7.55", "8.0", "8h"),
+     hãy ghi CHỈ con số tổng giờ đó vào "raw" (vd "7.55"). Con số tổng này đã trừ
+     giờ nghỉ giải lao nên là nguồn đúng nhất — luôn ghi nó kể cả khi đã có start/end.
+     Nếu ảnh KHÔNG in tổng giờ thì để raw="". KHÔNG ghi khoảng giờ vào "raw".
 3. Đọc NGÀY THÁNG ghi cho từng thứ trong ảnh (nếu có) và trả về field "date" dạng
    "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra
    dựa trên "Tuần bắt đầu" được cung cấp. Nếu ảnh KHÔNG ghi ngày thì để date="".
@@ -111,7 +115,8 @@ Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhi
 1. Tìm DÒNG/Ô ứng với nhân viên khớp nhất theo bất kỳ thông tin nào (ưu tiên mã, rồi họ tên, rồi SĐT). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu. Không khớp → found=false, entries=[].
 2. Đọc TẤT CẢ CÁC NGÀY có công của người đó TRONG THÁNG. Mỗi ngày trả về MỘT entry:
    - "date" dạng "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra theo "Tháng cần đọc" được cung cấp.
-   - "start"/"end": chuẩn hoá "HH:MM" 24 giờ (vd "9h"->"09:00"). Nếu ảnh chỉ ghi TỔNG GIỜ (vd "7.55") thì để start="" end="" và ghi số đó vào "raw".
+   - "start"/"end": chuẩn hoá "HH:MM" 24 giờ (vd "9h"->"09:00"). Nếu ảnh chỉ ghi TỔNG GIỜ (vd "7.55") thì để start="" end="".
+   - "raw": NẾU ảnh có in sẵn TỔNG GIỜ CÔNG của ngày (vd "7.55", "8.0", "8h") thì ghi CHỈ con số tổng giờ đó vào "raw" (vd "7.55"). Tổng này đã trừ giờ nghỉ nên là nguồn đúng nhất — luôn ghi kể cả khi đã có start/end. Nếu ảnh KHÔNG in tổng giờ thì raw="". KHÔNG ghi khoảng giờ vào "raw".
    - Ngày nghỉ/trống/"OFF"/"X" → off=true, start="", end="".
 3. CHỈ trả các ngày THỰC SỰ có trong ảnh cho người đó; KHÔNG bịa ngày, KHÔNG cần liệt kê ngày không xuất hiện.
 4. Không bịa giờ khi không chắc (off=true). Chỉ trả JSON đúng schema, không thêm chữ.`

@@ -55,6 +55,16 @@ function parseHours(raw) {
   return Number.isFinite(n) ? n : 0
 }
 
+// Số giờ "theo ảnh" cho một entry/ngày. ƯU TIÊN tổng giờ in sẵn trên ảnh (đã trừ
+// nghỉ giải lao) khi nó là số hợp lý (0–24h). Chỉ khi ảnh KHÔNG có cột tổng mới
+// suy từ khoảng giờ vào–ra (durationHours) — vốn gồm cả giờ nghỉ nên dễ dư ~1h.
+function imageHours(rec) {
+  if (rec.off) return 0
+  const total = parseHours(rec.raw)
+  if (total > 0 && total <= 24) return total
+  return rec.start && rec.end ? durationHours(rec.start, rec.end) : 0
+}
+
 // Modal ĐỐI CHIẾU CÔNG: tải ảnh bảng phân ca → AI đọc theo mã NV → so với các ca
 // đang có trong bảng công (workshift cards) để xem có đúng công không.
 export default function ReconcileModal({
@@ -185,12 +195,7 @@ export default function ReconcileModal({
         // Tháng: đọc mảng entries; mỗi ngày một entry, nhiều ca/ngày → cộng dồn.
         for (const e of data.entries || []) {
           if (!isoRe.test(e.date || '') || e.date.slice(0, 7) !== month) continue
-          const h = e.off
-            ? 0
-            : e.start && e.end
-              ? durationHours(e.start, e.end)
-              : parseHours(e.raw)
-          imgByDate.set(e.date, (imgByDate.get(e.date) || 0) + h)
+          imgByDate.set(e.date, (imgByDate.get(e.date) || 0) + imageHours(e))
         }
         // Tập ngày = ngày có trong ảnh ∪ ngày có ca trong tháng.
         const shiftDates = shifts
@@ -203,12 +208,7 @@ export default function ReconcileModal({
         dateList = WEEKDAYS.map((wd, i) => {
           const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
           const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
-          const h = d.off
-            ? 0
-            : d.start && d.end
-              ? durationHours(d.start, d.end)
-              : parseHours(d.raw)
-          imgByDate.set(date, h)
+          imgByDate.set(date, imageHours(d))
           return date
         })
       }
