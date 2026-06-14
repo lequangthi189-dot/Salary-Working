@@ -12,6 +12,7 @@ import ConfirmModal from './ConfirmModal.jsx'
 import CircularProgress from './CircularProgress.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const isoRe = /^\d{4}-\d{2}-\d{2}$/
 
 function pad2(n) {
   return String(n).padStart(2, '0')
@@ -75,11 +76,12 @@ export default function ReconcileModal({
   onClose,
 }) {
   const { t } = useI18n()
-  const [file, setFile] = useState(null)
-  const [previewUrl, setPreviewUrl] = useState(null)
-  // Chế độ đối chiếu: 'week' (1 tuần) | 'month' (cả tháng).
+  // Danh sách ảnh đã chọn. Chế độ tuần/tháng dùng 1 ảnh; chế độ nhiều tuần dùng N.
+  const [files, setFiles] = useState([])
+  const [previewUrls, setPreviewUrls] = useState([])
+  // Chế độ đối chiếu: 'week' (1 tuần) | 'weeks' (nhiều tuần) | 'month' (cả tháng).
   const [scope, setScope] = useState('week')
-  // Tuần bắt đầu (Thứ 2) cho chế độ tuần — dùng khi ảnh không ghi ngày cụ thể.
+  // Tuần bắt đầu (Thứ 2). Chế độ nhiều tuần: ảnh thứ i ứng với tuần weekStart+7*i.
   const [weekStart, setWeekStart] = useState(mondayOfThisWeek())
   // Tháng cần đối chiếu ("YYYY-MM", mặc định tháng này) cho chế độ tháng.
   const [month, setMonth] = useState(localTodayStr().slice(0, 7))
@@ -87,7 +89,9 @@ export default function ReconcileModal({
   // Tiến độ thật. indeterminate khi chờ Gemini; ẩn trong finally để không kẹt khi lỗi.
   const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
   const [error, setError] = useState(null)
-  const [rows, setRows] = useState(null)
+  // Kết quả gom theo NHÓM: mỗi nhóm { weekStart, rows, error? }. Chế độ tuần/tháng
+  // chỉ có 1 nhóm (weekStart=null cho tháng → không hiện tiêu đề nhóm).
+  const [groups, setGroups] = useState(null)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
 
   function askConfirm(message) {
@@ -115,131 +119,189 @@ export default function ReconcileModal({
     return 'off'
   }
 
+  // Tạo dòng đối chiếu cho một tập ngày: gộp giờ ảnh / thực tế / dự kiến theo ngày.
+  function compareDates(imgByDate, dateList) {
+    return dateList.map((date) => {
+      const imgHours = imgByDate.get(date) || 0
+      // Giờ THỰC TẾ = giờ công hiệu dụng như thẻ workshift (kẹp theo lịch dự kiến).
+      const aS = actualByDate.get(date)
+      const actualHours = aS
+        ? computeEffective(
+            hhmm(aS.scheduled_start),
+            hhmm(aS.scheduled_end),
+            hhmm(aS.start_time),
+            hhmm(aS.end_time),
+            !!aS.is_holiday
+          ).decimalHours
+        : 0
+      const sS = schedByDate.get(date)
+      const schedHours = sS
+        ? durationHours(hhmm(sS.scheduled_start), hhmm(sS.scheduled_end))
+        : 0
+      return {
+        date,
+        imgHours,
+        actualHours,
+        schedHours,
+        // Kết quả CHỈ dựa trên Thực tế vs Theo ảnh; Dự kiến không ảnh hưởng.
+        statusActual: cmpHours(imgHours, actualHours),
+      }
+    })
+  }
+
+  // Một ảnh tuần (data.days) + Thứ 2 của tuần → các dòng đối chiếu 7 ngày.
+  function buildWeekRows(data, wkStart) {
+    const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
+    const imgByDate = new Map()
+    const dateList = WEEKDAYS.map((wd, i) => {
+      const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
+      const date = isoRe.test(d.date || '') ? d.date : addDays(wkStart, i)
+      imgByDate.set(date, imageHours(d))
+      return date
+    })
+    return compareDates(imgByDate, dateList)
+  }
+
+  // Một ảnh tháng (data.entries) → các dòng đối chiếu cho mọi ngày trong tháng.
+  function buildMonthRows(data) {
+    const imgByDate = new Map()
+    for (const e of data.entries || []) {
+      if (!isoRe.test(e.date || '') || e.date.slice(0, 7) !== month) continue
+      imgByDate.set(e.date, (imgByDate.get(e.date) || 0) + imageHours(e))
+    }
+    const shiftDates = shifts
+      .map((s) => s.work_date)
+      .filter((d) => String(d).slice(0, 7) === month)
+    const dateList = [...new Set([...imgByDate.keys(), ...shiftDates])].sort()
+    return compareDates(imgByDate, dateList)
+  }
+
   function pickFile(e) {
-    const f = e.target.files?.[0]
-    if (!f) return
-    setFile(f)
-    setPreviewUrl(URL.createObjectURL(f))
-    setRows(null)
+    const list = Array.from(e.target.files || [])
+    if (!list.length) return
+    // Chế độ nhiều tuần giữ tất cả ảnh; các chế độ khác chỉ lấy ảnh đầu.
+    const picked = scope === 'weeks' ? list : list.slice(0, 1)
+    setFiles(picked)
+    setPreviewUrls(picked.map((f) => URL.createObjectURL(f)))
+    setGroups(null)
     setError(null)
+  }
+
+  // Gọi Edge Function đọc 1 ảnh; ném lỗi nếu function trả lỗi.
+  async function extractOne(base64, mediaType, opts) {
+    const { data, error: fnErr } = await supabase.functions.invoke(
+      'extract-schedule',
+      {
+        body: {
+          image: base64,
+          mediaType,
+          employeeCode: employeeCode.trim(),
+          fullName,
+          phone,
+          ...opts,
+        },
+      }
+    )
+    if (fnErr) {
+      let detail = fnErr.message
+      try {
+        const ctx = fnErr.context
+        if (ctx && typeof ctx.json === 'function') {
+          const b = await ctx.json()
+          if (b?.error) detail = b.error
+        }
+      } catch {
+        /* ignore */
+      }
+      throw new Error(detail)
+    }
+    if (data?.error) throw new Error(data.error)
+    return data
+  }
+
+  // Lý do BỎ QUA một ảnh (không phải bảng công / không tìm thấy NV) → text hiển thị.
+  function dataIssue(data) {
+    if (data?.is_roster === false) return t('import.errNotRoster')
+    if (!data?.found) return t('import.errNotFound', { code: employeeCode })
+    return null
   }
 
   async function readAndCompare() {
     setError(null)
-    if (!file) return setError(t('import.errPickImage'))
+    if (!files.length) return setError(t('import.errPickImage'))
     if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
       return setError(t('import.errNoCode'))
     setLoading(true)
     setProgress({ pct: 10, label: t('import.stageUpload'), indeterminate: false })
     try {
-      // 1) Đọc & mã hoá ảnh.
-      const { base64, mediaType } = await readImage(file)
-      setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
-      // 2) Gọi Gemini đọc bảng công — indeterminate (không biết bao lâu).
-      setProgress({ pct: 25, label: t('import.stageAI'), indeterminate: true })
-      const { data, error: fnErr } = await supabase.functions.invoke(
-        'extract-schedule',
-        {
-          body: {
-            image: base64,
-            mediaType,
-            employeeCode: employeeCode.trim(),
-            fullName,
-            phone,
-            // Tháng → gửi scope:'month'+month; Tuần → để mặc định + weekStart.
-            ...(scope === 'month' ? { scope: 'month', month } : { weekStart }),
-          },
-        }
-      )
-      // 3) Có phản hồi → chuẩn bị đối chiếu.
-      setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
-      if (fnErr) {
-        let detail = fnErr.message
-        try {
-          const ctx = fnErr.context
-          if (ctx && typeof ctx.json === 'function') {
-            const b = await ctx.json()
-            if (b?.error) detail = b.error
+      if (scope === 'weeks') {
+        // NHIỀU TUẦN: đọc lần lượt từng ảnh, mỗi ảnh là một tuần liên tiếp.
+        const result = []
+        let scheduleConfirmed = false
+        for (let i = 0; i < files.length; i++) {
+          const wkStart = addDays(weekStart, 7 * i)
+          setProgress({
+            pct: Math.round((i / files.length) * 90) + 5,
+            label: `${t('import.stageAI')} (${i + 1}/${files.length})`,
+            indeterminate: true,
+          })
+          const { base64, mediaType } = await readImage(files[i])
+          const data = await extractOne(base64, mediaType, { weekStart: wkStart })
+          // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
+          if (data?.doc_type === 'schedule' && !scheduleConfirmed) {
+            const ok = await askConfirm(t('reconcile.warnSchedule'))
+            if (!ok) {
+              setGroups(null)
+              return
+            }
+            scheduleConfirmed = true
           }
-        } catch {
-          /* ignore */
+          const issue = dataIssue(data)
+          result.push(
+            issue
+              ? { weekStart: wkStart, rows: [], error: issue }
+              : { weekStart: wkStart, rows: buildWeekRows(data, wkStart) }
+          )
         }
-        throw new Error(detail)
+        setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
+        setGroups(result)
+        return
       }
-      if (data?.error) throw new Error(data.error)
+
+      // MỘT ẢNH (tuần hoặc tháng).
+      setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
+      const { base64, mediaType } = await readImage(files[0])
+      setProgress({ pct: 25, label: t('import.stageAI'), indeterminate: true })
+      const data = await extractOne(
+        base64,
+        mediaType,
+        scope === 'month' ? { scope: 'month', month } : { weekStart }
+      )
+      setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) {
         setError(t('import.errNotRoster'))
-        setRows(null)
+        setGroups(null)
         return
       }
       // Nhầm loại: ảnh là lịch dự kiến nhưng đang Đối chiếu công → hỏi xác nhận.
       if (data?.doc_type === 'schedule') {
         const ok = await askConfirm(t('reconcile.warnSchedule'))
         if (!ok) {
-          setRows(null)
+          setGroups(null)
           return
         }
       }
       if (!data?.found) {
         setError(t('import.errNotFound', { code: employeeCode }))
-        setRows(null)
+        setGroups(null)
         return
       }
-      // 4) Đối chiếu công (planned/actual vs ảnh) — mốc thật, tính ở client.
       setProgress({ pct: 85, label: t('reconcile.stageCompare'), indeterminate: false })
-      const isoRe = /^\d{4}-\d{2}-\d{2}$/
-      // Giờ công theo ẢNH gom theo NGÀY + danh sách ngày cần đối chiếu (tuỳ chế độ).
-      const imgByDate = new Map()
-      let dateList = []
-      if (scope === 'month') {
-        // Tháng: đọc mảng entries; mỗi ngày một entry, nhiều ca/ngày → cộng dồn.
-        for (const e of data.entries || []) {
-          if (!isoRe.test(e.date || '') || e.date.slice(0, 7) !== month) continue
-          imgByDate.set(e.date, (imgByDate.get(e.date) || 0) + imageHours(e))
-        }
-        // Tập ngày = ngày có trong ảnh ∪ ngày có ca trong tháng.
-        const shiftDates = shifts
-          .map((s) => s.work_date)
-          .filter((d) => String(d).slice(0, 7) === month)
-        dateList = [...new Set([...imgByDate.keys(), ...shiftDates])].sort()
-      } else {
-        // Tuần: đọc 7 thứ; ngày ưu tiên đọc từ ảnh, thiếu thì suy theo weekStart.
-        const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
-        dateList = WEEKDAYS.map((wd, i) => {
-          const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
-          const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
-          imgByDate.set(date, imageHours(d))
-          return date
-        })
-      }
-      const compared = dateList.map((date) => {
-        const imgHours = imgByDate.get(date) || 0
-        // Giờ THỰC TẾ = giờ công hiệu dụng như thẻ workshift (kẹp theo lịch dự kiến).
-        const aS = actualByDate.get(date)
-        const actualHours = aS
-          ? computeEffective(
-              hhmm(aS.scheduled_start),
-              hhmm(aS.scheduled_end),
-              hhmm(aS.start_time),
-              hhmm(aS.end_time),
-              !!aS.is_holiday
-            ).decimalHours
-          : 0
-        const sS = schedByDate.get(date)
-        const schedHours = sS
-          ? durationHours(hhmm(sS.scheduled_start), hhmm(sS.scheduled_end))
-          : 0
-        return {
-          date,
-          imgHours,
-          actualHours,
-          schedHours,
-          // Kết quả CHỈ dựa trên Thực tế vs Theo ảnh; Dự kiến không ảnh hưởng.
-          statusActual: cmpHours(imgHours, actualHours),
-        }
-      })
+      const rows =
+        scope === 'month' ? buildMonthRows(data) : buildWeekRows(data, weekStart)
       setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
-      setRows(compared)
+      // Tuần → có tiêu đề nhóm theo weekStart; tháng → không tiêu đề (weekStart=null).
+      setGroups([{ weekStart: scope === 'week' ? weekStart : null, rows }])
     } catch (e) {
       // Lỗi (Gemini quota/timeout…) → báo lỗi; finally ẩn vòng tròn, không kẹt.
       setError(String(e.message || e))
@@ -249,10 +311,23 @@ export default function ReconcileModal({
   }
 
   // Chỉ bỏ ngày HOÀN TOÀN trống (ảnh, thực tế, dự kiến đều 0 giờ).
-  const visibleRows = rows
-    ? rows.filter((r) => r.imgHours || r.actualHours || r.schedHours)
+  function visibleOf(rows) {
+    return rows.filter((r) => r.imgHours || r.actualHours || r.schedHours)
+  }
+  // Chuẩn bị dữ liệu render: từng nhóm + tổng kết, cộng tổng kết toàn bộ.
+  const view = groups
+    ? groups.map((g) => {
+        const visible = visibleOf(g.rows)
+        return {
+          ...g,
+          visible,
+          match: visible.filter((r) => r.statusActual === 'match').length,
+        }
+      })
     : []
-  const matchActual = visibleRows.filter((r) => r.statusActual === 'match').length
+  const showGroupTitles = view.length > 1
+  const grandTotal = view.reduce((acc, g) => acc + g.visible.length, 0)
+  const grandMatch = view.reduce((acc, g) => acc + g.match, 0)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -277,12 +352,30 @@ export default function ReconcileModal({
         <div className="import-fields">
           <label className="import-file">
             <span>{t('import.image')}</span>
-            <input type="file" accept="image/*" onChange={pickFile} />
+            <input
+              type="file"
+              accept="image/*"
+              multiple={scope === 'weeks'}
+              onChange={pickFile}
+            />
           </label>
           <label className="import-week">
             <span>{t('reconcile.scope')}</span>
-            <select value={scope} onChange={(e) => setScope(e.target.value)}>
+            <select
+              value={scope}
+              onChange={(e) => {
+                const v = e.target.value
+                setScope(v)
+                // Đổi chế độ → bỏ ảnh thừa khi rời chế độ nhiều tuần.
+                if (v !== 'weeks' && files.length > 1) {
+                  setFiles(files.slice(0, 1))
+                  setPreviewUrls(previewUrls.slice(0, 1))
+                }
+                setGroups(null)
+              }}
+            >
               <option value="week">{t('reconcile.scopeWeek')}</option>
+              <option value="weeks">{t('reconcile.scopeWeeks')}</option>
               <option value="month">{t('reconcile.scopeMonth')}</option>
             </select>
           </label>
@@ -297,7 +390,11 @@ export default function ReconcileModal({
             </label>
           ) : (
             <label className="import-week">
-              <span>{t('import.weekStart')}</span>
+              <span>
+                {scope === 'weeks'
+                  ? t('reconcile.firstWeekStart')
+                  : t('import.weekStart')}
+              </span>
               <input
                 type="date"
                 value={weekStart}
@@ -306,17 +403,25 @@ export default function ReconcileModal({
             </label>
           )}
         </div>
+        {scope === 'weeks' && (
+          <p className="import-empcode">{t('reconcile.weeksHint')}</p>
+        )}
         <p className="import-empcode">
           {t('import.empcodeFrom')}
           <strong>{employeeCode || t('import.none')}</strong>
         </p>
 
-        {previewUrl && (
-          <img
-            className="import-preview"
-            src={previewUrl}
-            alt={t('import.previewAlt')}
-          />
+        {previewUrls.length > 0 && (
+          <div className="import-preview-row">
+            {previewUrls.map((url, i) => (
+              <img
+                key={url}
+                className="import-preview"
+                src={url}
+                alt={`${t('import.previewAlt')} ${i + 1}`}
+              />
+            ))}
+          </div>
         )}
 
         <div className="import-actions">
@@ -346,57 +451,88 @@ export default function ReconcileModal({
           </p>
         )}
 
-        {rows && (
+        {groups && (
           <>
             <p
               className={`msg ${
-                matchActual === visibleRows.length ? 'info' : 'error'
+                grandMatch === grandTotal ? 'info' : 'error'
               }`}
             >
-              {t('reconcile.summary', {
-                match: matchActual,
-                total: visibleRows.length,
-              })}
+              {t('reconcile.summary', { match: grandMatch, total: grandTotal })}
             </p>
-            <div className="import-table-wrap">
-              <table className="import-table reconcile-table">
-                <thead>
-                  <tr>
-                    <th>{t('import.thDate')}</th>
-                    <th>{t('reconcile.colActual')}</th>
-                    <th>{t('reconcile.colImage')}</th>
-                    <th>{t('reconcile.colSched')}</th>
-                    <th>{t('reconcile.colResult')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleRows.map((r) => (
-                    <tr key={r.date}>
-                      <td>{dmShort(r.date)}</td>
-                      <td
-                        className={`rec-${r.statusActual}`}
-                        title={t(`reconcile.${r.statusActual}`)}
-                      >
-                        {r.actualHours ? `${formatHours(r.actualHours)}h` : '—'}
-                      </td>
-                      <td>{r.imgHours ? `${formatHours(r.imgHours)}h` : '—'}</td>
-                      <td>{r.schedHours ? `${formatHours(r.schedHours)}h` : '—'}</td>
-                      <td
-                        className={`rec-${
-                          r.statusActual === 'match' ? 'match' : 'diff'
-                        }`}
-                      >
-                        {t(
-                          r.statusActual === 'match'
-                            ? 'reconcile.matchYes'
-                            : 'reconcile.matchNo'
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {view.map((g) => (
+              <div key={g.weekStart || 'single'} className="reconcile-group">
+                {showGroupTitles && (
+                  <h3 className="reconcile-group-title">
+                    {g.weekStart
+                      ? t('reconcile.weekLabel', {
+                          start: dmShort(g.weekStart),
+                          end: dmShort(addDays(g.weekStart, 6)),
+                        })
+                      : ''}
+                    {g.error ? null : (
+                      <span className="reconcile-group-sub">
+                        {t('reconcile.summary', {
+                          match: g.match,
+                          total: g.visible.length,
+                        })}
+                      </span>
+                    )}
+                  </h3>
+                )}
+                {g.error ? (
+                  <p className="msg error">{g.error}</p>
+                ) : (
+                  <div className="import-table-wrap">
+                    <table className="import-table reconcile-table">
+                      <thead>
+                        <tr>
+                          <th>{t('import.thDate')}</th>
+                          <th>{t('reconcile.colActual')}</th>
+                          <th>{t('reconcile.colImage')}</th>
+                          <th>{t('reconcile.colSched')}</th>
+                          <th>{t('reconcile.colResult')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {g.visible.map((r) => (
+                          <tr key={r.date}>
+                            <td>{dmShort(r.date)}</td>
+                            <td
+                              className={`rec-${r.statusActual}`}
+                              title={t(`reconcile.${r.statusActual}`)}
+                            >
+                              {r.actualHours
+                                ? `${formatHours(r.actualHours)}h`
+                                : '—'}
+                            </td>
+                            <td>
+                              {r.imgHours ? `${formatHours(r.imgHours)}h` : '—'}
+                            </td>
+                            <td>
+                              {r.schedHours
+                                ? `${formatHours(r.schedHours)}h`
+                                : '—'}
+                            </td>
+                            <td
+                              className={`rec-${
+                                r.statusActual === 'match' ? 'match' : 'diff'
+                              }`}
+                            >
+                              {t(
+                                r.statusActual === 'match'
+                                  ? 'reconcile.matchYes'
+                                  : 'reconcile.matchNo'
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            ))}
           </>
         )}
       </div>
