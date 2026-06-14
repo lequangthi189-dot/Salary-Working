@@ -1047,6 +1047,33 @@ button[type='submit']:disabled {
 .reconcile-table td.rec-extra {
   color: #c084fc;
 }
+/* Đối chiếu NHIỀU TUẦN: nhiều ảnh preview xếp hàng ngang, cuộn nếu tràn */
+.import-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.import-preview-row .import-preview {
+  max-width: 160px;
+  height: auto;
+}
+/* Mỗi tuần là một nhóm có tiêu đề + tổng kết riêng */
+.reconcile-group {
+  margin-top: 0.75rem;
+}
+.reconcile-group-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.95rem;
+}
+.reconcile-group-sub {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
 
 /* "Có cập nhật mới" */
 .whatsnew-entry {
