@@ -266,6 +266,36 @@ function JobInfoModal({ profile, payday, onSavePayday, onSaveField, onClose }) {
   )
 }
 
+// Phần TÙY BIẾN GIAO DIỆN: cỡ chữ (áp ngay, lưu theo tài khoản).
+function AppearanceSection({ fontScale, onChangeFontScale }) {
+  const { t } = useI18n()
+  const fonts = [
+    { key: 'sm', label: t('font.sm') },
+    { key: 'md', label: t('font.md') },
+    { key: 'lg', label: t('font.lg') },
+  ]
+  return (
+    <div className="appearance-section">
+      <span className="appearance-title">{t('appearance.title')}</span>
+      <div className="appearance-row">
+        <span className="appearance-label">{t('appearance.fontSize')}</span>
+        <div className="seg">
+          {fonts.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              className={`seg-btn${fontScale === f.key ? ' active' : ''}`}
+              onClick={() => onChangeFontScale(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Popup thông tin tài khoản: chỉnh từng trường tại chỗ + đổi mật khẩu + đăng xuất.
 // Các thông số việc làm (lương, phụ cấp, ca đêm, kỳ tính công) nằm ở popup riêng.
 export default function ProfileModal({
@@ -278,6 +308,8 @@ export default function ProfileModal({
   onSignOut,
   onSwitchAccount,
   onAddAccount,
+  fontScale,
+  onChangeFontScale,
 }) {
   const { t } = useI18n()
   const email = user.email || '—'
@@ -347,10 +379,15 @@ export default function ProfileModal({
             />
           </dl>
 
+          <AppearanceSection
+            fontScale={fontScale}
+            onChangeFontScale={onChangeFontScale}
+          />
+
           {/* Thông tin việc làm (lương, phụ cấp, ca đêm, kỳ tính công) trong popup riêng */}
           <button
             type="button"
-            className="account-btn"
+            className="account-btn full jobinfo-btn"
             onClick={() => setShowJobInfo(true)}
           >
             {t('profile.jobInfo')}

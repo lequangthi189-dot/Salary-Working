@@ -12,6 +12,18 @@
   --checkout: #58b3ff;
 }
 
+/* ===== CỠ CHỮ (data-font trên <html>, đặt ở src/lib/appearance.js) =====
+   Đổi font-size GỐC → mọi kích thước dùng rem co giãn theo (nhỏ / vừa / lớn). */
+html[data-font='sm'] {
+  font-size: 87.5%;
+}
+html[data-font='md'] {
+  font-size: 100%;
+}
+html[data-font='lg'] {
+  font-size: 112.5%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -1170,6 +1182,10 @@ button[type='submit']:disabled {
 .account-btn.full {
   width: 100%;
 }
+/* Nút "Thông tin việc làm": full width + cách đều khối phía dưới cho cân layout. */
+.jobinfo-btn {
+  margin-bottom: 1rem;
+}
 .change-pw {
   display: flex;
   flex-direction: column;
@@ -1281,6 +1297,54 @@ button[type='submit']:disabled {
 }
 
 /* Khối Thống kê & Lương: style nằm ở src/components/MonthStats.css (.stats-panel). */
+
+/* ---- Tùy biến giao diện trong popup Tài khoản (cỡ chữ) ---- */
+.appearance-section {
+  margin: 0.5rem 0 1rem;
+  padding: 0.9rem 1rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.appearance-title {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+.appearance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.appearance-label {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+/* Nhóm nút phân đoạn (segmented control) */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.seg-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.seg-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
 
 /* ---- Modal nhập lịch tuần từ ảnh ---- */
 .import-fields {
