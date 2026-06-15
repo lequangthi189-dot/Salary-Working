@@ -387,7 +387,7 @@ export default function ProfileModal({
           {/* Thông tin việc làm (lương, phụ cấp, ca đêm, kỳ tính công) trong popup riêng */}
           <button
             type="button"
-            className="account-btn"
+            className="account-btn full jobinfo-btn"
             onClick={() => setShowJobInfo(true)}
           >
             {t('profile.jobInfo')}

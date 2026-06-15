@@ -1182,6 +1182,10 @@ button[type='submit']:disabled {
 .account-btn.full {
   width: 100%;
 }
+/* Nút "Thông tin việc làm": full width + cách đều khối phía dưới cho cân layout. */
+.jobinfo-btn {
+  margin-bottom: 1rem;
+}
 .change-pw {
   display: flex;
   flex-direction: column;
