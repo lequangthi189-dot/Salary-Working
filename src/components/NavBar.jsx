@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react'
-import './NavBar.css'
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import "./NavBar.css";
 
 // Icon SVG (stroke currentColor → tự đổi sang trắng khi mục active nằm trong cục
 // tròn). Vẽ trực tiếp để khỏi phụ thuộc thư viện / tránh emoji không render.
@@ -41,7 +41,7 @@ const ICONS = {
       <path d="M9.3 8.7l-2-2L4 10l2 2zM3 21l6-6" />
     </svg>
   ),
-}
+};
 
 // Animated pill navbar có indicator: cục tròn accent trượt ngang tới mục đang chọn.
 // Data-driven & quản lý mục chọn bằng useState (KHÔNG thao tác DOM trực tiếp).
@@ -49,60 +49,60 @@ const ICONS = {
 //   active — chỉ số mục đồng bộ theo trạng thái view hiện tại (App truyền vào)
 //   onSelect(index) — báo cho App mở panel/modal tương ứng
 export default function NavBar({ items, active = 0, onSelect }) {
-  const [sel, setSel] = useState(active >= 0 ? active : 0)
-  const [openMenu, setOpenMenu] = useState(null) // chỉ số item đang mở menu chọn
-  const [visible, setVisible] = useState(false) // mặc định ẩn; cuộn XUỐNG mới hiện
-  const [indicatorX, setIndicatorX] = useState(0)
-  const itemRefs = useRef([])
-  const indicatorRef = useRef(null)
+  const [sel, setSel] = useState(active >= 0 ? active : 0);
+  const [openMenu, setOpenMenu] = useState(null); // chỉ số item đang mở menu chọn
+  const [visible, setVisible] = useState(false); // mặc định ẩn; cuộn XUỐNG mới hiện
+  const [indicatorX, setIndicatorX] = useState(0);
+  const itemRefs = useRef([]);
+  const indicatorRef = useRef(null);
 
-  // Hiện navbar khi ĐANG cuộn (bất kể hướng); ngừng cuộn ~1.2s thì tự ẩn. Mỗi lần
+  // Hiện navbar khi ĐANG cuộn (bất kể hướng); ngừng cuộn ~3s thì tự ẩn. Mỗi lần
   // cuộn: hiện + đặt lại timer ẩn → không cuộn thì không hiện.
   useEffect(() => {
-    let hideTimer
+    let hideTimer;
     function onScroll() {
-      setVisible(true)
-      clearTimeout(hideTimer)
-      hideTimer = setTimeout(() => setVisible(false), 1200)
+      setVisible(true);
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => setVisible(false), 2000);
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', onScroll)
-      clearTimeout(hideTimer)
-    }
-  }, [])
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(hideTimer);
+    };
+  }, []);
 
   // Đồng bộ với view hiện tại: app không dùng router nên "route" = trạng thái mở
   // panel/modal; App suy ra chỉ số và truyền qua `active`.
   useEffect(() => {
-    if (active >= 0) setSel(active)
-  }, [active])
+    if (active >= 0) setSel(active);
+  }, [active]);
 
   // Đo VỊ TRÍ THỰC của ô đang chọn rồi căn giữa indicator vào đó — không hardcode
   // chiều rộng (ô có thể co giãn/padding khác nhau). Đo lại khi đổi mục/resize.
   useLayoutEffect(() => {
     function measure() {
-      const li = itemRefs.current[sel]
-      const ind = indicatorRef.current
-      if (!li || !ind) return
-      const center = li.offsetLeft + li.offsetWidth / 2
-      setIndicatorX(center - ind.offsetWidth / 2)
+      const li = itemRefs.current[sel];
+      const ind = indicatorRef.current;
+      if (!li || !ind) return;
+      const center = li.offsetLeft + li.offsetWidth / 2;
+      setIndicatorX(center - ind.offsetWidth / 2);
       // Tâm lỗ mask trên thanh pill (xem .navbar-list) bám đúng tâm ô active.
-      ind.parentElement?.style.setProperty('--ind-cx', `${center}px`)
+      ind.parentElement?.style.setProperty("--ind-cx", `${center}px`);
     }
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [sel, items.length])
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [sel, items.length]);
 
   // KÍCH HOẠT thật (chạm lần 2 vào đúng mục đang chọn): item có `menu` → mở popover
   // chọn; item thường → báo App mở panel/modal. TÁCH khỏi việc chọn.
   function activate(i) {
     if (items[i].menu) {
-      setOpenMenu((cur) => (cur === i ? null : i))
+      setOpenMenu((cur) => (cur === i ? null : i));
     } else {
-      setOpenMenu(null)
-      onSelect?.(i)
+      setOpenMenu(null);
+      onSelect?.(i);
     }
   }
 
@@ -112,21 +112,24 @@ export default function NavBar({ items, active = 0, onSelect }) {
   //  - Chạm lần 2 vào ĐÚNG mục đang chọn → mới kích hoạt.
   function handleTap(i) {
     if (i === sel) {
-      activate(i)
+      activate(i);
     } else {
-      setSel(i) // chỉ trỏ tới, tách biệt với route/trang đang mở thật
-      setOpenMenu(null)
+      setSel(i); // chỉ trỏ tới, tách biệt với route/trang đang mở thật
+      setOpenMenu(null);
     }
   }
 
   return (
     <nav
-      className={`navbar${visible ? '' : ' navbar--hidden'}`}
+      className={`navbar${visible ? "" : " navbar--hidden"}`}
       aria-label="Main"
     >
       {/* Overlay bắt click-ra-ngoài để đóng menu (dưới navbar nên vẫn bấm được item khác) */}
       {openMenu != null && (
-        <div className="navbar-menu-overlay" onClick={() => setOpenMenu(null)} />
+        <div
+          className="navbar-menu-overlay"
+          onClick={() => setOpenMenu(null)}
+        />
       )}
 
       <ul className="navbar-list">
@@ -134,15 +137,15 @@ export default function NavBar({ items, active = 0, onSelect }) {
           <li
             key={item.key}
             ref={(el) => (itemRefs.current[i] = el)}
-            className={`navbar-item${sel === i ? ' active' : ''}${
-              openMenu === i ? ' menu-open' : ''
+            className={`navbar-item${sel === i ? " active" : ""}${
+              openMenu === i ? " menu-open" : ""
             }`}
           >
             <button
               type="button"
               onClick={() => handleTap(i)}
-              aria-current={sel === i ? 'page' : undefined}
-              aria-haspopup={item.menu ? 'true' : undefined}
+              aria-current={sel === i ? "page" : undefined}
+              aria-haspopup={item.menu ? "true" : undefined}
               aria-expanded={item.menu ? openMenu === i : undefined}
               title={item.label}
             >
@@ -157,15 +160,17 @@ export default function NavBar({ items, active = 0, onSelect }) {
                   <button
                     key={opt.key}
                     type="button"
-                    className={opt.active ? 'active' : ''}
+                    className={opt.active ? "active" : ""}
                     onClick={() => {
-                      opt.onPick()
-                      setOpenMenu(null)
+                      opt.onPick();
+                      setOpenMenu(null);
                     }}
                   >
                     {opt.node}
                     {opt.swatch && (
-                      <span className={`theme-swatch theme-swatch-${opt.swatch}`} />
+                      <span
+                        className={`theme-swatch theme-swatch-${opt.swatch}`}
+                      />
                     )}
                     <span className="navbar-menu-label">{opt.label}</span>
                   </button>
@@ -182,5 +187,5 @@ export default function NavBar({ items, active = 0, onSelect }) {
         />
       </ul>
     </nav>
-  )
+  );
 }
