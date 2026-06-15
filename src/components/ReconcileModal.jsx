@@ -249,20 +249,21 @@ export default function ReconcileModal({
     setProgress({ pct: 10, label: t('import.stageUpload'), indeterminate: false })
     try {
       if (scope === 'weeks') {
-        // NHIỀU TUẦN: đọc lần lượt từng ảnh; KHÔNG phụ thuộc thứ tự chọn file.
-        // Giai đoạn 1 — đọc hết ảnh. Hint weekStart gửi AI vẫn theo thứ tự file để
-        // suy năm/tháng cho ảnh ghi thiếu (dd/mm); nó không quyết định tuần cuối cùng.
+        // NHIỀU TUẦN: đọc hết ảnh; KHÔNG phụ thuộc thứ tự chọn file.
+        // Giai đoạn 1 — đọc hết ảnh. Mọi ảnh dùng CHUNG mốc tháng/năm là ô "Tuần
+        // đầu": ảnh thường chỉ ghi SỐ NGÀY (không ghi tháng), nên AI lấy số ngày
+        // trong ảnh + tháng/năm từ mốc này để ra ngày đầy đủ. Nhờ vậy chính SỐ NGÀY
+        // trong ảnh quyết định ảnh thuộc tuần nào, không lệ thuộc vị trí chọn file.
         const raw = []
         let scheduleConfirmed = false
         for (let i = 0; i < files.length; i++) {
-          const hintWeek = addDays(weekStart, 7 * i)
           setProgress({
             pct: Math.round((i / files.length) * 90) + 5,
             label: `${t('import.stageAI')} (${i + 1}/${files.length})`,
             indeterminate: true,
           })
           const { base64, mediaType } = await readImage(files[i])
-          const data = await extractOne(base64, mediaType, { weekStart: hintWeek })
+          const data = await extractOne(base64, mediaType, { weekStart })
           // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
           if (data?.doc_type === 'schedule' && !scheduleConfirmed) {
             const ok = await askConfirm(t('reconcile.warnSchedule'))
@@ -274,10 +275,10 @@ export default function ReconcileModal({
           }
           raw.push({ data, issue: dataIssue(data) })
         }
-        // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh có ngày → suy tuần từ chính ảnh,
-        // bất kể vị trí chọn. Ảnh KHÔNG ghi ngày → fallback theo THỨ TỰ CHỌN FILE,
-        // nhưng đếm RIÊNG trong nhóm ảnh thiếu ngày (bắt đầu từ ô "Tuần đầu") để ảnh
-        // có ngày không "chiếm" mất khe tuần của ảnh thiếu ngày.
+        // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh đọc được ngày → suy tuần từ chính
+        // SỐ NGÀY trong ảnh, bất kể vị trí chọn. Ảnh KHÔNG có ngày lẫn số ngày →
+        // fallback theo THỨ TỰ CHỌN FILE, đếm RIÊNG trong nhóm ảnh thiếu ngày (bắt
+        // đầu từ ô "Tuần đầu") để ảnh có ngày không "chiếm" mất khe tuần của ảnh thiếu.
         let datelessRank = 0
         const result = raw.map(({ data, issue }) => {
           if (issue) {
