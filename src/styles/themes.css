@@ -393,7 +393,6 @@
     .period-total,
     .deduction-card,
     .shift-card,
-    .stats-panel,
     .lang-menu
   ) {
   /* SOFT UI — Bề mặt lồi (convex): gradient nội nhẹ cho khối có chiều sâu hơn. */
@@ -514,6 +513,25 @@
 }
 [data-theme='neumorph'] .stats-panel .info-card:has(.tone-red) {
   background: #f6cabf; /* soft coral */
+}
+
+/* SOFT UI — Bỏ viền màu của ô tổng trong khung tổng kết (.summary). Mặc định
+   .stat-grand/.stat-total ép border xanh/accent → hiện thành "khung" bao quanh,
+   lạc lõng với phong cách không-viền của Soft UI. Override về trong suốt. */
+[data-theme='neumorph'] .summary :is(.stat, .stat-grand, .stat-total) {
+  border-color: transparent;
+}
+
+/* SOFT UI — Bọc form NHẬP CA trong card neumorphic NỔI (raised): nền cùng màu
+   nền trang (var(--bg) = #e0e5ec), bóng mềm sáng góc trên-trái (#ffffff) + tối
+   góc dưới-phải (#bcc3ce) qua --nm-shadow, KHÔNG viền, bo tròn 24px, padding
+   thoáng. Các ô input bên trong vẫn lõm (inset) theo rule input neumorph riêng. */
+[data-theme='neumorph'] .shift-form {
+  background: var(--bg);
+  border: none;
+  border-radius: 24px;
+  box-shadow: var(--nm-shadow);
+  padding: 1.6rem;
 }
 
 /* Ô lương lớn: nền lavender pastel, nổi khối mềm, bo tròn, không viền. */
