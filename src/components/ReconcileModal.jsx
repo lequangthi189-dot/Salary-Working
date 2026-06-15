@@ -194,10 +194,10 @@ export default function ReconcileModal({
   function pickFile(e) {
     const list = Array.from(e.target.files || [])
     if (!list.length) return
-    // Chế độ nhiều tuần giữ tất cả ảnh; các chế độ khác chỉ lấy ảnh đầu.
-    const picked = scope === 'weeks' ? list : list.slice(0, 1)
-    setFiles(picked)
-    setPreviewUrls(picked.map((f) => URL.createObjectURL(f)))
+    // Cho chọn nhiều ảnh ở MỌI chế độ; nếu chọn nhiều mà scope là Tuần/Tháng thì
+    // chặn ở bước đối chiếu (xem tooManyForScope) chứ không tự ý cắt bớt ảnh.
+    setFiles(list)
+    setPreviewUrls(list.map((f) => URL.createObjectURL(f)))
     setGroups(null)
     setError(null)
     setWarn(null)
@@ -246,6 +246,9 @@ export default function ReconcileModal({
     setError(null)
     setWarn(null)
     if (!files.length) return setError(t('import.errPickImage'))
+    // Chọn nhiều ảnh nhưng đang đối chiếu theo Tuần/Tháng (1 ảnh) → chặn, bắt chọn lại.
+    if (scope !== 'weeks' && files.length > 1)
+      return setError(t('reconcile.errScopeMulti'))
     if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
       return setError(t('import.errNoCode'))
     setLoading(true)
@@ -367,6 +370,8 @@ export default function ReconcileModal({
   const showGroupTitles = view.length > 1
   const grandTotal = view.reduce((acc, g) => acc + g.visible.length, 0)
   const grandMatch = view.reduce((acc, g) => acc + g.match, 0)
+  // Chọn nhiều ảnh nhưng scope là Tuần/Tháng (mỗi cái chỉ 1 ảnh) → không hợp lệ.
+  const tooManyForScope = scope !== 'weeks' && files.length > 1
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -403,15 +408,12 @@ export default function ReconcileModal({
             <select
               value={scope}
               onChange={(e) => {
-                const v = e.target.value
-                setScope(v)
-                // Đổi chế độ → bỏ ảnh thừa khi rời chế độ nhiều tuần.
-                if (v !== 'weeks' && files.length > 1) {
-                  setFiles(files.slice(0, 1))
-                  setPreviewUrls(previewUrls.slice(0, 1))
-                }
+                // Giữ nguyên ảnh đã chọn ở mọi chế độ; việc khớp số ảnh ↔ scope do
+                // tooManyForScope kiểm tra. Chỉ xoá kết quả/cảnh báo cũ.
+                setScope(e.target.value)
                 setGroups(null)
                 setWarn(null)
+                setError(null)
               }}
             >
               <option value="week">{t('reconcile.scopeWeek')}</option>
@@ -446,6 +448,11 @@ export default function ReconcileModal({
         {scope === 'weeks' && (
           <p className="import-empcode">{t('reconcile.weeksHint')}</p>
         )}
+        {tooManyForScope && (
+          <p className="msg error">
+            {t('reconcile.errScopeMulti', { count: files.length })}
+          </p>
+        )}
         <p className="import-empcode">
           {t('import.empcodeFrom')}
           <strong>{employeeCode || t('import.none')}</strong>
@@ -469,7 +476,7 @@ export default function ReconcileModal({
             type="button"
             className="account-btn"
             onClick={readAndCompare}
-            disabled={loading}
+            disabled={loading || tooManyForScope}
           >
             {loading ? t('import.reading') : t('reconcile.check')}
           </button>

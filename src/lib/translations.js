@@ -344,6 +344,8 @@ export const translations = {
     "reconcile.weekLabel": "Week {start} – {end}",
     "reconcile.spanWarn":
       "Some images landed far apart or across months ({months}). Double-check the “First week start” date.",
+    "reconcile.errScopeMulti":
+      "You picked {count} images, but “Reconcile by” is Week/Month (one image each). Switch to “Multiple weeks”, or select just one image.",
     "appearance.title": "Appearance",
     "appearance.fontSize": "Font size",
     "font.sm": "Small",
@@ -857,6 +859,8 @@ export const translations = {
     "reconcile.weekLabel": "Tuần {start} – {end}",
     "reconcile.spanWarn":
       "Có ảnh rơi vào tuần/tháng cách xa nhau ({months}). Kiểm tra lại ô “Tuần đầu bắt đầu”.",
+    "reconcile.errScopeMulti":
+      "Bạn đã chọn {count} ảnh nhưng “Đối chiếu theo” đang là Tuần/Tháng (mỗi cái 1 ảnh). Hãy chuyển sang “Nhiều tuần”, hoặc chỉ chọn 1 ảnh.",
     "appearance.title": "Giao diện",
     "appearance.fontSize": "Cỡ chữ",
     "font.sm": "Nhỏ",
