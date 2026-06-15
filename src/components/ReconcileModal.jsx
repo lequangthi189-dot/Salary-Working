@@ -249,18 +249,20 @@ export default function ReconcileModal({
     setProgress({ pct: 10, label: t('import.stageUpload'), indeterminate: false })
     try {
       if (scope === 'weeks') {
-        // NHIỀU TUẦN: đọc lần lượt từng ảnh, mỗi ảnh là một tuần liên tiếp.
-        const result = []
+        // NHIỀU TUẦN: đọc lần lượt từng ảnh; KHÔNG phụ thuộc thứ tự chọn file.
+        // Giai đoạn 1 — đọc hết ảnh. Hint weekStart gửi AI vẫn theo thứ tự file để
+        // suy năm/tháng cho ảnh ghi thiếu (dd/mm); nó không quyết định tuần cuối cùng.
+        const raw = []
         let scheduleConfirmed = false
         for (let i = 0; i < files.length; i++) {
-          const wkStart = addDays(weekStart, 7 * i)
+          const hintWeek = addDays(weekStart, 7 * i)
           setProgress({
             pct: Math.round((i / files.length) * 90) + 5,
             label: `${t('import.stageAI')} (${i + 1}/${files.length})`,
             indeterminate: true,
           })
           const { base64, mediaType } = await readImage(files[i])
-          const data = await extractOne(base64, mediaType, { weekStart: wkStart })
+          const data = await extractOne(base64, mediaType, { weekStart: hintWeek })
           // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
           if (data?.doc_type === 'schedule' && !scheduleConfirmed) {
             const ok = await askConfirm(t('reconcile.warnSchedule'))
@@ -270,17 +272,22 @@ export default function ReconcileModal({
             }
             scheduleConfirmed = true
           }
-          const issue = dataIssue(data)
-          if (issue) {
-            result.push({ weekStart: wkStart, rows: [], error: issue })
-          } else {
-            // TỰ SORT NGÀY: ưu tiên tuần suy từ ngày tháng đọc được trong ảnh,
-            // không phụ thuộc thứ tự chọn file. Ảnh không ghi ngày → dùng wkStart
-            // theo thứ tự như cũ làm fallback.
-            const realWeek = detectWeekStart(data) || wkStart
-            result.push({ weekStart: realWeek, rows: buildWeekRows(data, realWeek) })
-          }
+          raw.push({ data, issue: dataIssue(data) })
         }
+        // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh có ngày → suy tuần từ chính ảnh,
+        // bất kể vị trí chọn. Ảnh KHÔNG ghi ngày → fallback theo THỨ TỰ CHỌN FILE,
+        // nhưng đếm RIÊNG trong nhóm ảnh thiếu ngày (bắt đầu từ ô "Tuần đầu") để ảnh
+        // có ngày không "chiếm" mất khe tuần của ảnh thiếu ngày.
+        let datelessRank = 0
+        const result = raw.map(({ data, issue }) => {
+          if (issue) {
+            const wk = data && detectWeekStart(data)
+            return { weekStart: wk || addDays(weekStart, 7 * datelessRank++), rows: [], error: issue }
+          }
+          const detected = detectWeekStart(data)
+          const realWeek = detected || addDays(weekStart, 7 * datelessRank++)
+          return { weekStart: realWeek, rows: buildWeekRows(data, realWeek) }
+        })
         // Sắp xếp các nhóm theo tuần (tăng dần) để hiển thị đúng trình tự thời gian
         // dù người dùng chọn ảnh lộn xộn.
         result.sort((a, b) => a.weekStart.localeCompare(b.weekStart))
