@@ -275,36 +275,23 @@ export default function ReconcileModal({
             }
             scheduleConfirmed = true
           }
-          raw.push({ data, issue: dataIssue(data), name: files[i].name })
+          raw.push({ data, issue: dataIssue(data) })
         }
         // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh suy được ngày (resolveWeek) → lấy
         // tuần thật từ chính SỐ NGÀY trong ảnh, bất kể vị trí chọn. Ảnh KHÔNG có cả
         // ngày lẫn số ngày → fallback theo THỨ TỰ CHỌN FILE, đếm RIÊNG trong nhóm ảnh
         // thiếu ngày (bắt đầu từ ô "Tuần đầu") để ảnh có ngày không chiếm mất khe tuần.
         let datelessRank = 0
-        const result = raw.map(({ data, issue, name }) => {
+        const result = raw.map(({ data, issue }) => {
           const r = data ? resolveWeek(data, weekStart) : null
           const realWeek = r ? r.weekStart : addDays(weekStart, 7 * datelessRank++)
           if (issue) return { weekStart: realWeek, rows: [], error: issue }
           const dates = r ? r.dates : WEEKDAYS.map((_, i) => addDays(realWeek, i))
-          // [DIAG] gỡ sau khi xác nhận: số ngày AI đọc, tháng tiêu đề, ngày ghép, tuần.
-          /* eslint-disable-next-line no-console */
-          console.log(
-            `[reconcile] "${name}" day=`,
-            (data?.days || []).map((d) => `${d.weekday}:${d.day ?? '∅'}`).join(' '),
-            `| sheet=${data?.sheet_month || 0}/${data?.sheet_year || 0}`,
-            `| source=${r?.source || 'file-order'} → ${realWeek}`,
-            '| dates=', dates
-          )
           return { weekStart: realWeek, rows: buildWeekRows(data, dates) }
         })
         // Sắp xếp các nhóm theo tuần (tăng dần) để hiển thị đúng trình tự thời gian
         // dù người dùng chọn ảnh lộn xộn.
-        /* eslint-disable no-console */
-        console.log('[reconcile] TRƯỚC sort =', result.map((g) => g.weekStart))
         result.sort((a, b) => a.weekStart.localeCompare(b.weekStart))
-        console.log('[reconcile] SAU sort  =', result.map((g) => g.weekStart))
-        /* eslint-enable no-console */
         // Chặn giới hạn "nhảy tháng": nếu các tuần cách xa bất thường hoặc trải ≥3
         // tháng → cảnh báo (không chặn) để người dùng soát lại ô "Tuần đầu".
         setWarn(weekSpanWarning(result.map((g) => g.weekStart)))
