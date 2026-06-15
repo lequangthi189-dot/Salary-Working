@@ -8,6 +8,7 @@ import {
   computeEffective,
 } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
+import { resolveWeek, weekSpanWarning } from '../lib/reconcileDates.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import CircularProgress from './CircularProgress.jsx'
 
@@ -31,17 +32,6 @@ function mondayOf(dateStr) {
 }
 function mondayOfThisWeek() {
   return mondayOf(localTodayStr())
-}
-
-// Suy ra Thứ 2 của tuần từ NGÀY THÁNG mà AI đọc được trong ảnh (data.days[].date).
-// Lấy ngày hợp lệ nhỏ nhất → Thứ 2 của tuần đó. Trả null nếu ảnh không ghi ngày
-// (chỉ có thứ) → khi đó phải dựa vào thứ tự chọn ảnh như cũ.
-function detectWeekStart(data) {
-  const dates = (data?.days || [])
-    .map((d) => d.date)
-    .filter((d) => isoRe.test(d || ''))
-    .sort()
-  return dates.length ? mondayOf(dates[0]) : null
 }
 
 function readImage(file) {
@@ -106,6 +96,8 @@ export default function ReconcileModal({
   // Kết quả gom theo NHÓM: mỗi nhóm { weekStart, rows, error? }. Chế độ tuần/tháng
   // chỉ có 1 nhóm (weekStart=null cho tháng → không hiện tiêu đề nhóm).
   const [groups, setGroups] = useState(null)
+  // Cảnh báo (không chặn) khi các tuần suy ra có dấu hiệu sai mốc "Tuần đầu".
+  const [warn, setWarn] = useState(null)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
 
   function askConfirm(message) {
@@ -163,17 +155,26 @@ export default function ReconcileModal({
     })
   }
 
-  // Một ảnh tuần (data.days) + Thứ 2 của tuần → các dòng đối chiếu 7 ngày.
-  function buildWeekRows(data, wkStart) {
+  // Một ảnh tuần (data.days) + mảng NGÀY ĐẦY ĐỦ theo cột Mon..Sun (do resolveWeek
+  // suy ra) → các dòng đối chiếu 7 ngày.
+  function buildWeekRows(data, dates) {
     const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
     const imgByDate = new Map()
     const dateList = WEEKDAYS.map((wd, i) => {
       const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
-      const date = isoRe.test(d.date || '') ? d.date : addDays(wkStart, i)
+      const date = dates[i]
       imgByDate.set(date, imageHours(d))
       return date
     })
     return compareDates(imgByDate, dateList)
+  }
+  // Suy ngày + weekStart cho 1 ảnh tuần; fallback theo wkStart khi ảnh không có
+  // cả ngày lẫn số ngày (resolveWeek trả null).
+  function weekDatesOf(data, wkStart) {
+    const r = resolveWeek(data, weekStart)
+    const ws = r ? r.weekStart : wkStart
+    const dates = r ? r.dates : WEEKDAYS.map((_, i) => addDays(ws, i))
+    return { ws, dates, resolved: !!r }
   }
 
   // Một ảnh tháng (data.entries) → các dòng đối chiếu cho mọi ngày trong tháng.
@@ -199,6 +200,7 @@ export default function ReconcileModal({
     setPreviewUrls(picked.map((f) => URL.createObjectURL(f)))
     setGroups(null)
     setError(null)
+    setWarn(null)
   }
 
   // Gọi Edge Function đọc 1 ảnh; ném lỗi nếu function trả lỗi.
@@ -242,6 +244,7 @@ export default function ReconcileModal({
 
   async function readAndCompare() {
     setError(null)
+    setWarn(null)
     if (!files.length) return setError(t('import.errPickImage'))
     if (![employeeCode, fullName, phone].some((v) => String(v || '').trim()))
       return setError(t('import.errNoCode'))
@@ -250,10 +253,9 @@ export default function ReconcileModal({
     try {
       if (scope === 'weeks') {
         // NHIỀU TUẦN: đọc hết ảnh; KHÔNG phụ thuộc thứ tự chọn file.
-        // Giai đoạn 1 — đọc hết ảnh. Mọi ảnh dùng CHUNG mốc tháng/năm là ô "Tuần
-        // đầu": ảnh thường chỉ ghi SỐ NGÀY (không ghi tháng), nên AI lấy số ngày
-        // trong ảnh + tháng/năm từ mốc này để ra ngày đầy đủ. Nhờ vậy chính SỐ NGÀY
-        // trong ảnh quyết định ảnh thuộc tuần nào, không lệ thuộc vị trí chọn file.
+        // Giai đoạn 1 — đọc hết ảnh. AI chỉ đọc SỐ NGÀY trần (day) + tháng ở tiêu đề
+        // (sheet_month/year) nếu có; KHÔNG suy ngày. Việc ghép số ngày → ngày đầy đủ
+        // do client làm (resolveWeek) dựa trên tháng-trong-ảnh hoặc ô "Tuần đầu".
         const raw = []
         let scheduleConfirmed = false
         for (let i = 0; i < files.length; i++) {
@@ -263,7 +265,7 @@ export default function ReconcileModal({
             indeterminate: true,
           })
           const { base64, mediaType } = await readImage(files[i])
-          const data = await extractOne(base64, mediaType, { weekStart })
+          const data = await extractOne(base64, mediaType, {})
           // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
           if (data?.doc_type === 'schedule' && !scheduleConfirmed) {
             const ok = await askConfirm(t('reconcile.warnSchedule'))
@@ -273,25 +275,39 @@ export default function ReconcileModal({
             }
             scheduleConfirmed = true
           }
-          raw.push({ data, issue: dataIssue(data) })
+          raw.push({ data, issue: dataIssue(data), name: files[i].name })
         }
-        // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh đọc được ngày → suy tuần từ chính
-        // SỐ NGÀY trong ảnh, bất kể vị trí chọn. Ảnh KHÔNG có ngày lẫn số ngày →
-        // fallback theo THỨ TỰ CHỌN FILE, đếm RIÊNG trong nhóm ảnh thiếu ngày (bắt
-        // đầu từ ô "Tuần đầu") để ảnh có ngày không "chiếm" mất khe tuần của ảnh thiếu.
+        // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh suy được ngày (resolveWeek) → lấy
+        // tuần thật từ chính SỐ NGÀY trong ảnh, bất kể vị trí chọn. Ảnh KHÔNG có cả
+        // ngày lẫn số ngày → fallback theo THỨ TỰ CHỌN FILE, đếm RIÊNG trong nhóm ảnh
+        // thiếu ngày (bắt đầu từ ô "Tuần đầu") để ảnh có ngày không chiếm mất khe tuần.
         let datelessRank = 0
-        const result = raw.map(({ data, issue }) => {
-          if (issue) {
-            const wk = data && detectWeekStart(data)
-            return { weekStart: wk || addDays(weekStart, 7 * datelessRank++), rows: [], error: issue }
-          }
-          const detected = detectWeekStart(data)
-          const realWeek = detected || addDays(weekStart, 7 * datelessRank++)
-          return { weekStart: realWeek, rows: buildWeekRows(data, realWeek) }
+        const result = raw.map(({ data, issue, name }) => {
+          const r = data ? resolveWeek(data, weekStart) : null
+          const realWeek = r ? r.weekStart : addDays(weekStart, 7 * datelessRank++)
+          if (issue) return { weekStart: realWeek, rows: [], error: issue }
+          const dates = r ? r.dates : WEEKDAYS.map((_, i) => addDays(realWeek, i))
+          // [DIAG] gỡ sau khi xác nhận: số ngày AI đọc, tháng tiêu đề, ngày ghép, tuần.
+          /* eslint-disable-next-line no-console */
+          console.log(
+            `[reconcile] "${name}" day=`,
+            (data?.days || []).map((d) => `${d.weekday}:${d.day ?? '∅'}`).join(' '),
+            `| sheet=${data?.sheet_month || 0}/${data?.sheet_year || 0}`,
+            `| source=${r?.source || 'file-order'} → ${realWeek}`,
+            '| dates=', dates
+          )
+          return { weekStart: realWeek, rows: buildWeekRows(data, dates) }
         })
         // Sắp xếp các nhóm theo tuần (tăng dần) để hiển thị đúng trình tự thời gian
         // dù người dùng chọn ảnh lộn xộn.
+        /* eslint-disable no-console */
+        console.log('[reconcile] TRƯỚC sort =', result.map((g) => g.weekStart))
         result.sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+        console.log('[reconcile] SAU sort  =', result.map((g) => g.weekStart))
+        /* eslint-enable no-console */
+        // Chặn giới hạn "nhảy tháng": nếu các tuần cách xa bất thường hoặc trải ≥3
+        // tháng → cảnh báo (không chặn) để người dùng soát lại ô "Tuần đầu".
+        setWarn(weekSpanWarning(result.map((g) => g.weekStart)))
         setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
         setGroups(result)
         return
@@ -304,7 +320,7 @@ export default function ReconcileModal({
       const data = await extractOne(
         base64,
         mediaType,
-        scope === 'month' ? { scope: 'month', month } : { weekStart }
+        scope === 'month' ? { scope: 'month', month } : {}
       )
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) {
@@ -326,11 +342,18 @@ export default function ReconcileModal({
         return
       }
       setProgress({ pct: 85, label: t('reconcile.stageCompare'), indeterminate: false })
-      const rows =
-        scope === 'month' ? buildMonthRows(data) : buildWeekRows(data, weekStart)
+      let rows
+      let groupWeek = null
+      if (scope === 'month') {
+        rows = buildMonthRows(data)
+      } else {
+        const { ws, dates } = weekDatesOf(data, weekStart)
+        rows = buildWeekRows(data, dates)
+        groupWeek = ws // dùng tuần suy được (theo số ngày/ISO trong ảnh) cho tiêu đề
+      }
       setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
       // Tuần → có tiêu đề nhóm theo weekStart; tháng → không tiêu đề (weekStart=null).
-      setGroups([{ weekStart: scope === 'week' ? weekStart : null, rows }])
+      setGroups([{ weekStart: groupWeek, rows }])
     } catch (e) {
       // Lỗi (Gemini quota/timeout…) → báo lỗi; finally ẩn vòng tròn, không kẹt.
       setError(String(e.message || e))
@@ -401,6 +424,7 @@ export default function ReconcileModal({
                   setPreviewUrls(previewUrls.slice(0, 1))
                 }
                 setGroups(null)
+                setWarn(null)
               }}
             >
               <option value="week">{t('reconcile.scopeWeek')}</option>
@@ -477,6 +501,12 @@ export default function ReconcileModal({
         {error && (
           <p className="msg error" style={{ whiteSpace: 'pre-wrap' }}>
             {error}
+          </p>
+        )}
+
+        {warn && (
+          <p className="msg error">
+            {t('reconcile.spanWarn', { months: warn.months.join(', ') })}
           </p>
         )}
 

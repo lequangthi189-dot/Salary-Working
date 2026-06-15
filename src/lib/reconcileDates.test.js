@@ -2,7 +2,31 @@ import { describe, it, expect } from 'vitest'
 import {
   dayNumsToDates,
   weekStartFromDayNums,
+  resolveWeek,
+  anchorFor,
+  sheetYearMonth,
+  weekSpanWarning,
+  daysBetween,
 } from './reconcileDates.js'
+
+// Dựng nhanh data.days từ mảng số ngày (Mon..Sun) + tuỳ chọn date ISO / sheet tháng.
+const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+function mkData(dayNums, opts = {}) {
+  const isoDates = opts.dates || []
+  return {
+    sheet_month: opts.sheet_month ?? 0,
+    sheet_year: opts.sheet_year ?? 0,
+    days: WD.map((wd, i) => ({
+      weekday: wd,
+      day: dayNums[i] ?? 0,
+      date: isoDates[i] || '',
+      start: '',
+      end: '',
+      off: !dayNums[i],
+      raw: '',
+    })),
+  }
+}
 
 // Các test này XÁC NHẬN logic ghép số ngày trần → ngày đầy đủ + xử lý giáp tháng,
 // dùng đúng 3 dải người dùng nêu (8–14, 1–7, 26–31) + các ca giáp tháng.
@@ -111,5 +135,92 @@ describe('weekStartFromDayNums — Thứ 2 thật của ảnh + thứ tự sort'
 
   it('null khi cả ảnh không có số ngày nào', () => {
     expect(weekStartFromDayNums([0, 0, null, 0, 0, 0, 0], anchor)).toBeNull()
+  })
+})
+
+describe('sheetYearMonth / anchorFor — ưu tiên tháng đọc trong ảnh', () => {
+  it('có sheet_month + year → anchor về ngày 01 của tháng đó', () => {
+    const data = mkData([8, 9, 10, 11, 12, 13, 14], { sheet_month: 7, sheet_year: 2025 })
+    expect(sheetYearMonth(data)).toEqual({ month: 7, year: 2025 })
+    expect(anchorFor(data, '2026-06-01')).toBe('2025-07-01')
+  })
+
+  it('có tháng nhưng thiếu năm → mượn năm từ ô Tuần đầu', () => {
+    const data = mkData([1, 2, 3, 4, 5, 6, 7], { sheet_month: 7 })
+    expect(anchorFor(data, '2026-06-01')).toBe('2026-07-01')
+  })
+
+  it('không có tháng trong ảnh → dùng nguyên ô Tuần đầu', () => {
+    const data = mkData([1, 2, 3, 4, 5, 6, 7])
+    expect(sheetYearMonth(data)).toBeNull()
+    expect(anchorFor(data, '2026-06-22')).toBe('2026-06-22')
+  })
+})
+
+describe('resolveWeek — ưu tiên ISO → số ngày → null', () => {
+  it('1) ảnh in sẵn ngày ISO → dùng trực tiếp', () => {
+    const data = mkData([8, 9, 10, 11, 12, 13, 14], {
+      dates: ['2024-03-04', '2024-03-05', '', '', '', '', ''],
+    })
+    const r = resolveWeek(data, '2026-06-01')
+    expect(r.source).toBe('iso')
+    expect(r.weekStart).toBe('2024-03-04')
+    expect(r.dates[6]).toBe('2024-03-10')
+  })
+
+  it('2a) số ngày trần + tháng trong ảnh → source=sheet', () => {
+    const data = mkData([8, 9, 10, 11, 12, 13, 14], { sheet_month: 7, sheet_year: 2026 })
+    const r = resolveWeek(data, '2026-06-01')
+    expect(r.source).toBe('sheet')
+    expect(r.weekStart).toBe('2026-07-08')
+  })
+
+  it('2b) số ngày trần, không tháng → ghép từ ô Tuần đầu, source=anchor', () => {
+    const data = mkData([26, 27, 28, 29, 30, 1, 2])
+    const r = resolveWeek(data, '2026-06-01')
+    expect(r.source).toBe('anchor')
+    expect(r.weekStart).toBe('2026-06-26')
+    expect(r.dates).toEqual([
+      '2026-06-26', '2026-06-27', '2026-06-28', '2026-06-29',
+      '2026-06-30', '2026-07-01', '2026-07-02',
+    ])
+  })
+
+  it('3) không ngày lẫn số ngày → null', () => {
+    expect(resolveWeek(mkData([0, 0, 0, 0, 0, 0, 0]), '2026-06-01')).toBeNull()
+  })
+})
+
+describe('weekSpanWarning — chặn giới hạn nhảy tháng', () => {
+  it('các tuần liên tiếp trong 1–2 tháng → KHÔNG cảnh báo', () => {
+    expect(weekSpanWarning(['2026-06-01', '2026-06-08', '2026-06-15'])).toBeNull()
+    // trải 2 tháng liền nhau là bình thường
+    expect(weekSpanWarning(['2026-06-22', '2026-06-29', '2026-07-06'])).toBeNull()
+  })
+
+  it('khoảng trống > 2 tuần giữa các ảnh → cảnh báo', () => {
+    // 06-01 rồi nhảy thẳng 07-06 (35 ngày) → nghi sai mốc
+    const w = weekSpanWarning(['2026-06-01', '2026-07-06'])
+    expect(w).not.toBeNull()
+    expect(w.months).toEqual(['2026-06', '2026-07'])
+  })
+
+  it('trải ≥ 3 tháng → cảnh báo', () => {
+    const w = weekSpanWarning(['2026-06-01', '2026-07-06', '2026-08-03'])
+    expect(w).not.toBeNull()
+    expect(w.months.length).toBe(3)
+  })
+
+  it('dưới 2 mốc → không cảnh báo', () => {
+    expect(weekSpanWarning(['2026-06-01'])).toBeNull()
+    expect(weekSpanWarning([])).toBeNull()
+  })
+})
+
+describe('daysBetween', () => {
+  it('tính đúng khoảng cách ngày qua tháng', () => {
+    expect(daysBetween('2026-06-01', '2026-06-08')).toBe(7)
+    expect(daysBetween('2026-06-22', '2026-07-06')).toBe(14)
+    expect(daysBetween('2026-06-01', '2026-07-06')).toBe(35)
   })
 })
