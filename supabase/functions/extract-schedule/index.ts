@@ -41,23 +41,36 @@ const SCHEMA_WEEK = {
     doc_type: { type: 'STRING', enum: ['schedule', 'timesheet', 'other'] },
     found: { type: 'BOOLEAN' },
     matched_code: { type: 'STRING' },
+    // Tháng/năm đọc được ở TIÊU ĐỀ bảng (nếu có). 0 = không thấy.
+    sheet_month: { type: 'INTEGER' },
+    sheet_year: { type: 'INTEGER' },
     days: {
       type: 'ARRAY',
       items: {
         type: 'OBJECT',
         properties: {
           weekday: { type: 'STRING', enum: WEEKDAYS },
+          // SỐ NGÀY TRẦN (1–31) đọc nguyên ở header cột; 0 = cột không ghi ngày.
+          day: { type: 'INTEGER' },
           date: { type: 'STRING' },
           start: { type: 'STRING' },
           end: { type: 'STRING' },
           off: { type: 'BOOLEAN' },
           raw: { type: 'STRING' },
         },
-        required: ['weekday', 'date', 'start', 'end', 'off', 'raw'],
+        required: ['weekday', 'day', 'date', 'start', 'end', 'off', 'raw'],
       },
     },
   },
-  required: ['is_roster', 'doc_type', 'found', 'matched_code', 'days'],
+  required: [
+    'is_roster',
+    'doc_type',
+    'found',
+    'matched_code',
+    'sheet_month',
+    'sheet_year',
+    'days',
+  ],
 }
 
 // CHẾ ĐỘ THÁNG: trả về MẢNG NGÀY (entries) theo ngày tháng, không ràng buộc thứ.
@@ -88,7 +101,7 @@ const SCHEMA_MONTH = {
 
 const SYSTEM_WEEK = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
 Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
-0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, doc_type="other", found=false, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp.
+0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, doc_type="other", found=false, sheet_month=0, sheet_year=0, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp.
 0b. Phân loại doc_type:
    - "schedule" = LỊCH PHÂN CA / LỊCH ĐI LÀM (giờ vào–ra DỰ KIẾN cho tuần, thường là kế hoạch sắp tới; ô ghi khung giờ như "09:00-17:00").
    - "timesheet" = BẢNG CÔNG / CHẤM CÔNG (ghi nhận công ĐÃ làm; thường có TỔNG GIỜ mỗi ngày như "7.55", "8.0", hoặc giờ check-in/out thực tế, có tiêu đề kiểu "Bảng công"/"Chấm công").
@@ -102,10 +115,17 @@ Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhi
      hãy ghi CHỈ con số tổng giờ đó vào "raw" (vd "7.55"). Con số tổng này đã trừ
      giờ nghỉ giải lao nên là nguồn đúng nhất — luôn ghi nó kể cả khi đã có start/end.
      Nếu ảnh KHÔNG in tổng giờ thì để raw="". KHÔNG ghi khoảng giờ vào "raw".
-3. Đọc NGÀY THÁNG ghi cho từng thứ trong ảnh (nếu có) và trả về field "date" dạng
-   "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra
-   dựa trên "Tuần bắt đầu" được cung cấp. Nếu ảnh KHÔNG ghi ngày thì để date="".
-4. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
+3. "day" = SỐ NGÀY (số nguyên 1–31) ghi ở header của cột thứ đó (vd cột ghi
+   "8 T2 Mon" → day=8). CHỈ đọc đúng con số HIỆN trên ảnh; TUYỆT ĐỐI KHÔNG tự suy,
+   KHÔNG tự tính, KHÔNG cộng/trừ, KHÔNG ghép tháng/năm. Cột không ghi số ngày → day=0.
+4. "date": CHỈ điền khi ảnh in SẴN ngày ĐẦY ĐỦ có cả ngày-tháng-năm (vd "08/06/2026"
+   hoặc "2026-06-08") → chuẩn hoá "YYYY-MM-DD". Nếu ảnh không in đủ năm thì để date=""
+   (đừng bịa tháng/năm — phần ghép ngày do hệ thống tự làm dựa trên "day").
+5. "sheet_month"/"sheet_year": nếu TIÊU ĐỀ / đầu bảng có ghi THÁNG (và NĂM) áp dụng
+   cho cả bảng (vd "Bảng công tháng 6/2026", "THÁNG 06", "Kỳ công 06/2026") thì đặt
+   sheet_month=6, sheet_year=2026. Chỉ điền khi thấy rõ; không thấy tháng → sheet_month=0;
+   không thấy năm → sheet_year=0.
+6. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
 Chỉ trả JSON đúng schema, không thêm chữ.`
 
 const SYSTEM_MONTH = `Bạn là công cụ đọc BẢNG CÔNG / BẢNG PHÂN CA cả THÁNG từ ảnh.
@@ -155,8 +175,9 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ error: 'Body JSON không hợp lệ' }, 400)
   }
-  const { image, mediaType, employeeCode, fullName, phone, weekStart, scope, month } =
-    body
+  // weekStart không còn dùng ở server (chế độ tuần): client tự ghép số ngày → ngày
+  // đầy đủ dựa trên ô "Tuần đầu" / tháng đọc trong ảnh.
+  const { image, mediaType, employeeCode, fullName, phone, scope, month } = body
   const isMonth = scope === 'month'
   const hasId = [employeeCode, fullName, phone].some(
     (v) => v && String(v).trim()
@@ -179,8 +200,9 @@ Deno.serve(async (req: Request) => {
         ' Trả về TẤT CẢ ngày có công trong tháng (mỗi ngày một entry).' +
         (month ? ` Tháng cần đọc: ${month}.` : '')
       : idText +
-        ' Trả về ca từng thứ Mon..Sun.' +
-        (weekStart ? ` Tuần bắt đầu (Thứ 2) khoảng: ${weekStart}.` : '')
+        ' Trả về ca từng thứ Mon..Sun. Với mỗi cột đọc "day" = SỐ NGÀY trần ghi ở' +
+        ' header (1–31, không có thì 0) và đọc tháng/năm ở tiêu đề nếu có' +
+        ' (sheet_month/sheet_year). KHÔNG tự suy hay ghép ngày — hệ thống tự ghép.'
 
     const reqBody = JSON.stringify({
       systemInstruction: { parts: [{ text: isMonth ? SYSTEM_MONTH : SYSTEM_WEEK }] },
