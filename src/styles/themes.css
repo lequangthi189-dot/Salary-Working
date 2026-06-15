@@ -48,6 +48,7 @@
     .period-total,
     .deduction-card,
     .shift-card,
+    .shift-form,
     .stats-panel .info-card,
     .stats-panel .salary-hero
   ) {
@@ -84,6 +85,25 @@
 [data-theme='dark'] :is(input, select, textarea):focus-visible {
   outline: none;
   border-color: var(--accent);
+}
+
+/* MINIMALIST — Làm nổi khối NHẬP CA mà vẫn phẳng/sạch: nền panel-2 sáng hơn nền
+   trang một bậc + viền accent mảnh để khối tách khỏi bố cục phẳng xung quanh. */
+[data-theme='dark'] .shift-form {
+  background: var(--panel-2);
+  border-color: rgba(91, 158, 198, 0.45);
+}
+/* Tiêu đề: tô accent + gạch chân mảnh để hút mắt vào khối nhập ca. */
+[data-theme='dark'] .shift-form .form-title {
+  color: var(--accent);
+  display: inline-block;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--accent);
+}
+/* Thẻ ca (workshift cards): viền trái accent để mỗi ca tách bạch, nổi nhẹ trên
+   nền phẳng mà không cần đổ bóng (giữ tinh thần minimalist). */
+[data-theme='dark'] .shift-card:not(.editing) {
+  border-left: 3px solid rgba(91, 158, 198, 0.6);
 }
 
 /* ---------- Modern Glassmorphism ----------
@@ -145,6 +165,7 @@
     .period-total,
     .deduction-card,
     .shift-card,
+    .shift-form,
     .stats-panel,
     .lang-menu,
     .account-btn
@@ -182,6 +203,7 @@
     .period-total,
     .deduction-card,
     .shift-card,
+    .shift-form,
     .lang-menu
   )::before {
   content: '';
@@ -215,6 +237,7 @@
     .period-total,
     .deduction-card,
     .shift-card,
+    .shift-form,
     .lang-menu
   ):hover {
   transform: translateY(-4px);
@@ -237,6 +260,7 @@
     .period-total,
     .deduction-card,
     .shift-card,
+    .shift-form,
     .lang-menu
   ):hover::before {
   opacity: 1;
@@ -328,6 +352,15 @@
   background: linear-gradient(135deg, #f43f5e, #fb923c);
 }
 
+/* MODERN — Tiêu đề khối nhập ca: tô accent + gạch chân sáng để khối kính nổi bật,
+   ăn nhập với bề mặt glass (blur + viền gradient phát sáng đã thêm qua :is). */
+[data-theme='glass'] .shift-form .form-title {
+  color: var(--accent);
+  display: inline-block;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid rgba(124, 196, 255, 0.7);
+}
+
 /* Ô lương lớn: gradient tím→hồng nổi bật, viền sáng, đổ bóng màu. */
 [data-theme='glass'] .stats-panel .salary-hero {
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(236, 72, 153, 0.9));
@@ -349,7 +382,7 @@
   [data-theme='glass'] :is(
     .auth-card, .emp-card, .modal-card, .comp-pop, .chat-float, .stat-card,
     .period-card, .period-stat-card, .period-total, .deduction-card, .shift-card,
-    .lang-menu, .stats-panel .info-card, .stats-panel .salary-hero,
+    .shift-form, .lang-menu, .stats-panel .info-card, .stats-panel .salary-hero,
     button, .account-btn
   ):hover {
     transform: none;
@@ -375,6 +408,9 @@
   --nm-inset: inset 3px 3px 7px #bcc3ce, inset -3px -3px 7px #ffffff;
   /* Bóng nổi CAO hơn (dùng khi hover) → khối nhô lên rõ rệt. */
   --nm-shadow-hover: 9px 9px 20px #b2b9c4, -9px -9px 20px #ffffff;
+  /* Bóng NỔI BẬT (raised): elevation cao hơn mặc định, dưới mức hover → dùng cho
+     khối cần nổi lên so với các thẻ thường (Nhập ca, thẻ ca trong bảng công). */
+  --nm-shadow-raised: 8px 8px 18px #b6bdc8, -8px -8px 18px #ffffff;
   /* Gradient bề mặt lồi (convex): sáng trên, tối nhẹ dưới. */
   --nm-convex: linear-gradient(145deg, #f0f4fa, #cdd3dd);
 }
@@ -393,6 +429,7 @@
     .period-total,
     .deduction-card,
     .shift-card,
+    .shift-form,
     .lang-menu
   ) {
   /* SOFT UI — Bề mặt lồi (convex): gradient nội nhẹ cho khối có chiều sâu hơn. */
@@ -522,16 +559,36 @@
   border-color: transparent;
 }
 
-/* SOFT UI — Bọc form NHẬP CA trong card neumorphic NỔI (raised): nền cùng màu
-   nền trang (var(--bg) = #e0e5ec), bóng mềm sáng góc trên-trái (#ffffff) + tối
-   góc dưới-phải (#bcc3ce) qua --nm-shadow, KHÔNG viền, bo tròn 24px, padding
-   thoáng. Các ô input bên trong vẫn lõm (inset) theo rule input neumorph riêng. */
+/* SOFT UI — Bọc form NHẬP CA trong card neumorphic NỔI BẬT (raised): bề mặt lồi
+   (convex gradient) + bóng raised cao hơn các thẻ thường để khối nhô hẳn lên,
+   KHÔNG viền, bo tròn 24px, padding thoáng. Các ô input bên trong vẫn lõm (inset)
+   theo rule input neumorph riêng. */
 [data-theme='neumorph'] .shift-form {
-  background: var(--bg);
+  background: var(--nm-convex);
   border: none;
   border-radius: 24px;
-  box-shadow: var(--nm-shadow);
+  box-shadow: var(--nm-shadow-raised);
   padding: 1.6rem;
+  transition: box-shadow 0.22s ease;
+}
+/* Hover: nhô cao thêm cho cảm giác sống động khi tương tác. */
+[data-theme='neumorph'] .shift-form:hover {
+  box-shadow: var(--nm-shadow-hover);
+}
+/* Tiêu đề khối nhập ca: tô accent + thanh gạch nhỏ phía dưới để hút mắt, giúp
+   khối nổi bật giữa các thẻ thống kê pastel bên cạnh. */
+[data-theme='neumorph'] .shift-form .form-title {
+  color: var(--accent);
+  display: inline-block;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* SOFT UI — Thẻ ca (workshift cards) trong bảng công: nâng elevation lên mức raised
+   để mỗi ca nổi khối rõ hơn so với nền & các thẻ phụ. Đặt SAU khối :is(...) chung
+   để thắng nhờ thứ tự. Hover vẫn dùng --nm-shadow-hover (cao hơn) để nhô thêm. */
+[data-theme='neumorph'] .shift-card:not(.editing) {
+  box-shadow: var(--nm-shadow-raised);
 }
 
 /* Ô lương lớn: nền lavender pastel, nổi khối mềm, bo tròn, không viền. */
