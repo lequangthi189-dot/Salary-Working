@@ -342,6 +342,11 @@ export const translations = {
     "reconcile.weeksHint":
       "Pick one image per week, in any order — weeks are sorted automatically by the dates printed in each image. The date above is only a fallback for images that don't show dates.",
     "reconcile.weekLabel": "Week {start} – {end}",
+    "appearance.title": "Appearance",
+    "appearance.fontSize": "Font size",
+    "font.sm": "Small",
+    "font.md": "Medium",
+    "font.lg": "Large",
     "reconcile.stageCompare": "Comparing hours…",
     "reconcile.colImage": "From image",
     "reconcile.colActual": "Actual",
@@ -848,6 +853,11 @@ export const translations = {
     "reconcile.weeksHint":
       "Chọn mỗi tuần một ảnh, theo thứ tự nào cũng được — các tuần tự sắp xếp theo ngày tháng in trong từng ảnh. Ngày ở trên chỉ dùng dự phòng cho ảnh không ghi ngày.",
     "reconcile.weekLabel": "Tuần {start} – {end}",
+    "appearance.title": "Giao diện",
+    "appearance.fontSize": "Cỡ chữ",
+    "font.sm": "Nhỏ",
+    "font.md": "Vừa",
+    "font.lg": "Lớn",
     "reconcile.stageCompare": "Đang đối chiếu công…",
     "reconcile.colImage": "Theo ảnh",
     "reconcile.colActual": "Thực tế",

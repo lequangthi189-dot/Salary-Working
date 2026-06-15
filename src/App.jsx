@@ -34,6 +34,7 @@ import { useProfile } from './controllers/useProfile.js'
 import { periodStats } from './lib/shiftMath.js'
 import { getDayRate, getNightRate } from './lib/rates.js'
 import { THEMES, getTheme, setTheme } from './lib/theme.js'
+import { FONT_SCALES, getFontScale, setFontScale } from './lib/appearance.js'
 import {
   pendingPeriodKey,
   visibleBoardShifts,
@@ -65,6 +66,7 @@ export default function App() {
   const [showPayPeriod, setShowPayPeriod] = useState(false) // popup Kỳ lương
   const [showToolsSheet, setShowToolsSheet] = useState(false) // bottom sheet Công cụ
   const [theme, setThemeSt] = useState(getTheme()) // phong cách hiện tại (cho ThemeToggle)
+  const [fontScale, setFontScaleSt] = useState(getFontScale()) // cỡ chữ
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
@@ -165,6 +167,23 @@ export default function App() {
     setTheme(key)
     setThemeSt(key)
     if (profile) saveProfileFields({ theme: key })
+  }
+
+  // Khi hồ sơ nạp xong, áp cỡ chữ đã lưu theo tài khoản (giữ qua các máy).
+  useEffect(() => {
+    const f = profile?.font_scale
+    if (f && FONT_SCALES.includes(f) && f !== fontScale) {
+      setFontScale(f)
+      setFontScaleSt(f)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.font_scale])
+
+  // Đổi cỡ chữ: áp tại chỗ + lưu theo tài khoản.
+  function changeFontScale(f) {
+    setFontScale(f)
+    setFontScaleSt(f)
+    if (profile) saveProfileFields({ font_scale: f })
   }
 
   // Đánh dấu kỳ đang chờ nhận = đã nhận (ngày nhận = hôm nay).
@@ -470,6 +489,8 @@ export default function App() {
           profile={profile}
           payday={profile?.payday}
           employeeCode={employeeCode}
+          fontScale={fontScale}
+          onChangeFontScale={changeFontScale}
           onSavePayday={savePayday}
           onSaveField={saveProfileFields}
           onClose={() => setShowProfile(false)}
