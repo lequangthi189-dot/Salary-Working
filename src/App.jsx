@@ -10,7 +10,7 @@ import PayPeriodPage from './components/PayPeriodPage.jsx'
 import CompensationModal from './components/CompensationModal.jsx'
 import ExtraIncomeModal from './components/ExtraIncomeModal.jsx'
 import SalaryChat from './components/SalaryChat.jsx'
-import ChatbotAvatar from './components/ChatbotAvatar.jsx'
+import FloatingChatButton from './components/FloatingChatButton.jsx'
 import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
@@ -368,15 +368,6 @@ export default function App() {
         <div className="header-actions">
           <ThemeToggle theme={theme} onChange={changeTheme} />
           <LangCycle onChange={changeLang} />
-          <button
-            type="button"
-            className="chat-avatar-btn"
-            onClick={() => setShowChat(true)}
-            aria-label={t('chat.title')}
-            title={t('chat.title')}
-          >
-            <ChatbotAvatar size={34} />
-          </button>
         </div>
       </header>
 
@@ -470,6 +461,11 @@ export default function App() {
           onDelete={deleteExtraIncome}
           onClose={() => setShowExtraIncome(false)}
         />
+      )}
+
+      {/* Nút NỔI kéo-thả mở trợ lý lương; ẩn khi khung chat đang mở. */}
+      {!showChat && (
+        <FloatingChatButton onOpen={() => setShowChat(true)} label={t('chat.title')} />
       )}
 
       {/* Luôn mount để GIỮ tin nhắn khi đóng/mở; chỉ reset khi reload trang. */}

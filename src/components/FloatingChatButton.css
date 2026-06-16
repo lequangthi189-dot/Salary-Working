@@ -1,0 +1,42 @@
+/* Nút NỔI mở trợ lý lương. Bám viewport, trên mọi nội dung, kéo-thả được. */
+.chat-fab {
+  position: fixed;
+  z-index: 9000; /* trên mọi nội dung; dưới overlay modal nếu có (modal ~1000+) */
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: #0d1424;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  /* Không cuộn trang / không zoom khi kéo bằng cảm ứng. */
+  touch-action: none;
+  /* Không bôi đen chữ / icon khi kéo. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.chat-fab:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.chat-fab:active {
+  cursor: grabbing;
+}
+
+/* Đang kéo: con trỏ nắm + nhấc nhẹ; tắt hiệu ứng hover cho mượt. */
+.chat-fab--dragging {
+  cursor: grabbing;
+  transform: scale(1.05);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+
+.chat-fab svg {
+  pointer-events: none; /* mọi pointer event do nút xử lý, không phải SVG con */
+}
