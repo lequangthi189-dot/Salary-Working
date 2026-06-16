@@ -3,13 +3,13 @@ import ChatbotAvatar from './ChatbotAvatar.jsx'
 import './FloatingChatButton.css'
 
 // NÚT NỔI mở trợ lý lương: position:fixed, kéo-thả bằng POINTER EVENTS (chạy cả
-// chuột lẫn cảm ứng), phân biệt KÉO vs CHẠM, kẹp trong viewport, nhớ vị trí qua
-// localStorage. Chạm (di chuyển < ngưỡng) → mở chat; kéo (di chuyển nhiều) → KHÔNG mở.
+// chuột lẫn cảm ứng), phân biệt KÉO vs CHẠM, kẹp trong viewport. Vị trí được lưu
+// THEO TỪNG USER trên Supabase (qua onPersist) để đồng bộ nhiều thiết bị; initialPos
+// là vị trí đã lưu. Chạm (< ngưỡng) → mở chat; kéo (nhiều hơn) → KHÔNG mở.
 
 const SIZE = 56 // đường kính nút (px) — khớp CSS
 const MARGIN = 12 // chừa mép viewport (px)
 const DRAG_THRESHOLD = 5 // di chuyển ≤ ngưỡng (px) coi là CHẠM, hơn là KÉO
-const STORAGE_KEY = 'chatFabPos' // {x,y} góc trên-trái nút
 
 // Kẹp (x,y) để nút luôn NẰM TRONG màn hình (chừa MARGIN ở mọi cạnh).
 function clamp(x, y) {
@@ -35,20 +35,17 @@ function snapToEdge(x, y) {
   return { x: centerX < window.innerWidth / 2 ? MARGIN : maxX, y: c.y }
 }
 
-// Đọc vị trí đã lưu; sai/không có → null để dùng mặc định.
-function loadPos() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const p = JSON.parse(raw)
-    if (typeof p?.x === 'number' && typeof p?.y === 'number') return p
-  } catch {
-    /* bỏ qua localStorage lỗi */
-  }
-  return null
+// Vị trí lưu hợp lệ ({x,y} số) → trả về; sai/không có → null để dùng mặc định.
+function validPos(p) {
+  return p && typeof p.x === 'number' && typeof p.y === 'number' ? p : null
 }
 
-export default function FloatingChatButton({ onOpen, label = 'Chat' }) {
+export default function FloatingChatButton({
+  onOpen,
+  initialPos = null,
+  onPersist,
+  label = 'Chat',
+}) {
   // pos = null tới khi đo được viewport (tránh nhảy vị trí lúc mount).
   const [pos, setPos] = useState(null)
   const [dragging, setDragging] = useState(false)
@@ -58,11 +55,13 @@ export default function FloatingChatButton({ onOpen, label = 'Chat' }) {
   const btnRef = useRef(null)
   const snapTimer = useRef(null)
 
-  // Khởi tạo vị trí: lưu trước đó → HÍT MÉP (giữ dính cạnh); chưa có → mặc định
-  // góc dưới-phải.
+  // Khởi tạo vị trí: đã lưu theo user (initialPos) → HÍT MÉP (giữ dính cạnh, phòng
+  // đổi kích thước màn hình giữa các thiết bị); chưa có → mặc định góc dưới-phải.
+  // Chỉ chạy 1 LẦN (initialPos ở thời điểm mount) để không nhảy khi profile reload.
   useEffect(() => {
-    const saved = loadPos()
+    const saved = validPos(initialPos)
     setPos(saved ? snapToEdge(saved.x, saved.y) : defaultPos())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Xoay/resize màn hình: hít lại mép để nút vẫn dính cạnh & trong khung mới.
@@ -119,13 +118,7 @@ export default function FloatingChatButton({ onOpen, label = 'Chat' }) {
         setSnapping(true)
         setPos((p) => {
           const snapped = p ? snapToEdge(p.x, p.y) : p
-          if (snapped) {
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(snapped))
-            } catch {
-              /* bỏ qua */
-            }
-          }
+          if (snapped) onPersist?.(snapped) // lưu THEO USER (Supabase) sau mỗi lần kéo
           return snapped
         })
         // Tắt transition sau khi trượt xong (khớp thời lượng CSS).

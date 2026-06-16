@@ -129,6 +129,9 @@ alter table public.profiles add column if not exists period_start_day smallint n
 alter table public.profiles add column if not exists period_end_day smallint not null default 25;
 -- Cỡ chữ ưa thích ('sm' | 'md' | 'lg') — lưu theo tài khoản, áp ngay khi đăng nhập.
 alter table public.profiles add column if not exists font_scale text;
+-- Vị trí nút NỔI của trợ lý lương ({x,y} px) — lưu theo tài khoản để đồng bộ nhiều
+-- thiết bị. jsonb cho gọn; null = dùng vị trí mặc định (góc dưới-phải).
+alter table public.profiles add column if not exists chat_fab_pos jsonb;
 
 alter table public.profiles enable row level security;
 

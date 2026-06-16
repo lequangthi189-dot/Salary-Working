@@ -463,9 +463,15 @@ export default function App() {
         />
       )}
 
-      {/* Nút NỔI kéo-thả mở trợ lý lương; ẩn khi khung chat đang mở. */}
+      {/* Nút NỔI kéo-thả mở trợ lý lương; ẩn khi khung chat đang mở. Vị trí lưu
+          theo TÀI KHOẢN (profiles.chat_fab_pos) để đồng bộ nhiều thiết bị. */}
       {!showChat && (
-        <FloatingChatButton onOpen={() => setShowChat(true)} label={t('chat.title')} />
+        <FloatingChatButton
+          onOpen={() => setShowChat(true)}
+          initialPos={profile?.chat_fab_pos || null}
+          onPersist={(p) => saveProfileFields({ chat_fab_pos: p })}
+          label={t('chat.title')}
+        />
       )}
 
       {/* Luôn mount để GIỮ tin nhắn khi đóng/mở; chỉ reset khi reload trang. */}
