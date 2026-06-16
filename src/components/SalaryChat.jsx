@@ -15,6 +15,15 @@ import {
   sumDeductions,
 } from '../lib/payPeriod.js'
 import { sumExtraIncome } from '../lib/extraIncome.js'
+import {
+  fetchRecentMessages,
+  insertMessage,
+} from '../models/chatMessagesModel.js'
+
+// Bộ nhớ chat: số tin nạp lại khi mở (Mức 2) và số tin GỬI kèm mỗi request làm
+// ngữ cảnh cho AI (Mức 1) — giữ nhỏ để khỏi vượt context / tốn token.
+const MAX_HISTORY_LOAD = 30
+const MAX_HISTORY_SEND = 12
 
 // Gom toàn bộ HƯỚNG DẪN dùng app (từ các bước WelcomeGuide) thành text, theo đúng
 // ngôn ngữ hiện tại. Gửi cho AI để trả lời câu "cách dùng" — CHỈ dựa vào đây.
@@ -468,6 +477,24 @@ export default function SalaryChat({
   const listRef = useRef(null)
   const cardRef = useRef(null)
   const dragRef = useRef(null) // { dx, dy } khi đang kéo
+  const loadedRef = useRef(false) // đã nạp lịch sử từ DB chưa (chỉ nạp 1 lần)
+
+  // MỨC 2 — nạp lại lịch sử chat của ĐÚNG user (RLS giới hạn theo auth.uid()) khi
+  // mở chatbot lần đầu. Có lịch sử → thay lời chào bằng các tin cũ; lỗi/không có →
+  // giữ nguyên lời chào. Chỉ chạy 1 lần để không đè tin đang gõ.
+  useEffect(() => {
+    if (loadedRef.current) return
+    loadedRef.current = true
+    let alive = true
+    ;(async () => {
+      const { data, error } = await fetchRecentMessages(MAX_HISTORY_LOAD)
+      if (!alive || error || !data || data.length === 0) return
+      setMessages(data.map((m) => ({ role: m.role, text: m.content })))
+    })()
+    return () => {
+      alive = false
+    }
+  }, [])
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -752,10 +779,27 @@ export default function SalaryChat({
         t('chat.dayTotal', { hours: formatHours(totH), pay: formatMoney(totPay) })
       )
     }
-    setMessages((m) => [...m, { role: 'bot', text: lines.join('\n') }])
+    bot(lines.join('\n'))
   }
 
-  const bot = (text) => setMessages((m) => [...m, { role: 'bot', text }])
+  // Lưu 1 tin vào DB (bộ nhớ). Fire-and-forget — không chặn UI, nuốt lỗi (vd offline
+  // / chưa chạy migration) để chat vẫn hoạt động. KHÔNG truyền user_id (default
+  // auth.uid()). role: 'user' | 'bot'.
+  function persist(role, text) {
+    if (!text) return
+    try {
+      insertMessage(role, text).then?.(() => {}, () => {})
+    } catch {
+      /* bỏ qua lỗi lưu lịch sử */
+    }
+  }
+
+  // Hiện 1 tin bot dạng text VÀ lưu vào bộ nhớ. Các tin chỉ-UI (menu/bảng/thẻ xác
+  // nhận) dùng setMessages trực tiếp với `node` → KHÔNG lưu (không serialize được).
+  const bot = (text) => {
+    setMessages((m) => [...m, { role: 'bot', text }])
+    persist('bot', text)
+  }
 
   // Ca ngày không ghi giờ → hỏi chọn: 6–14, 14–22, hoặc Giờ khác (tự nhập).
   function pushDayChoice(date) {
@@ -1155,7 +1199,14 @@ export default function SalaryChat({
     const msg = input.trim()
     if (!msg || busy) return
     setInput('')
+    // Lịch sử để gửi kèm AI (Mức 1) = các tin TEXT trước câu vừa gõ, lấy ~N tin gần
+    // nhất. Lấy TRƯỚC khi thêm tin mới để không gồm chính nó.
+    const history = messages
+      .filter((m) => typeof m.text === 'string' && m.text)
+      .slice(-MAX_HISTORY_SEND)
+      .map((m) => ({ role: m.role === 'user' ? 'user' : 'model', content: m.text }))
     setMessages((m) => [...m, { role: 'user', text: msg }])
+    persist('user', msg) // Mức 2: lưu câu hỏi của user
 
     // VALIDATION ngôn ngữ: chỉ cho nhắn đúng ngôn ngữ đang chọn. Chỉ chặn khi đoán
     // chắc chắn lệch (câu trung tính như số tiền/giờ vẫn cho qua). Đang chờ bổ sung
@@ -1296,6 +1347,7 @@ export default function SalaryChat({
           today: localTodayStr(),
           snapshot,
           guide: buildGuide(t),
+          history, // Mức 1: ngữ cảnh hội thoại (≤ N tin gần nhất)
         },
       })
       if (error || data?.error) throw new Error(data?.error || error.message)
@@ -1330,7 +1382,7 @@ export default function SalaryChat({
       if (Number.isFinite(target) && target > 0) {
         text = `${text}\n\n${buildEstimate(target)}`.trim()
       }
-      setMessages((m) => [...m, { role: 'bot', text }])
+      bot(text)
     } catch {
       setMessages((m) => [...m, { role: 'bot', text: t('chat.error') }])
     } finally {
