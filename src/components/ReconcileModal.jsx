@@ -10,7 +10,7 @@ import {
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import { resolveWeek, weekSpanWarning } from '../lib/reconcileDates.js'
 import ConfirmModal from './ConfirmModal.jsx'
-import CircularProgress from './CircularProgress.jsx'
+import ProgressButton from './ProgressButton.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const isoRe = /^\d{4}-\d{2}-\d{2}$/
@@ -484,7 +484,7 @@ export default function ReconcileModal({
 
         {loading && (
           <div className="import-progress">
-            <CircularProgress
+            <ProgressButton
               value={progress.pct}
               label={progress.label}
               indeterminate={progress.indeterminate}
