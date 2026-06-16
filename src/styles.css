@@ -529,18 +529,36 @@ button[type='submit']:disabled {
 .row-btn:disabled {
   opacity: 0.6;
 }
-/* Ô nhập co giãn lấp khoảng giữa, NẰM CÙNG HÀNG với nhóm nút: flex-basis = 0 để
-   khi flex-wrap tính ngắt dòng, tổng basis (0 + bề rộng nhóm nút) luôn vừa cột →
-   không bị đẩy xuống dòng. min-width:0 cho phép input co nhỏ thay vì tràn. */
+/* Ô nhập co giãn lấp khoảng giữa NHƯNG có min-width đủ đọc giá trị: nếu một hàng
+   [ô nhập đủ rộng | Lưu | Hủy] không vừa cột → flex-wrap đẩy nguyên ô xuống một
+   dòng riêng (grow chiếm full width), nhóm nút xuống hàng dưới cạnh nhau. Thà ô
+   rộng xuống dòng còn hơn ô hẹp cắt chữ. */
 .field-edit input,
 .field-edit select {
+  /* flex-basis:0 để bỏ qua kích thước nội tại size=20 của input (vốn ~200px khiến
+     nút bị đẩy xuống dòng); ô co/giãn theo chỗ trống. Dòng sửa đã chiếm full width
+     nên ô vẫn rộng rãi, min-width đảm bảo đọc đủ số/giờ ngắn. */
   flex: 1 1 0;
-  min-width: 0;
+  min-width: 6rem;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
   color: var(--text);
+}
+/* Ô chữ (Họ và tên, Mã NV, SĐT…) thường dài → chiếm trọn MỘT dòng riêng để đọc
+   đủ; nút Lưu/Hủy xuống hàng dưới cạnh nhau. type mặc định EditableRow là "text". */
+.field-edit input[type='text'],
+.field-edit input:not([type]) {
+  flex-basis: 100%;
+  min-width: 11rem;
+}
+/* Khi một dòng vào chế độ SỬA, cho ô + nút chiếm trọn bề ngang modal (nhãn lùi
+   lên dòng trên) → ô nhập rộng tối đa, đọc hết giá trị dài thay vì kẹt trong cột
+   phải hẹp. Dòng ở chế độ xem vẫn giữ bố cục 2 cột bình thường. */
+.profile-info dd:has(.field-edit),
+.profile-info dd:has(.payday-edit) {
+  grid-column: 1 / -1;
 }
 /* Thông báo lỗi (nếu có) xuống dòng riêng, chiếm trọn bề ngang. */
 .payday-edit .msg,
