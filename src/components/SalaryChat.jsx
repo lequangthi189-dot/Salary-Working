@@ -392,20 +392,27 @@ function parseFeasibilityReq(msg) {
 
 // Câu hỏi DỰ PHÓNG lương: "nếu làm thêm N ca [đêm/ngày] nữa thì (lương) tổng bao
 // nhiêu". Cần đồng thời: tín hiệu HỎI (bao nhiêu / tổng / ?) + tín hiệu THÊM
-// (thêm/nữa) + "N ca". Trả { count, type } (type: 'night'|'day'|null) hoặc null.
+// (thêm/nữa) + số lượng "N ca | N ca đêm | N đêm | N ca ngày | N ngày".
+// Trả { count, type } (type: 'night'|'day'|null) hoặc null.
 function parseProjectionReq(msg) {
   const s = deaccent(msg)
   if (!/(bao nhieu|tong|\?)/.test(s)) return null
   if (!/(them|nua)/.test(s)) return null
-  const m = s.match(/(\d{1,3})\s*ca\b/)
+  const m = s.match(/(\d{1,3})\s*(ca dem|ca ngay|ca|dem|ngay)\b/)
   if (!m) return null
   const count = Number(m[1])
   if (!count || count < 1 || count > 100) return null
-  const type = /\bdem\b|ca dem|ban dem/.test(s)
+  // Loại ca: ưu tiên đơn vị đi kèm số ("3 đêm" → đêm); nếu chỉ "N ca" thì dò cả câu.
+  const unit = m[2]
+  const type = /dem/.test(unit)
     ? 'night'
-    : /ca ngay|ban ngay/.test(s)
+    : /ngay/.test(unit)
       ? 'day'
-      : null
+      : /\bdem\b|ca dem|ban dem/.test(s)
+        ? 'night'
+        : /ca ngay|ban ngay/.test(s)
+          ? 'day'
+          : null
   return { count, type }
 }
 
