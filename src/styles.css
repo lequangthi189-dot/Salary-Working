@@ -494,26 +494,59 @@ button[type='submit']:disabled {
 .payday-edit,
 .field-view,
 .field-edit {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem;
+  /* Chiếm trọn cột dd, ổn định ở cả chế độ xem lẫn sửa (cùng khung flex). */
+  width: 100%;
 }
-.payday-view .link,
-.payday-edit .link,
-.field-view .link,
-.field-edit .link {
-  margin-top: 0;
+/* Nhóm hành động Lưu + Hủy: LUÔN nằm cùng một hàng, không co, không tách lẻ.
+   Là MỘT flex-item của .field-edit → khi cột hẹp cả cụm wrap xuống cùng nhau,
+   không bao giờ để "Hủy" rớt riêng. */
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
-/* Ô input khi chỉnh inline trong hồ sơ: gọn, không tràn cột */
-.field-edit input {
-  width: 9rem;
-  max-width: 100%;
+/* Nút hành động trong dòng: nền theo BIẾN theme → có nền nút ở MỌI theme
+   (dark/glass/neumorph) mà không cần override riêng từng theme. */
+.row-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.row-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.row-btn:disabled {
+  opacity: 0.6;
+}
+/* Ô nhập co giãn lấp khoảng giữa, NẰM CÙNG HÀNG với nhóm nút: flex-basis = 0 để
+   khi flex-wrap tính ngắt dòng, tổng basis (0 + bề rộng nhóm nút) luôn vừa cột →
+   không bị đẩy xuống dòng. min-width:0 cho phép input co nhỏ thay vì tràn. */
+.field-edit input,
+.field-edit select {
+  flex: 1 1 0;
+  min-width: 0;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
   color: var(--text);
+}
+/* Thông báo lỗi (nếu có) xuống dòng riêng, chiếm trọn bề ngang. */
+.payday-edit .msg,
+.field-edit .msg {
+  flex-basis: 100%;
+  margin: 0;
 }
 .field-view {
   justify-content: space-between;

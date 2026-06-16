@@ -461,7 +461,15 @@
   box-shadow: var(--nm-inset);
 }
 
-[data-theme='neumorph'] :is(.account-btn, .modal-card button, button.primary) {
+/* Loại nút dạng text-link (.link: Lưu/Hủy chỉnh inline) & biểu tượng (.edit-icon:
+   bút chì) khỏi style nút lồi: chúng vốn không nền/không padding nên khi bị ép
+   convex + bóng nổi sẽ thành "hộp" nhỏ vỡ layout. Giữ chúng phẳng như các theme khác. */
+[data-theme='neumorph']
+  :is(
+    .account-btn,
+    .modal-card button:not(.link):not(.edit-icon),
+    button.primary
+  ) {
   /* SOFT UI — Nút lồi nhẹ + chuyển động press mượt. */
   background: var(--nm-convex);
   border: none;
@@ -469,11 +477,19 @@
   transition: box-shadow 0.18s ease, transform 0.1s ease;
 }
 [data-theme='neumorph']
-  :is(.account-btn, .modal-card button, button.primary):hover {
+  :is(
+    .account-btn,
+    .modal-card button:not(.link):not(.edit-icon),
+    button.primary
+  ):hover {
   box-shadow: 6px 6px 14px #b2b9c4, -6px -6px 14px #ffffff;
 }
 [data-theme='neumorph']
-  :is(.account-btn, .modal-card button, button.primary):active {
+  :is(
+    .account-btn,
+    .modal-card button:not(.link):not(.edit-icon),
+    button.primary
+  ):active {
   box-shadow: var(--nm-inset);
   transform: scale(0.985);
 }
