@@ -529,36 +529,25 @@ button[type='submit']:disabled {
 .row-btn:disabled {
   opacity: 0.6;
 }
-/* Ô nhập co giãn lấp khoảng giữa NHƯNG có min-width đủ đọc giá trị: nếu một hàng
-   [ô nhập đủ rộng | Lưu | Hủy] không vừa cột → flex-wrap đẩy nguyên ô xuống một
-   dòng riêng (grow chiếm full width), nhóm nút xuống hàng dưới cạnh nhau. Thà ô
-   rộng xuống dòng còn hơn ô hẹp cắt chữ. */
+/* Bố cục 2 cột CỐ ĐỊNH (nhãn | nội dung), KHÔNG đổi khung giữa xem/sửa nên không
+   nhảy layout. Ô nhập co/giãn theo chỗ trống trong cột phải, nằm CÙNG HÀNG với nút.
+   flex-basis:0 để bỏ qua kích thước nội tại size=20 của input (vốn ~200px khiến nút
+   bị đẩy xuống dòng). Popup Hồ sơ/Việc làm dùng .modal-card.wide (480px) để cột phải
+   đủ rộng cho ô đọc hết giá trị mà nút vẫn cùng hàng. */
 .field-edit input,
 .field-edit select {
-  /* flex-basis:0 để bỏ qua kích thước nội tại size=20 của input (vốn ~200px khiến
-     nút bị đẩy xuống dòng); ô co/giãn theo chỗ trống. Dòng sửa đã chiếm full width
-     nên ô vẫn rộng rãi, min-width đảm bảo đọc đủ số/giờ ngắn. */
   flex: 1 1 0;
-  min-width: 6rem;
+  min-width: 6rem; /* ô số/giờ/select: đủ đọc giá trị ngắn */
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
   color: var(--text);
 }
-/* Ô chữ (Họ và tên, Mã NV, SĐT…) thường dài → chiếm trọn MỘT dòng riêng để đọc
-   đủ; nút Lưu/Hủy xuống hàng dưới cạnh nhau. type mặc định EditableRow là "text". */
+/* Ô chữ (Họ và tên, Mã NV, SĐT…) thường dài → min-width lớn hơn để đọc đủ hơn. */
 .field-edit input[type='text'],
 .field-edit input:not([type]) {
-  flex-basis: 100%;
-  min-width: 11rem;
-}
-/* Khi một dòng vào chế độ SỬA, cho ô + nút chiếm trọn bề ngang modal (nhãn lùi
-   lên dòng trên) → ô nhập rộng tối đa, đọc hết giá trị dài thay vì kẹt trong cột
-   phải hẹp. Dòng ở chế độ xem vẫn giữ bố cục 2 cột bình thường. */
-.profile-info dd:has(.field-edit),
-.profile-info dd:has(.payday-edit) {
-  grid-column: 1 / -1;
+  min-width: 9rem;
 }
 /* Thông báo lỗi (nếu có) xuống dòng riêng, chiếm trọn bề ngang. */
 .payday-edit .msg,

@@ -121,7 +121,7 @@ function JobInfoModal({ profile, payday, onSavePayday, onSaveField, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-card"
+        className="modal-card wide"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
@@ -348,7 +348,7 @@ export default function ProfileModal({
     <>
       <div className="modal-overlay" onClick={onClose}>
         <div
-          className="modal-card"
+          className="modal-card wide"
           role="dialog"
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
