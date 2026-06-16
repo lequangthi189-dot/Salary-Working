@@ -4,7 +4,7 @@ import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
 import ManualScheduleModal from './ManualScheduleModal.jsx'
-import CircularProgress from './CircularProgress.jsx'
+import ProgressButton from './ProgressButton.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -252,7 +252,7 @@ export default function ScheduleImportModal({
 
         {loading && (
           <div className="import-progress">
-            <CircularProgress
+            <ProgressButton
               value={progress.pct}
               label={progress.label}
               indeterminate={progress.indeterminate}
