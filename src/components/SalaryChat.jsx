@@ -390,6 +390,25 @@ function parseFeasibilityReq(msg) {
   return { target, withinDays, deadline }
 }
 
+// Câu hỏi DỰ PHÓNG lương: "nếu làm thêm N ca [đêm/ngày] nữa thì (lương) tổng bao
+// nhiêu". Cần đồng thời: tín hiệu HỎI (bao nhiêu / tổng / ?) + tín hiệu THÊM
+// (thêm/nữa) + "N ca". Trả { count, type } (type: 'night'|'day'|null) hoặc null.
+function parseProjectionReq(msg) {
+  const s = deaccent(msg)
+  if (!/(bao nhieu|tong|\?)/.test(s)) return null
+  if (!/(them|nua)/.test(s)) return null
+  const m = s.match(/(\d{1,3})\s*ca\b/)
+  if (!m) return null
+  const count = Number(m[1])
+  if (!count || count < 1 || count > 100) return null
+  const type = /\bdem\b|ca dem|ban dem/.test(s)
+    ? 'night'
+    : /ca ngay|ban ngay/.test(s)
+      ? 'day'
+      : null
+  return { count, type }
+}
+
 // Nhận diện lệnh MỞ một công cụ/màn hình của web. Trả khoá công cụ hoặc null.
 // Các công cụ dễ trùng với thêm/tra cứu (bồi thường, việc ngoài, nhập lịch, đối
 // chiếu) chỉ mở khi có động từ "mở/xem/vào…" để không nuốt câu thêm/hỏi dữ liệu.
@@ -582,6 +601,43 @@ export default function SalaryChat({
       verdict,
     ]
     return lines.join('\n')
+  }
+
+  // DỰ PHÓNG lương khi làm thêm N ca: tổng = lương kỳ này + N × tiền ước tính mỗi
+  // ca. Tiền mỗi ca theo loại (đêm/ngày) = lương 1 giờ × số giờ TB mỗi ca; không rõ
+  // loại → TB mỗi ca theo lịch sử. CODE tính (không để AI tính).
+  function buildProjection({ count, type }) {
+    const cur = snapshot.currentPay || 0
+    const dayRate = snapshot.dayRate || 0
+    const nightRate = snapshot.nightRate || 0
+    if (!dayRate) return t('chat.noRate')
+    const hours = snapshot.avgHoursPerShift > 0 ? snapshot.avgHoursPerShift : 8
+    // Ca đêm nhưng cửa hàng không có ca đêm → coi như ca ngày.
+    let kind = type
+    if (kind === 'night' && !snapshot.hasNightShift) kind = 'day'
+    let perShift
+    if (kind === 'night') perShift = nightRate * hours
+    else if (kind === 'day') perShift = dayRate * hours
+    else perShift = snapshot.avgPerShift > 0 ? snapshot.avgPerShift : dayRate * hours
+    perShift = Math.round(perShift)
+    const added = perShift * count
+    const total = cur + added
+    const shift =
+      kind === 'night'
+        ? t('chat.projNight')
+        : kind === 'day'
+          ? t('chat.projDay')
+          : t('chat.projShift')
+    return [
+      t('chat.projLine', {
+        count,
+        shift,
+        hours: formatHours(hours),
+        per: formatMoney(perShift),
+        added: formatMoney(added),
+      }),
+      t('chat.projTotal', { total: formatMoney(total), current: formatMoney(cur) }),
+    ].join('\n')
   }
 
   // Xuất bảng công cho 1 kỳ (tháng) hoặc 1 tuần trong kỳ — render TimesheetTable
@@ -1144,6 +1200,13 @@ export default function SalaryChat({
     const exBatch = parseExtraIncomeBatch(msg)
     if (exBatch) {
       pushExtraBatchConfirm(exBatch)
+      return
+    }
+    // Câu DỰ PHÓNG: "làm thêm N ca đêm nữa thì tổng bao nhiêu" → tính tổng dự kiến
+    // tại client. Đặt TRƯỚC thêm-ca để câu HỎI không bị hiểu nhầm thành lệnh thêm ca.
+    const projReq = parseProjectionReq(msg)
+    if (projReq) {
+      bot(buildProjection(projReq))
       return
     }
     // Thêm ca từ câu tự nhiên (keyword ngày/đêm hoặc 'thêm ca' + ngày/giờ). Tương
