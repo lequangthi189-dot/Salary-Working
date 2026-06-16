@@ -51,8 +51,16 @@ const SCHEMA = {
   required: ['reply', 'target', 'action'],
 }
 
-const SYSTEM = `Bạn là TRỢ LÝ LƯƠNG của một app chấm công. Trả lời NGẮN GỌN, thân thiện, bằng ĐÚNG ngôn ngữ của câu hỏi (Việt hoặc Anh).
-Người dùng được cung cấp SỐ LIỆU thật (lương kỳ này, đơn giá lương 1 giờ ca ngày và ca đêm, lương/giờ trung bình mỗi ca). Tuyệt đối KHÔNG bịa số; chỉ dùng số liệu được cung cấp.
+const SYSTEM = `Bạn là TRỢ LÝ LƯƠNG của app chấm công SalaryWorking. Trả lời NGẮN GỌN, thân thiện, bằng ĐÚNG ngôn ngữ của câu hỏi (Việt hoặc Anh).
+Người dùng được cung cấp SỐ LIỆU thật trong phần "DỮ LIỆU" (lương kỳ này, lương dự kiến, tiền phạt do đi trễ, tổng giờ, giờ ngày/đêm, giờ trễ, số ca ngày/đêm, đơn giá 1 giờ, đơn giá lễ, cấu hình kỳ lương). Mọi con số đã được app TÍNH SẴN.
+TUYỆT ĐỐI KHÔNG bịa số và KHÔNG tự tính lại — chỉ trích đúng số trong "DỮ LIỆU". Nếu "DỮ LIỆU" KHÔNG có thông tin cần thiết để trả lời, hãy nói rõ "mình chưa có thông tin đó" thay vì đoán.
+
+CÁCH TÍNH LƯƠNG CỦA APP (dùng để GIẢI THÍCH khi người dùng hỏi vì sao, KHÔNG để tự bịa số):
+- Lương ca = giờ-ngày × đơn giá ngày + giờ-đêm × đơn giá đêm. Giờ trong khung ĐÊM (xem nightStart–nightEnd) hưởng đơn giá đêm cao hơn.
+- Lương DỰ KIẾN (idealPay) = lương đáng lẽ nhận nếu đi ĐÚNG GIỜ ca. Nếu vào trễ hoặc về sớm, phần giờ thiếu bị PHẠT (lostPay) → lương thực = dự kiến − phạt.
+- "lostHours" là số giờ bị mất do đi trễ/về sớm; "lostPay" là tiền tương ứng. Khi người dùng hỏi "vì sao bị phạt/trừ", hãy giải thích là do đi trễ hoặc về sớm so với giờ ca, dẫn tới mất {lostHours} giờ ≈ {lostPay}.
+- Ngày lễ hưởng đơn giá lễ (holidayDayRate/holidayNightRate) cao hơn ngày thường.
+- Kỳ lương tính từ ngày {periodStartDay} đến ngày {periodEndDay} hằng tháng.
 
 QUAN TRỌNG NHẤT — khi người dùng hỏi CÁCH DÙNG app (vd "làm sao để…", "tính năng X ở đâu", "thêm việc ngoài thế nào"): CHỈ trả lời DỰA TRÊN phần "HƯỚNG DẪN DÙNG APP" được cung cấp. TUYỆT ĐỐI KHÔNG bịa thêm bước, nút, hay tính năng KHÔNG có trong hướng dẫn. Nếu hướng dẫn không đề cập, hãy thành thật nói "mình không chắc" và gợi ý mở mục "Hướng dẫn" trong app. Câu hỏi cách-dùng KHÔNG phải lệnh ghi nhận → đặt action.intent="khong_ro".
 - Nếu người dùng hỏi kiểu "cần làm bao nhiêu ca / bao nhiêu giờ / bao nhiêu nữa để ĐẠT/NHẬN được X tiền", hãy đặt field "target" = X (chỉ chữ số, đơn vị VND, vd "3000000"), và để "reply" là một câu mở đầu ngắn (vd "Để đạt mục tiêu đó:"). KHÔNG tự tính trong reply — app sẽ tự tính chính xác số GIỜ ngày/đêm cần làm dựa trên lương 1 giờ.
@@ -89,6 +97,31 @@ Deno.serve(async (req: Request) => {
       avgPerShift?: number
       avgHoursPerShift?: number
       shiftCount?: number
+      period?: {
+        label?: string
+        grossPay?: number
+        idealPay?: number
+        lostPay?: number
+        deductionTotal?: number
+        extraIncome?: number
+        netPay?: number
+        totalIncome?: number
+        totalHours?: number
+        dayHours?: number
+        nightHours?: number
+        lostHours?: number
+        dayShiftCount?: number
+        nightShiftCount?: number
+        workDays?: number
+      }
+      config?: {
+        holidayDayRate?: number
+        holidayNightRate?: number
+        nightStart?: string
+        nightEnd?: string
+        periodStartDay?: number
+        periodEndDay?: number
+      }
     }
   }
   try {
@@ -99,15 +132,35 @@ Deno.serve(async (req: Request) => {
   const message = (body.message || '').trim()
   if (!message) return json({ error: 'Thiếu message' }, 400)
   const s = body.snapshot || {}
+  const p = s.period || {}
+  const cfg = s.config || {}
+  const n = (v: number | undefined) => Math.round(Number(v) || 0)
+  const h = (v: number | undefined) => Number(v || 0).toFixed(2)
+
+  // KHỐI DỮ LIỆU: mọi con số đã tính sẵn ở client — AI chỉ trích, không tính lại.
+  const data =
+    `Kỳ lương đang xem: ${p.label || '(kỳ hiện tại)'} ` +
+    `(tính từ ngày ${cfg.periodStartDay ?? 26} đến ngày ${cfg.periodEndDay ?? 25} hằng tháng).\n` +
+    `- TỔNG THU NHẬP kỳ này (lương ca sau khấu trừ + việc ngoài) = ${n(p.totalIncome)} VND.\n` +
+    `- Lương ca thực nhận (sau khấu trừ) = ${n(p.netPay)} VND.\n` +
+    `- Lương ca trước khấu trừ = ${n(p.grossPay)} VND.\n` +
+    `- Lương DỰ KIẾN nếu đi đúng giờ = ${n(p.idealPay)} VND.\n` +
+    `- Tiền PHẠT do đi trễ/về sớm = ${n(p.lostPay)} VND (tương ứng ${h(p.lostHours)} giờ bị mất).\n` +
+    `- Tiền bồi thường/khấu trừ = ${n(p.deductionTotal)} VND.\n` +
+    `- Thu nhập việc ngoài đã nhận = ${n(p.extraIncome)} VND.\n` +
+    `- Tổng giờ làm = ${h(p.totalHours)} giờ (giờ ngày = ${h(p.dayHours)}, giờ đêm = ${h(p.nightHours)}).\n` +
+    `- Giờ bị mất do trễ = ${h(p.lostHours)} giờ.\n` +
+    `- Số ca ngày = ${p.dayShiftCount ?? 0}; số ca đêm = ${p.nightShiftCount ?? 0}; số ngày công = ${p.workDays ?? 0}.\n` +
+    `Đơn giá lương 1 giờ: ca ngày = ${n(s.dayRate)} VND; ca đêm = ${n(s.nightRate)} VND` +
+    `${s.hasNightShift === false ? ' (cửa hàng KHÔNG có ca đêm — mọi giờ tính lương thường)' : ''}.\n` +
+    `Đơn giá ngày LỄ: ca ngày = ${n(cfg.holidayDayRate)} VND; ca đêm = ${n(cfg.holidayNightRate)} VND.\n` +
+    `Khung giờ ĐÊM: ${cfg.nightStart || '22:00'}–${cfg.nightEnd || '06:00'}.\n` +
+    `Trung bình mỗi ca: ${n(s.avgPerShift)} VND, ${h(s.avgHoursPerShift)} giờ; tổng số ca đã làm = ${s.shiftCount || 0}.`
 
   const context =
-    `Số liệu của tôi: lương kỳ này = ${Math.round(s.currentPay || 0)} VND; ` +
-    `lương 1 giờ ca ngày = ${Math.round(s.dayRate || 0)} VND; ` +
-    `lương 1 giờ ca đêm = ${Math.round(s.nightRate || 0)} VND` +
-    `${s.hasNightShift === false ? ' (cửa hàng không có ca đêm)' : ''}; ` +
-    `lương trung bình mỗi ca = ${Math.round(s.avgPerShift || 0)} VND; ` +
-    `giờ trung bình mỗi ca = ${s.avgHoursPerShift || 0}; ` +
-    `số ca đã làm = ${s.shiftCount || 0}.\n` +
+    `===== DỮ LIỆU (nguồn DUY NHẤT cho số liệu — KHÔNG bịa, KHÔNG tự tính lại) =====\n` +
+    `${data}\n` +
+    `===== HẾT DỮ LIỆU =====\n` +
     `HÔM NAY là ${body.today || ''} (dùng để tính ngày tương đối).\n` +
     `Ngôn ngữ trả lời: ${body.lang === 'vi' ? 'Tiếng Việt' : 'English'}.\n` +
     `===== HƯỚNG DẪN DÙNG APP (nguồn DUY NHẤT cho câu hỏi cách dùng) =====\n` +
