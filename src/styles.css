@@ -332,8 +332,10 @@ button[type='submit']:disabled {
 /* Cửa sổ chat NỔI, kéo được như bong bóng trò chuyện (mặc định góc dưới phải) */
 .chat-float {
   position: fixed;
-  right: 1rem;
-  bottom: 1rem;
+  /* Mặc định CANH GIỮA layout (inset:0 + margin:auto). Khi kéo, inline left/top
+     ghi đè để đặt tự do. */
+  inset: 0;
+  margin: auto;
   z-index: 60;
   width: min(88vw, 320px);
   height: min(62vh, 460px);
