@@ -56,19 +56,26 @@ function EditableRow({ label, display, initial, type = 'text', onSave }) {
                 onChange={(e) => setVal(e.target.value)}
               />
             )}
-            <button type="button" className="link" onClick={save} disabled={busy}>
-              {busy ? '…' : t('common.save')}
-            </button>
-            <button
-              type="button"
-              className="link"
-              onClick={() => {
-                setErr(null)
-                setEditing(false)
-              }}
-            >
-              {t('common.cancel')}
-            </button>
+            <span className="row-actions">
+              <button
+                type="button"
+                className="row-btn"
+                onClick={save}
+                disabled={busy}
+              >
+                {busy ? '…' : t('common.save')}
+              </button>
+              <button
+                type="button"
+                className="row-btn"
+                onClick={() => {
+                  setErr(null)
+                  setEditing(false)
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+            </span>
             {err && <span className="msg error sm">{err}</span>}
           </span>
         ) : (
@@ -146,24 +153,26 @@ function JobInfoModal({ profile, payday, onSavePayday, onSaveField, onClose }) {
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  className="link"
-                  onClick={savePayday}
-                  disabled={savingDay}
-                >
-                  {savingDay ? '…' : t('common.save')}
-                </button>
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => {
-                    setEditPayday(false)
-                    setPaydayErr(null)
-                  }}
-                >
-                  {t('common.cancel')}
-                </button>
+                <span className="row-actions">
+                  <button
+                    type="button"
+                    className="row-btn"
+                    onClick={savePayday}
+                    disabled={savingDay}
+                  >
+                    {savingDay ? '…' : t('common.save')}
+                  </button>
+                  <button
+                    type="button"
+                    className="row-btn"
+                    onClick={() => {
+                      setEditPayday(false)
+                      setPaydayErr(null)
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </span>
                 {paydayErr && <span className="msg error sm">{paydayErr}</span>}
               </span>
             ) : (
