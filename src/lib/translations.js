@@ -512,7 +512,7 @@ export const translations = {
     "chat.projLine":
       "🔮 {count} more {shift} (~{hours}h each, ~{per} each) ≈ +{added}.",
     "chat.projTotal":
-      "Projected total this period: {total} (currently {current}).",
+      "Projected total income this period: {total} (currently {current}, incl. side income).",
     "chat.error": "Sorry, something went wrong. Please try again.",
 
     // lib: period label + lost breakdown
@@ -1032,7 +1032,8 @@ export const translations = {
     "chat.projShift": "ca",
     "chat.projLine":
       "🔮 Làm thêm {count} {shift} (~{hours} giờ/ca, ~{per}/ca) ≈ +{added}.",
-    "chat.projTotal": "Tổng dự kiến kỳ này: {total} (đang có {current}).",
+    "chat.projTotal":
+      "Tổng thu nhập dự kiến kỳ này: {total} (đang có {current}, đã gồm việc ngoài).",
     "chat.error": "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.",
 
     // lib: period label + lost breakdown

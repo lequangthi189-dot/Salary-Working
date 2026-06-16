@@ -603,14 +603,23 @@ export default function SalaryChat({
     return lines.join('\n')
   }
 
-  // DỰ PHÓNG lương khi làm thêm N ca: tổng = lương kỳ này + N × tiền ước tính mỗi
-  // ca. Tiền mỗi ca theo loại (đêm/ngày) = lương 1 giờ × số giờ TB mỗi ca; không rõ
-  // loại → TB mỗi ca theo lịch sử. CODE tính (không để AI tính).
+  // DỰ PHÓNG tổng thu nhập khi làm thêm N ca: tổng = TỔNG THU NHẬP kỳ này (lương ca
+  // sau khoản trừ + thu nhập việc ngoài đã thực nhận) + N × tiền ước tính mỗi ca.
+  // Tiền mỗi ca theo loại (đêm/ngày) = lương 1 giờ × số giờ TB mỗi ca; không rõ loại
+  // → TB mỗi ca theo lịch sử. CODE tính (không để AI tính).
   function buildProjection({ count, type }) {
-    const cur = snapshot.currentPay || 0
     const dayRate = snapshot.dayRate || 0
     const nightRate = snapshot.nightRate || 0
     if (!dayRate) return t('chat.noRate')
+    // Tổng thu nhập kỳ này = lương ca sau trừ (currentPay) + việc ngoài đã thực nhận.
+    const key = payPeriodKeyOf(localTodayStr())
+    const today = localTodayStr()
+    const extraNow = sumExtraIncome(
+      (extraIncome || []).filter(
+        (x) => payPeriodKeyOf(x.date) === key && x.date <= today
+      )
+    )
+    const cur = (snapshot.currentPay || 0) + extraNow
     const hours = snapshot.avgHoursPerShift > 0 ? snapshot.avgHoursPerShift : 8
     // Ca đêm nhưng cửa hàng không có ca đêm → coi như ca ngày.
     let kind = type
