@@ -211,21 +211,21 @@ function resolveDate(msg) {
   return null
 }
 
-// Ý ĐỊNH THÊM CA từ câu tự nhiên. Kích hoạt khi có loại ca ("đêm"/"ca ngày") HOẶC
-// động từ thêm/tạo + ca; KHÔNG phải câu hỏi. Trả { date, times[], type } — phần nào
-// thiếu để null/[] và chatbot sẽ hỏi lại. type: 'night'|'day'|null.
+// Ý ĐỊNH THÊM CA từ câu tự nhiên. CHỈ kích hoạt khi có ĐỘNG TỪ tạo/thêm gắn với
+// "ca/lịch/shift" (vd "thêm ca", "tạo ca đêm", "đăng ký lịch"), HOẶC ghi rõ đủ 2 mốc
+// giờ (chấm một ca cụ thể). Việc chỉ NHẮC TỚI loại ca ("đêm", "3 đêm") KHÔNG còn tự
+// kích hoạt — tránh nuốt câu hỏi "làm thêm … bao nhiêu". Không phải câu hỏi (?).
+// Trả { date, times[], type } — phần nào thiếu để null/[] và chatbot sẽ hỏi lại.
 function parseShiftIntent(msg) {
   const s = deaccent(msg)
   if (/\?|khong/.test(s)) return null
   const night = /\bdem\b|ca dem|ban dem/.test(s)
   const day = /ca ngay|ban ngay/.test(s)
   const addVerb = /(them|tao|dang ky|add)/.test(s) && /(ca|lich|shift)/.test(s)
-  if (!night && !day && !addVerb) return null
-  const date = resolveDate(msg)
   const times = findTimes(s)
+  if (!addVerb && times.length < 2) return null
+  const date = resolveDate(msg)
   const type = night ? 'night' : day ? 'day' : null
-  // Tránh nhận nhầm câu mơ hồ: cần có loại ca, hoặc đủ 2 mốc giờ, hoặc ngày rõ.
-  if (!type && times.length < 2 && !date) return null
   return { date, times, type }
 }
 
