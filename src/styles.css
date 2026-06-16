@@ -536,18 +536,21 @@ button[type='submit']:disabled {
    đủ rộng cho ô đọc hết giá trị mà nút vẫn cùng hàng. */
 .field-edit input,
 .field-edit select {
-  flex: 1 1 0;
-  min-width: 6rem; /* ô số/giờ/select: đủ đọc giá trị ngắn */
+  /* width cố định (không giãn đầy cột) → ô số liệu gọn; co được khi cột hẹp.
+     Dùng width thay max-width vì .modal-card input{max-width:100%} ghi đè max-width. */
+  flex: 0 1 auto;
+  width: 7rem; /* ô số/giờ/select: gọn, vẫn đủ đọc */
+  min-width: 0;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
   color: var(--text);
 }
-/* Ô chữ (Họ và tên, Mã NV, SĐT…) thường dài → min-width lớn hơn để đọc đủ hơn. */
+/* Ô chữ (Họ và tên, Mã NV, SĐT…) thường dài → rộng hơn để đọc đủ, vẫn cùng hàng nút. */
 .field-edit input[type='text'],
 .field-edit input:not([type]) {
-  min-width: 9rem;
+  width: 9rem;
 }
 /* Thông báo lỗi (nếu có) xuống dòng riêng, chiếm trọn bề ngang. */
 .payday-edit .msg,
