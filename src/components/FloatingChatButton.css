@@ -37,6 +37,12 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
 }
 
+/* Thả ra: trượt HÍT MÉP (chỉ bật transition left/top trong lúc hít, khi kéo thì
+   bám con trỏ tức thì). */
+.chat-fab--snapping {
+  transition: left 0.22s ease, top 0.22s ease, box-shadow 0.15s ease;
+}
+
 .chat-fab svg {
   pointer-events: none; /* mọi pointer event do nút xử lý, không phải SVG con */
 }

@@ -26,6 +26,15 @@ function defaultPos() {
   return clamp(window.innerWidth - SIZE - MARGIN, window.innerHeight - SIZE - MARGIN)
 }
 
+// HÍT MÉP: kẹp trong khung rồi đẩy x về cạnh TRÁI hoặc PHẢI gần tâm nút hơn. Giữ
+// nguyên y. Hợp mobile (nút luôn dính một bên, không che giữa màn hình).
+function snapToEdge(x, y) {
+  const c = clamp(x, y)
+  const maxX = Math.max(MARGIN, window.innerWidth - SIZE - MARGIN)
+  const centerX = c.x + SIZE / 2
+  return { x: centerX < window.innerWidth / 2 ? MARGIN : maxX, y: c.y }
+}
+
 // Đọc vị trí đã lưu; sai/không có → null để dùng mặc định.
 function loadPos() {
   try {
@@ -43,21 +52,23 @@ export default function FloatingChatButton({ onOpen, label = 'Chat' }) {
   // pos = null tới khi đo được viewport (tránh nhảy vị trí lúc mount).
   const [pos, setPos] = useState(null)
   const [dragging, setDragging] = useState(false)
+  const [snapping, setSnapping] = useState(false) // đang chạy animation hít mép
   // Dữ liệu phiên kéo hiện tại (không cần re-render nên để trong ref).
   const drag = useRef(null) // { startX, startY, originX, originY, moved }
   const btnRef = useRef(null)
+  const snapTimer = useRef(null)
 
-  // Khởi tạo vị trí: lưu trước đó → kẹp lại (phòng đổi kích thước màn hình); chưa có
-  // → mặc định góc dưới-phải.
+  // Khởi tạo vị trí: lưu trước đó → HÍT MÉP (giữ dính cạnh); chưa có → mặc định
+  // góc dưới-phải.
   useEffect(() => {
     const saved = loadPos()
-    setPos(saved ? clamp(saved.x, saved.y) : defaultPos())
+    setPos(saved ? snapToEdge(saved.x, saved.y) : defaultPos())
   }, [])
 
-  // Xoay/resize màn hình: kẹp lại để nút không lọt ra ngoài khung mới.
+  // Xoay/resize màn hình: hít lại mép để nút vẫn dính cạnh & trong khung mới.
   useEffect(() => {
     function onResize() {
-      setPos((p) => (p ? clamp(p.x, p.y) : p))
+      setPos((p) => (p ? snapToEdge(p.x, p.y) : p))
     }
     window.addEventListener('resize', onResize)
     window.addEventListener('orientationchange', onResize)
@@ -67,8 +78,12 @@ export default function FloatingChatButton({ onOpen, label = 'Chat' }) {
     }
   }, [])
 
+  useEffect(() => () => clearTimeout(snapTimer.current), [])
+
   const onPointerDown = useCallback((e) => {
     if (e.button != null && e.button !== 0) return // chỉ nút trái / chạm
+    clearTimeout(snapTimer.current)
+    setSnapping(false) // kéo phải bám con trỏ tức thì (không transition)
     const rect = btnRef.current.getBoundingClientRect()
     drag.current = {
       startX: e.clientX,
@@ -100,17 +115,21 @@ export default function FloatingChatButton({ onOpen, label = 'Chat' }) {
       btnRef.current?.releasePointerCapture?.(e.pointerId)
       if (!d) return
       if (d.moved) {
-        // KÉO xong → lưu vị trí, KHÔNG mở chat.
+        // KÉO xong → HÍT MÉP (trượt dính cạnh gần nhất) + LƯU, KHÔNG mở chat.
+        setSnapping(true)
         setPos((p) => {
-          if (p) {
+          const snapped = p ? snapToEdge(p.x, p.y) : p
+          if (snapped) {
             try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(p))
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(snapped))
             } catch {
               /* bỏ qua */
             }
           }
-          return p
+          return snapped
         })
+        // Tắt transition sau khi trượt xong (khớp thời lượng CSS).
+        snapTimer.current = setTimeout(() => setSnapping(false), 230)
       } else {
         // CHẠM (gần như không di chuyển) → mở chat.
         onOpen?.()
@@ -125,7 +144,7 @@ export default function FloatingChatButton({ onOpen, label = 'Chat' }) {
     <button
       ref={btnRef}
       type="button"
-      className={`chat-fab${dragging ? ' chat-fab--dragging' : ''}`}
+      className={`chat-fab${dragging ? ' chat-fab--dragging' : ''}${snapping ? ' chat-fab--snapping' : ''}`}
       style={{ left: pos.x, top: pos.y }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
