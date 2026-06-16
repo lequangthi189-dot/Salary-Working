@@ -322,5 +322,40 @@ create policy "delete own extra_income"
   on public.extra_income for delete
   using (auth.uid() = user_id);
 
+-- ===================== chat_messages (lịch sử trợ lý lương) =====================
+-- Bộ NHỚ của chatbot: lưu từng tin hỏi/đáp để nạp lại qua nhiều phiên.
+-- role: 'user' (người dùng gõ) | 'bot' (trợ lý trả lời — cả AI lẫn câu app tự tính).
+-- content: nội dung text của tin. user_id mặc định auth.uid() — CLIENT KHÔNG gửi
+-- user_id; DB tự điền theo phiên đăng nhập nên không thể giả mạo người khác.
+create table if not exists public.chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  role text not null check (role in ('user', 'bot')),
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+-- Nạp lịch sử gần đây của ĐÚNG user nhanh hơn (lọc user_id + sắp theo thời gian).
+create index if not exists chat_messages_user_created_idx
+  on public.chat_messages (user_id, created_at);
+
+alter table public.chat_messages enable row level security;
+
+-- RLS: mỗi user CHỈ đọc/ghi/xoá tin của CHÍNH MÌNH (cả USING lẫn WITH CHECK).
+drop policy if exists "select own chat_messages" on public.chat_messages;
+create policy "select own chat_messages"
+  on public.chat_messages for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "insert own chat_messages" on public.chat_messages;
+create policy "insert own chat_messages"
+  on public.chat_messages for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "delete own chat_messages" on public.chat_messages;
+create policy "delete own chat_messages"
+  on public.chat_messages for delete
+  using (auth.uid() = user_id);
+
 -- Làm mới cache schema của PostgREST.
 notify pgrst, 'reload schema';
