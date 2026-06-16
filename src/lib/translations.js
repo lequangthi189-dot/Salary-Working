@@ -506,6 +506,13 @@ export const translations = {
       "❌ Hardly realistic in this window — it needs ~{perDay}h/day, beyond a normal workload.",
     "chat.feasEnded":
       "The deadline has already passed — no days left to reach {target}. Try another target or date.",
+    "chat.projNight": "night shift(s)",
+    "chat.projDay": "day shift(s)",
+    "chat.projShift": "shift(s)",
+    "chat.projLine":
+      "🔮 {count} more {shift} (~{hours}h each, ~{per} each) ≈ +{added}.",
+    "chat.projTotal":
+      "Projected total this period: {total} (currently {current}).",
     "chat.error": "Sorry, something went wrong. Please try again.",
 
     // lib: period label + lost breakdown
@@ -1020,6 +1027,12 @@ export const translations = {
       "❌ Gần như không khả thi trong khoảng này — cần ~{perDay} giờ/ngày, vượt sức làm bình thường.",
     "chat.feasEnded":
       "Hạn chót đã qua — không còn ngày nào để đạt {target}. Hãy đặt mục tiêu hoặc mốc khác nhé.",
+    "chat.projNight": "ca đêm",
+    "chat.projDay": "ca ngày",
+    "chat.projShift": "ca",
+    "chat.projLine":
+      "🔮 Làm thêm {count} {shift} (~{hours} giờ/ca, ~{per}/ca) ≈ +{added}.",
+    "chat.projTotal": "Tổng dự kiến kỳ này: {total} (đang có {current}).",
     "chat.error": "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.",
 
     // lib: period label + lost breakdown
