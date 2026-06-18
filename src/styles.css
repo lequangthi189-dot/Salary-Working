@@ -329,13 +329,11 @@ button[type='submit']:disabled {
   flex-direction: column;
   height: min(70vh, 560px);
 }
-/* Cửa sổ chat NỔI, kéo được như bong bóng trò chuyện (mặc định góc dưới phải) */
+/* Cửa sổ chat NỔI, CỐ ĐỊNH ở góc dưới bên phải (khớp vị trí nút nổi). */
 .chat-float {
   position: fixed;
-  /* Mặc định CANH GIỮA layout (inset:0 + margin:auto). Khi kéo, inline left/top
-     ghi đè để đặt tự do. */
-  inset: 0;
-  margin: auto;
+  right: 1rem;
+  bottom: 1rem;
   z-index: 60;
   width: min(88vw, 320px);
   height: min(62vh, 460px);
@@ -346,11 +344,6 @@ button[type='submit']:disabled {
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
-}
-.chat-drag {
-  cursor: move;
-  user-select: none;
-  touch-action: none;
 }
 .chat-list {
   flex: 1;
