@@ -13,7 +13,7 @@ import {
   computeEffective,
 } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
-import { resolveWeek, weekSpanWarning } from '../lib/reconcileDates.js'
+import { resolveWeek, weekSpanWarning, dayInPeriod } from '../lib/reconcileDates.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ProgressButton from './ProgressButton.jsx'
 
@@ -106,6 +106,10 @@ export default function ReconcileModal({
   // Cảnh báo (không chặn) khi các tuần suy ra có dấu hiệu sai mốc "Tuần đầu".
   const [warn, setWarn] = useState(null)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
+  // LƯỚI AN TOÀN: số giờ "Theo ảnh" do người dùng SỬA TAY, theo từng ngày
+  // ("YYYY-MM-DD" -> chuỗi nhập). Khi AI đọc nhầm/sót, người dùng gõ đè để đối
+  // chiếu vẫn chạy. Khoá theo ngày nên áp dụng cho mọi nhóm/scope. Xoá khi quét lại.
+  const [imgEdits, setImgEdits] = useState({})
 
   function askConfirm(message) {
     return new Promise((resolve) => setConfirmState({ message, resolve }))
@@ -158,14 +162,9 @@ export default function ReconcileModal({
       // Giờ THỰC TẾ = TỔNG giờ công hiệu dụng mọi ca trong ngày (đã gộp, kẹp lịch).
       const actualHours = actualHoursByDate.get(date) || 0
       const schedHours = schedHoursByDate.get(date) || 0
-      return {
-        date,
-        imgHours,
-        actualHours,
-        schedHours,
-        // Kết quả CHỈ dựa trên Thực tế vs Theo ảnh; Dự kiến không ảnh hưởng.
-        statusActual: cmpHours(imgHours, actualHours),
-      }
+      // Kết quả khớp KHÔNG chốt ở đây: tính ở render qua effStatus theo giờ ảnh HIỆU
+      // DỤNG (gồm cả số người dùng sửa tay). Dự kiến không ảnh hưởng kết quả.
+      return { date, imgHours, actualHours, schedHours }
     })
   }
 
@@ -198,8 +197,15 @@ export default function ReconcileModal({
     const { start, end } = payPeriodRange(month)
     const imgByDate = new Map()
     for (const e of data.entries || []) {
-      if (!isoRe.test(e.date || '') || e.date < start || e.date > end) continue
-      imgByDate.set(e.date, (imgByDate.get(e.date) || 0) + imageHours(e))
+      // Client lo TOÀN BỘ ghép ngày: ưu tiên SỐ NGÀY trần AI đọc (e.day, đáng tin);
+      // nếu thiếu thì rút số ngày từ chuỗi date ISO mà ảnh in sẵn (nếu có). Không
+      // bao giờ tin tháng/năm AI tự suy → tránh lệch tháng làm rớt ngoài kỳ.
+      const dom =
+        Number(e.day) ||
+        (isoRe.test(e.date || '') ? Number(e.date.slice(8, 10)) : 0)
+      const date = dayInPeriod(dom, start, end)
+      if (!date) continue
+      imgByDate.set(date, (imgByDate.get(date) || 0) + imageHours(e))
     }
     const shiftDates = shifts
       .map((s) => s.work_date)
@@ -218,6 +224,7 @@ export default function ReconcileModal({
     setGroups(null)
     setError(null)
     setWarn(null)
+    setImgEdits({}) // ảnh mới → bỏ các số sửa tay của lần trước
   }
 
   // Gọi Edge Function đọc 1 ảnh; ném lỗi nếu function trả lỗi.
@@ -262,6 +269,7 @@ export default function ReconcileModal({
   async function readAndCompare() {
     setError(null)
     setWarn(null)
+    setImgEdits({}) // quét lại → bỏ số sửa tay cũ, dùng kết quả AI mới
     if (!files.length) return setError(t('import.errPickImage'))
     // Chọn nhiều ảnh nhưng đang đối chiếu theo Tuần/Tháng (1 ảnh) → chặn, bắt chọn lại.
     if (scope !== 'weeks' && files.length > 1)
@@ -376,9 +384,28 @@ export default function ReconcileModal({
     }
   }
 
-  // Chỉ bỏ ngày HOÀN TOÀN trống (ảnh, thực tế, dự kiến đều 0 giờ).
+  // Giờ "Theo ảnh" HIỆU DỤNG cho một dòng: ưu tiên số người dùng SỬA TAY (imgEdits),
+  // nếu chưa sửa thì dùng số AI đọc. Là nguồn DUY NHẤT cho hiển thị + kết quả khớp.
+  function effImgHours(r) {
+    const edit = imgEdits[r.date]
+    if (edit != null) return parseHours(edit) // đã sửa tay (kể cả "" = 0)
+    return r.imgHours
+  }
+  // Kết quả khớp tính theo giờ ảnh HIỆU DỤNG, nên sửa tay là tự cập nhật.
+  function effStatus(r) {
+    return cmpHours(effImgHours(r), r.actualHours)
+  }
+  // Giá trị hiển thị trong ô input "Theo ảnh" (chuỗi): số đã sửa, hoặc số AI đọc.
+  function imgCellValue(r) {
+    const edit = imgEdits[r.date]
+    if (edit != null) return edit
+    return r.imgHours ? formatHours(r.imgHours) : ''
+  }
+  // Chỉ bỏ ngày HOÀN TOÀN trống (ảnh hiệu dụng, thực tế, dự kiến đều 0 giờ).
   function visibleOf(rows) {
-    return rows.filter((r) => r.imgHours || r.actualHours || r.schedHours)
+    return rows.filter(
+      (r) => effImgHours(r) || r.actualHours || r.schedHours
+    )
   }
   // Chuẩn bị dữ liệu render: từng nhóm + tổng kết, cộng tổng kết toàn bộ.
   const view = groups
@@ -387,7 +414,7 @@ export default function ReconcileModal({
         return {
           ...g,
           visible,
-          match: visible.filter((r) => r.statusActual === 'match').length,
+          match: visible.filter((r) => effStatus(r) === 'match').length,
         }
       })
     : []
@@ -575,19 +602,36 @@ export default function ReconcileModal({
                         </tr>
                       </thead>
                       <tbody>
-                        {g.visible.map((r) => (
+                        {g.visible.map((r) => {
+                          const status = effStatus(r)
+                          return (
                           <tr key={r.date}>
                             <td>{dmShort(r.date)}</td>
                             <td
-                              className={`rec-${r.statusActual}`}
-                              title={t(`reconcile.${r.statusActual}`)}
+                              className={`rec-${status}`}
+                              title={t(`reconcile.${status}`)}
                             >
                               {r.actualHours
                                 ? `${formatHours(r.actualHours)}h`
                                 : '—'}
                             </td>
-                            <td>
-                              {r.imgHours ? `${formatHours(r.imgHours)}h` : '—'}
+                            <td className="rec-img-cell">
+                              {/* Lưới an toàn: gõ đè giờ khi AI đọc nhầm/sót. */}
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                className="rec-img-edit"
+                                value={imgCellValue(r)}
+                                placeholder="—"
+                                aria-label={t('reconcile.colImage')}
+                                onChange={(ev) =>
+                                  setImgEdits((m) => ({
+                                    ...m,
+                                    [r.date]: ev.target.value,
+                                  }))
+                                }
+                              />
+                              <span className="rec-img-unit">h</span>
                             </td>
                             <td>
                               {r.schedHours
@@ -596,17 +640,18 @@ export default function ReconcileModal({
                             </td>
                             <td
                               className={`rec-${
-                                r.statusActual === 'match' ? 'match' : 'diff'
+                                status === 'match' ? 'match' : 'diff'
                               }`}
                             >
                               {t(
-                                r.statusActual === 'match'
+                                status === 'match'
                                   ? 'reconcile.matchYes'
                                   : 'reconcile.matchNo'
                               )}
                             </td>
                           </tr>
-                        ))}
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>

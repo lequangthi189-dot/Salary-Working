@@ -1134,6 +1134,29 @@ button[type='submit']:disabled {
 .reconcile-table td.rec-extra {
   color: #c084fc;
 }
+/* Ô "Theo ảnh" cho SỬA TAY: input gọn trong ô, đơn vị "h" cạnh bên. Lưới an toàn
+   khi AI đọc nhầm/sót — gõ đè để đối chiếu vẫn chạy. */
+.reconcile-table td.rec-img-cell {
+  white-space: nowrap;
+}
+.reconcile-table .rec-img-edit {
+  width: 3.4rem;
+  text-align: right;
+  background: var(--input-bg, rgba(255, 255, 255, 0.06));
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.15rem 0.3rem;
+  font: inherit;
+}
+.reconcile-table .rec-img-edit:focus {
+  outline: none;
+  border-color: var(--accent, #60a5fa);
+}
+.reconcile-table .rec-img-unit {
+  margin-left: 0.2rem;
+  opacity: 0.7;
+}
 /* Đối chiếu NHIỀU TUẦN: nhiều ảnh preview xếp hàng ngang, cuộn nếu tràn */
 .import-preview-row {
   display: flex;

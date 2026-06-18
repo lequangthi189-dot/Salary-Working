@@ -74,6 +74,26 @@ export function weekStartFromDayNums(dayNums, anchor) {
   return addDays(dates[idx], -idx)
 }
 
+// Ghép NGÀY ĐẦY ĐỦ trong KỲ LƯƠNG từ SỐ NGÀY-TRONG-THÁNG (dom, 1–31), BỎ QUA
+// tháng/năm của nguồn. Dùng cho chế độ "Đối chiếu cả kỳ": AI đọc ảnh thường đọc
+// ĐÚNG số ngày nhưng hay tự suy LỆCH THÁNG (vd ghi 2026-06-27 thay vì 2026-05-27),
+// khiến mọi ngày rớt ngoài kỳ. Kỳ [start,end] dài ~1 tháng nên mỗi số ngày xuất
+// hiện tối đa một lần:
+//   - dom >= ngày-bắt-đầu-kỳ  → thuộc THÁNG ĐẦU (tháng của start);
+//   - ngược lại dom <= ngày-chốt → thuộc THÁNG CHỐT (tháng của end).
+// Trả "YYYY-MM-DD" nếu nằm trong [start,end]; ngược lại null.
+export function dayInPeriod(dom, start, end) {
+  const d = Number(dom)
+  if (!Number.isInteger(d) || d < 1 || d > 31) return null
+  const startDom = Number(start.slice(8, 10))
+  const endDom = Number(end.slice(8, 10))
+  let iso
+  if (d >= startDom) iso = `${start.slice(0, 7)}-${pad2(d)}`
+  else if (d <= endDom) iso = `${end.slice(0, 7)}-${pad2(d)}`
+  else return null
+  return iso >= start && iso <= end ? iso : null
+}
+
 // Số ngày chênh (b - a) giữa 2 mốc "YYYY-MM-DD", tính theo UTC.
 export function daysBetween(a, b) {
   const [ay, am, ad] = a.split('-').map(Number)
