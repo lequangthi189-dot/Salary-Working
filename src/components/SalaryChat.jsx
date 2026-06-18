@@ -525,6 +525,32 @@ export default function SalaryChat({
     }
   }, [])
 
+  // Khi MỞ LẠI (hoặc đổi kích thước/ xoay màn hình lúc đang mở): kẹp lại vị trí đã
+  // kéo cho NẰM TRỌN trong viewport. Cửa sổ giữ pos cũ qua các lần đóng/mở; nếu lần
+  // trước kéo sát mép/đáy hoặc viewport đổi (bàn phím ảo, xoay máy) thì pos cũ có thể
+  // ra ngoài màn hình → mở lại sẽ "mất tích" (nút nổi cũng đang ẩn). Kẹp để luôn thấy.
+  useEffect(() => {
+    if (!open) return
+    function reclamp() {
+      setPos((p) => {
+        if (!p) return p
+        const el = cardRef.current
+        const w = el?.offsetWidth || 320
+        const h = el?.offsetHeight || 460
+        const x = Math.max(4, Math.min(p.x, window.innerWidth - w - 4))
+        const y = Math.max(4, Math.min(p.y, window.innerHeight - h - 4))
+        return x === p.x && y === p.y ? p : { x, y }
+      })
+    }
+    reclamp()
+    window.addEventListener('resize', reclamp)
+    window.addEventListener('orientationchange', reclamp)
+    return () => {
+      window.removeEventListener('resize', reclamp)
+      window.removeEventListener('orientationchange', reclamp)
+    }
+  }, [open])
+
   // Bắt đầu kéo từ thanh tiêu đề (bỏ qua khi bấm nút đóng).
   function startDrag(e) {
     if (e.target.closest('.modal-close, .chat-menu-btn')) return
