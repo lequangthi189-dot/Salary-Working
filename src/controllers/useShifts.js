@@ -25,6 +25,14 @@ export function useShifts(session) {
   async function addShift(shift) {
     const closedErr = periodClosedError(shift.work_date)
     if (closedErr) return closedErr
+    // Ngày đã có ca LỊCH DỰ KIẾN (chưa check-in: thiếu giờ thực) → "hiện thực hoá"
+    // chính ca đó bằng cách cập nhật giờ thực vào nó, thay vì chèn ca thứ hai. Tránh
+    // (1) bị overlapError chặn nhầm vì ShiftForm đã kèm sẵn khung giờ dự kiến, và
+    // (2) nhân đôi dòng (ca lịch + ca thực) cho cùng một ngày.
+    const planned = shifts.find(
+      (s) => s.work_date === shift.work_date && !s.start_time && !s.end_time
+    )
+    if (planned) return updateShift(planned.id, shift)
     const overlapErr = overlapError(shift, shifts)
     if (overlapErr) return overlapErr
     const { error } = await shiftsModel.insertShift(shift, session.user.id)
