@@ -473,10 +473,7 @@ export default function SalaryChat({
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState(null) // { date } đang chờ nhập giờ ca ngày
-  const [pos, setPos] = useState(null) // {x,y}; null = vị trí mặc định (góc dưới phải)
   const listRef = useRef(null)
-  const cardRef = useRef(null)
-  const dragRef = useRef(null) // { dx, dy } khi đang kéo
   const loadedRef = useRef(false) // đã nạp lịch sử từ DB chưa (chỉ nạp 1 lần)
 
   // MỨC 2 — nạp lại lịch sử chat của ĐÚNG user (RLS giới hạn theo auth.uid()) khi
@@ -501,63 +498,6 @@ export default function SalaryChat({
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
-
-  // Kéo cửa sổ chat (nổi như bong bóng). Lắng nghe toàn cục, chỉ hoạt động khi
-  // đang kéo (dragRef đã set ở startDrag).
-  useEffect(() => {
-    function move(e) {
-      if (!dragRef.current) return
-      const w = cardRef.current?.offsetWidth || 320
-      let x = e.clientX - dragRef.current.dx
-      let y = e.clientY - dragRef.current.dy
-      x = Math.max(4, Math.min(x, window.innerWidth - w))
-      y = Math.max(4, Math.min(y, window.innerHeight - 48))
-      setPos({ x, y })
-    }
-    function up() {
-      dragRef.current = null
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    return () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-    }
-  }, [])
-
-  // Khi MỞ LẠI (hoặc đổi kích thước/ xoay màn hình lúc đang mở): kẹp lại vị trí đã
-  // kéo cho NẰM TRỌN trong viewport. Cửa sổ giữ pos cũ qua các lần đóng/mở; nếu lần
-  // trước kéo sát mép/đáy hoặc viewport đổi (bàn phím ảo, xoay máy) thì pos cũ có thể
-  // ra ngoài màn hình → mở lại sẽ "mất tích" (nút nổi cũng đang ẩn). Kẹp để luôn thấy.
-  useEffect(() => {
-    if (!open) return
-    function reclamp() {
-      setPos((p) => {
-        if (!p) return p
-        const el = cardRef.current
-        const w = el?.offsetWidth || 320
-        const h = el?.offsetHeight || 460
-        const x = Math.max(4, Math.min(p.x, window.innerWidth - w - 4))
-        const y = Math.max(4, Math.min(p.y, window.innerHeight - h - 4))
-        return x === p.x && y === p.y ? p : { x, y }
-      })
-    }
-    reclamp()
-    window.addEventListener('resize', reclamp)
-    window.addEventListener('orientationchange', reclamp)
-    return () => {
-      window.removeEventListener('resize', reclamp)
-      window.removeEventListener('orientationchange', reclamp)
-    }
-  }, [open])
-
-  // Bắt đầu kéo từ thanh tiêu đề (bỏ qua khi bấm nút đóng).
-  function startDrag(e) {
-    if (e.target.closest('.modal-close, .chat-menu-btn')) return
-    const rect = cardRef.current.getBoundingClientRect()
-    dragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top }
-    if (!pos) setPos({ x: rect.left, y: rect.top })
-  }
 
   useEffect(() => {
     listRef.current?.scrollTo(0, listRef.current.scrollHeight)
@@ -1421,13 +1361,11 @@ export default function SalaryChat({
 
   return (
     <div
-      ref={cardRef}
       className="chat-float comp-pop"
       role="dialog"
       aria-label={t('chat.title')}
-      style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined}
     >
-      <div className="modal-head chat-drag" onPointerDown={startDrag}>
+      <div className="modal-head">
         <h2>🤖 {t('chat.title')}</h2>
         <div className="chat-head-actions">
           <button
