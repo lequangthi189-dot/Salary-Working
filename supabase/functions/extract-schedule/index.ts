@@ -84,13 +84,16 @@ const SCHEMA_MONTH = {
       items: {
         type: 'OBJECT',
         properties: {
+          // SỐ NGÀY TRẦN (1–31) đọc nguyên trên ảnh; 0 = ô không ghi số ngày.
+          // Client tự ghép thành ngày đầy đủ trong kỳ (KHÔNG để AI tính ngày).
+          day: { type: 'INTEGER' },
           date: { type: 'STRING' },
           start: { type: 'STRING' },
           end: { type: 'STRING' },
           off: { type: 'BOOLEAN' },
           raw: { type: 'STRING' },
         },
-        required: ['date', 'start', 'end', 'off', 'raw'],
+        required: ['day', 'date', 'start', 'end', 'off', 'raw'],
       },
     },
   },
@@ -126,16 +129,17 @@ Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhi
 6. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
 Chỉ trả JSON đúng schema, không thêm chữ.`
 
-const SYSTEM_MONTH = `Bạn là công cụ đọc BẢNG CÔNG / BẢNG PHÂN CA cả THÁNG từ ảnh.
+const SYSTEM_MONTH = `Bạn là công cụ đọc BẢNG CÔNG / BẢNG PHÂN CA cả KỲ (nhiều tuần) từ ảnh.
 Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
 0. Xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không. Nếu KHÔNG phải thì is_roster=false, doc_type="other", found=false, entries=[] rồi dừng. Nếu phải thì is_roster=true.
 0b. Phân loại doc_type: "schedule" = lịch phân ca (giờ vào–ra dự kiến); "timesheet" = bảng công đã làm (tổng giờ/ngày hoặc giờ check-in/out). Chọn loại khớp nhất.
 1. Tìm DÒNG/Ô ứng với nhân viên khớp nhất theo bất kỳ thông tin nào (ưu tiên mã, rồi họ tên, rồi SĐT). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu. Không khớp → found=false, entries=[].
-2. Đọc TẤT CẢ CÁC NGÀY có công của người đó TRONG THÁNG. Mỗi ngày trả về MỘT entry:
-   - "date" dạng "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra theo "Kỳ lương cần đọc" (khoảng ngày) hoặc "Tháng cần đọc" được cung cấp. Khi kỳ VẮT QUA 2 THÁNG: số ngày LỚN (cuối tháng, ≥ ngày bắt đầu kỳ) thuộc THÁNG ĐẦU; số ngày NHỎ (≤ ngày chốt kỳ) thuộc THÁNG CHỐT.
-   - "start"/"end": chuẩn hoá "HH:MM" 24 giờ (vd "9h"->"09:00"). Nếu ảnh chỉ ghi TỔNG GIỜ (vd "7.55") thì để start="" end="".
+2. Đọc TẤT CẢ CÁC NGÀY có công của người đó. Mỗi ngày trả về MỘT entry:
+   - "day" = SỐ NGÀY (số nguyên 1–31) GHI TRÊN ẢNH cho ô đó (vd ô "27" → day=27). CHỈ đọc đúng con số HIỆN trên ảnh; TUYỆT ĐỐI KHÔNG tự suy, KHÔNG tính, KHÔNG cộng/trừ, KHÔNG ghép tháng/năm. Hệ thống tự ghép ngày đầy đủ. Ô không đọc được số ngày → day=0.
+   - "date": CHỈ điền khi ảnh in SẴN ngày ĐẦY ĐỦ có cả ngày-tháng-NĂM (vd "27/05/2026" hoặc "2026-05-27") → chuẩn hoá "YYYY-MM-DD". Nếu ảnh KHÔNG in đủ năm thì để date="" (đừng bịa tháng/năm).
    - "raw": NẾU ảnh có in sẵn TỔNG GIỜ CÔNG của ngày (vd "7.55", "8.0", "8h") thì ghi CHỈ con số tổng giờ đó vào "raw" (vd "7.55"). Tổng này đã trừ giờ nghỉ nên là nguồn đúng nhất — luôn ghi kể cả khi đã có start/end. Nếu ảnh KHÔNG in tổng giờ thì raw="". KHÔNG ghi khoảng giờ vào "raw".
-   - Ngày nghỉ/trống/"OFF"/"X" → off=true, start="", end="".
+   - "start"/"end": nếu ảnh ghi giờ vào–ra thì chuẩn hoá "HH:MM" 24 giờ (vd "9h"->"09:00"). Nếu ảnh chỉ ghi TỔNG GIỜ thì để start="" end="".
+   - Ngày nghỉ/trống/"OFF"/"X" → off=true, start="", end="", raw="".
 3. CHỈ trả các ngày THỰC SỰ có trong ảnh cho người đó; KHÔNG bịa ngày, KHÔNG cần liệt kê ngày không xuất hiện.
 4. Không bịa giờ khi không chắc (off=true). Chỉ trả JSON đúng schema, không thêm chữ.`
 
@@ -201,23 +205,19 @@ Deno.serve(async (req: Request) => {
       (employeeCode ? ` Mã: "${employeeCode}".` : '') +
       (fullName ? ` Họ tên: "${fullName}".` : '') +
       (phone ? ` SĐT: "${phone}".` : '')
-    // Chế độ kỳ lương: hướng dẫn AI map SỐ NGÀY trần qua ranh giới 2 tháng dựa trên
-    // khoảng kỳ thật (vd 26/05–25/06): số ngày lớn (≥ ngày bắt đầu) thuộc tháng đầu,
-    // số ngày nhỏ (≤ ngày chốt) thuộc tháng chốt. Không có khoảng kỳ → fallback tháng.
+    // Chế độ kỳ lương: AI CHỈ đọc số ngày trần (day) + tổng giờ; client tự ghép ngày
+    // đầy đủ trong kỳ (dayInPeriod) nên KHÔNG bắt AI tính tháng/năm nữa — đây là gốc
+    // rễ giúp scan ra công ổn định. Chỉ nêu khoảng kỳ để AI biết phạm vi bảng.
     const periodHint = hasPeriod
-      ? ` Kỳ lương cần đọc TỪ ${periodStart} ĐẾN ${periodEnd} (có thể vắt qua 2 tháng).` +
-        ` Nếu ảnh CHỈ ghi SỐ NGÀY trần (thiếu tháng/năm): số ngày >= ${Number(
-          periodStart.slice(8, 10)
-        )} thuộc tháng ${periodStart.slice(0, 7)}; số ngày <= ${Number(
-          periodEnd.slice(8, 10)
-        )} thuộc tháng ${periodEnd.slice(0, 7)}.` +
-        ` CHỈ trả các ngày NẰM TRONG khoảng ${periodStart}..${periodEnd}.`
+      ? ` Bảng công này thuộc kỳ TỪ ${periodStart} ĐẾN ${periodEnd}.`
       : month
         ? ` Tháng cần đọc: ${month}.`
         : ''
     const userText = isMonth
       ? idText +
-        ' Trả về TẤT CẢ ngày có công trong kỳ (mỗi ngày một entry).' +
+        ' Trả về MỌI ngày có công của người đó (mỗi ngày một entry). Với mỗi ngày,' +
+        ' "day" = SỐ NGÀY trần (1–31) GHI TRÊN ẢNH (không tự suy/ghép tháng) và "raw"' +
+        ' = tổng giờ công nếu ảnh in sẵn. Hệ thống tự ghép ngày đầy đủ.' +
         periodHint
       : idText +
         ' Trả về ca từng thứ Mon..Sun. Với mỗi cột đọc "day" = SỐ NGÀY trần ghi ở' +

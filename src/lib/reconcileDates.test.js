@@ -7,6 +7,7 @@ import {
   sheetYearMonth,
   weekSpanWarning,
   daysBetween,
+  dayInPeriod,
 } from './reconcileDates.js'
 
 // Dựng nhanh data.days từ mảng số ngày (Mon..Sun) + tuỳ chọn date ISO / sheet tháng.
@@ -214,6 +215,44 @@ describe('weekSpanWarning — chặn giới hạn nhảy tháng', () => {
   it('dưới 2 mốc → không cảnh báo', () => {
     expect(weekSpanWarning(['2026-06-01'])).toBeNull()
     expect(weekSpanWarning([])).toBeNull()
+  })
+})
+
+describe('dayInPeriod — ghép số ngày vào kỳ lương, bỏ qua tháng AI tự suy', () => {
+  // Kỳ "tháng 6/2026": 26/05 → 25/06 (vắt 2 tháng).
+  const start = '2026-05-26'
+  const end = '2026-06-25'
+
+  it('ngày >= ngày-bắt-đầu (26) → thuộc tháng đầu (05)', () => {
+    expect(dayInPeriod(26, start, end)).toBe('2026-05-26')
+    expect(dayInPeriod(27, start, end)).toBe('2026-05-27')
+    expect(dayInPeriod(31, start, end)).toBe('2026-05-31')
+  })
+
+  it('ngày <= ngày-chốt (25) → thuộc tháng chốt (06)', () => {
+    expect(dayInPeriod(1, start, end)).toBe('2026-06-01')
+    expect(dayInPeriod(17, start, end)).toBe('2026-06-17')
+    expect(dayInPeriod(25, start, end)).toBe('2026-06-25')
+  })
+
+  it('phản hồi đúng dữ liệu lỗi thật: AI lệch +1 tháng vẫn ghép về kỳ', () => {
+    // AI trả 2026-06-27 (lệch tháng) → lấy số ngày 27 → 2026-05-27 trong kỳ.
+    expect(dayInPeriod(Number('2026-06-27'.slice(8, 10)), start, end)).toBe('2026-05-27')
+    expect(dayInPeriod(Number('2026-07-17'.slice(8, 10)), start, end)).toBe('2026-06-17')
+  })
+
+  it('ngoài kỳ (vd ngày trong khoảng trống không tồn tại) → null', () => {
+    // Kỳ 26/05–25/06: không có số ngày nào rơi vào "khoảng trống" vì chuỗi liền,
+    // nhưng số không hợp lệ phải trả null.
+    expect(dayInPeriod(0, start, end)).toBeNull()
+    expect(dayInPeriod(32, start, end)).toBeNull()
+    expect(dayInPeriod(NaN, start, end)).toBeNull()
+  })
+
+  it('kỳ trong CÙNG một tháng (vd 01–31/03) → mọi ngày thuộc tháng đó', () => {
+    expect(dayInPeriod(15, '2026-03-01', '2026-03-31')).toBe('2026-03-15')
+    expect(dayInPeriod(1, '2026-03-01', '2026-03-31')).toBe('2026-03-01')
+    expect(dayInPeriod(31, '2026-03-01', '2026-03-31')).toBe('2026-03-31')
   })
 })
 
