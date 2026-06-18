@@ -320,7 +320,14 @@ export default function ReconcileModal({
       const data = await extractOne(
         base64,
         mediaType,
-        scope === 'month' ? { scope: 'month', month } : {}
+        scope === 'month'
+          ? {
+              scope: 'month',
+              month,
+              periodStart: payPeriodRange(month).start,
+              periodEnd: payPeriodRange(month).end,
+            }
+          : {}
       )
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) {

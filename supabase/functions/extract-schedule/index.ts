@@ -134,7 +134,7 @@ Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhi
 0b. Phân loại doc_type: "schedule" = lịch phân ca (giờ vào–ra dự kiến); "timesheet" = bảng công đã làm (tổng giờ/ngày hoặc giờ check-in/out). Chọn loại khớp nhất.
 1. Tìm DÒNG/Ô ứng với nhân viên khớp nhất theo bất kỳ thông tin nào (ưu tiên mã, rồi họ tên, rồi SĐT). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu. Không khớp → found=false, entries=[].
 2. Đọc TẤT CẢ CÁC NGÀY có công của người đó TRONG THÁNG. Mỗi ngày trả về MỘT entry:
-   - "date" dạng "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra theo "Tháng cần đọc" được cung cấp.
+   - "date" dạng "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra theo "Kỳ lương cần đọc" (khoảng ngày) hoặc "Tháng cần đọc" được cung cấp. Khi kỳ VẮT QUA 2 THÁNG: số ngày LỚN (cuối tháng, ≥ ngày bắt đầu kỳ) thuộc THÁNG ĐẦU; số ngày NHỎ (≤ ngày chốt kỳ) thuộc THÁNG CHỐT.
    - "start"/"end": chuẩn hoá "HH:MM" 24 giờ (vd "9h"->"09:00"). Nếu ảnh chỉ ghi TỔNG GIỜ (vd "7.55") thì để start="" end="".
    - "raw": NẾU ảnh có in sẵn TỔNG GIỜ CÔNG của ngày (vd "7.55", "8.0", "8h") thì ghi CHỈ con số tổng giờ đó vào "raw" (vd "7.55"). Tổng này đã trừ giờ nghỉ nên là nguồn đúng nhất — luôn ghi kể cả khi đã có start/end. Nếu ảnh KHÔNG in tổng giờ thì raw="". KHÔNG ghi khoảng giờ vào "raw".
    - Ngày nghỉ/trống/"OFF"/"X" → off=true, start="", end="".
@@ -169,6 +169,9 @@ Deno.serve(async (req: Request) => {
     weekStart?: string
     scope?: string
     month?: string
+    // Chế độ KỲ LƯƠNG: khoảng ngày thật của kỳ ("YYYY-MM-DD"), có thể vắt 2 tháng.
+    periodStart?: string
+    periodEnd?: string
   }
   try {
     body = await req.json()
@@ -178,6 +181,10 @@ Deno.serve(async (req: Request) => {
   // weekStart không còn dùng ở server (chế độ tuần): client tự ghép số ngày → ngày
   // đầy đủ dựa trên ô "Tuần đầu" / tháng đọc trong ảnh.
   const { image, mediaType, employeeCode, fullName, phone, scope, month } = body
+  const periodStart = (body.periodStart || '').trim()
+  const periodEnd = (body.periodEnd || '').trim()
+  const isoRe = /^\d{4}-\d{2}-\d{2}$/
+  const hasPeriod = isoRe.test(periodStart) && isoRe.test(periodEnd)
   const isMonth = scope === 'month'
   const hasId = [employeeCode, fullName, phone].some(
     (v) => v && String(v).trim()
@@ -195,10 +202,24 @@ Deno.serve(async (req: Request) => {
       (employeeCode ? ` Mã: "${employeeCode}".` : '') +
       (fullName ? ` Họ tên: "${fullName}".` : '') +
       (phone ? ` SĐT: "${phone}".` : '')
+    // Chế độ kỳ lương: hướng dẫn AI map SỐ NGÀY trần qua ranh giới 2 tháng dựa trên
+    // khoảng kỳ thật (vd 26/05–25/06): số ngày lớn (≥ ngày bắt đầu) thuộc tháng đầu,
+    // số ngày nhỏ (≤ ngày chốt) thuộc tháng chốt. Không có khoảng kỳ → fallback tháng.
+    const periodHint = hasPeriod
+      ? ` Kỳ lương cần đọc TỪ ${periodStart} ĐẾN ${periodEnd} (có thể vắt qua 2 tháng).` +
+        ` Nếu ảnh CHỈ ghi SỐ NGÀY trần (thiếu tháng/năm): số ngày >= ${Number(
+          periodStart.slice(8, 10)
+        )} thuộc tháng ${periodStart.slice(0, 7)}; số ngày <= ${Number(
+          periodEnd.slice(8, 10)
+        )} thuộc tháng ${periodEnd.slice(0, 7)}.` +
+        ` CHỈ trả các ngày NẰM TRONG khoảng ${periodStart}..${periodEnd}.`
+      : month
+        ? ` Tháng cần đọc: ${month}.`
+        : ''
     const userText = isMonth
       ? idText +
-        ' Trả về TẤT CẢ ngày có công trong tháng (mỗi ngày một entry).' +
-        (month ? ` Tháng cần đọc: ${month}.` : '')
+        ' Trả về TẤT CẢ ngày có công trong kỳ (mỗi ngày một entry).' +
+        periodHint
       : idText +
         ' Trả về ca từng thứ Mon..Sun. Với mỗi cột đọc "day" = SỐ NGÀY trần ghi ở' +
         ' header (1–31, không có thì 0) và đọc tháng/năm ở tiêu đề nếu có' +
