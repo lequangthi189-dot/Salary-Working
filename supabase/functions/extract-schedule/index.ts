@@ -12,8 +12,6 @@
 // Gọi từ frontend (kèm Authorization: Bearer <user access token>):
 //   POST { image: "<base64 không gồm tiền tố data:>", mediaType: "image/png", employeeCode: "..." }
 
-import { createClient } from 'npm:@supabase/supabase-js@2'
-
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -145,17 +143,18 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  // Xác thực người dùng qua JWT của Supabase (chỉ user đã đăng nhập mới gọi được).
+  // Xác thực người dùng qua JWT (chỉ user đã đăng nhập mới gọi được). Gọi GoTrue
+  // REST /auth/v1/user thay vì SDK npm:@supabase/supabase-js để hàm là Deno THUẦN
+  // → deploy KHÔNG cần Docker bundling (giống salary-chat).
   const authHeader = req.headers.get('Authorization') || ''
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } }
-  )
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return json({ error: 'Unauthorized' }, 401)
+  const userResp = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/user`, {
+    headers: {
+      Authorization: authHeader,
+      apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+    },
+  })
+  const user = userResp.ok ? await userResp.json() : null
+  if (!user?.id) return json({ error: 'Unauthorized' }, 401)
 
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) return json({ error: 'Server chưa cấu hình GEMINI_API_KEY' }, 500)
