@@ -111,15 +111,34 @@ export default function ReconcileModal({
     return new Promise((resolve) => setConfirmState({ message, resolve }))
   }
 
-  // Map ngày -> giờ THỰC TẾ (đã check-in) và giờ DỰ KIẾN (lịch) trong bảng công.
-  // Hai loại có thể nằm ở hai dòng ca khác nhau cùng ngày.
-  const actualByDate = new Map()
-  const schedByDate = new Map()
+  // Map ngày -> TỔNG giờ THỰC TẾ và TỔNG giờ DỰ KIẾN trong bảng công. Một ngày có
+  // thể có NHIỀU ca (tách ca sáng/chiều) → CỘNG DỒN mọi ca, không lấy mỗi ca đầu,
+  // để khớp tổng giờ trên ảnh. Giờ THỰC TẾ dùng computeEffective (kẹp theo lịch dự
+  // kiến): công ty CHẶN giờ làm vượt lịch nên phần vượt không được tính — khớp cách
+  // công ty ghi công.
+  const actualHoursByDate = new Map()
+  const schedHoursByDate = new Map()
   for (const s of shifts) {
-    if (s.start_time && s.end_time && !actualByDate.has(s.work_date))
-      actualByDate.set(s.work_date, s)
-    if (s.scheduled_start && s.scheduled_end && !schedByDate.has(s.work_date))
-      schedByDate.set(s.work_date, s)
+    if (s.start_time && s.end_time) {
+      const h = computeEffective(
+        hhmm(s.scheduled_start),
+        hhmm(s.scheduled_end),
+        hhmm(s.start_time),
+        hhmm(s.end_time),
+        !!s.is_holiday
+      ).decimalHours
+      actualHoursByDate.set(
+        s.work_date,
+        (actualHoursByDate.get(s.work_date) || 0) + h
+      )
+    }
+    if (s.scheduled_start && s.scheduled_end) {
+      const h = durationHours(hhmm(s.scheduled_start), hhmm(s.scheduled_end))
+      schedHoursByDate.set(
+        s.work_date,
+        (schedHoursByDate.get(s.work_date) || 0) + h
+      )
+    }
   }
 
   // Đối chiếu theo TỔNG GIỜ CÔNG: chỉ cần giờ bằng nhau là khớp.
@@ -136,21 +155,9 @@ export default function ReconcileModal({
   function compareDates(imgByDate, dateList) {
     return dateList.map((date) => {
       const imgHours = imgByDate.get(date) || 0
-      // Giờ THỰC TẾ = giờ công hiệu dụng như thẻ workshift (kẹp theo lịch dự kiến).
-      const aS = actualByDate.get(date)
-      const actualHours = aS
-        ? computeEffective(
-            hhmm(aS.scheduled_start),
-            hhmm(aS.scheduled_end),
-            hhmm(aS.start_time),
-            hhmm(aS.end_time),
-            !!aS.is_holiday
-          ).decimalHours
-        : 0
-      const sS = schedByDate.get(date)
-      const schedHours = sS
-        ? durationHours(hhmm(sS.scheduled_start), hhmm(sS.scheduled_end))
-        : 0
+      // Giờ THỰC TẾ = TỔNG giờ công hiệu dụng mọi ca trong ngày (đã gộp, kẹp lịch).
+      const actualHours = actualHoursByDate.get(date) || 0
+      const schedHours = schedHoursByDate.get(date) || 0
       return {
         date,
         imgHours,
