@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   computeEffective,
   formatHours,
@@ -8,6 +8,13 @@ import {
 import TimeInput from './TimeInput.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
+
+// Giờ "HH:MM" của thời điểm HIỆN TẠI (đồng hồ máy người dùng).
+function nowHHMM() {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 // ShiftForm = KHỐI NHẬP CA (cột phải). Tự quản lý state các ô nhập; khi bấm
 // "Add shift" gọi callback onAdd(shiftData) để truyền dữ liệu lên component cha (App).
@@ -24,11 +31,30 @@ export default function ShiftForm({
   const { t } = useI18n()
   // --- STATE các trường nhập ---
   const [workDate, setWorkDate] = useState(localTodayStr())
-  const [startTime, setStartTime] = useState('09:00')
-  const [endTime, setEndTime] = useState('17:00')
+  const [startTime, setStartTime] = useState(nowHHMM())
+  const [endTime, setEndTime] = useState(nowHHMM())
+  // Ô giờ vào/ra mặc định CHẠY THEO GIỜ THỰC; khi người dùng tự gõ thì ô đó
+  // "đã chạm" và dừng cập nhật để giữ giá trị họ đặt.
+  const [startTouched, setStartTouched] = useState(false)
+  const [endTouched, setEndTouched] = useState(false)
   const [isHoliday, setIsHoliday] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+
+  // Đồng hồ real-time: mỗi giây bơm giờ hiện tại vào ô CHƯA bị chạm. setState với
+  // chuỗi y hệt → React bỏ qua render nên không tốn gì khi phút chưa đổi.
+  useEffect(() => {
+    if (startTouched && endTouched) return
+    const id = setInterval(() => {
+      const now = nowHHMM()
+      if (!startTouched) setStartTime(now)
+      if (!endTouched) setEndTime(now)
+    }, 1000)
+    return () => clearInterval(id)
+  }, [startTouched, endTouched])
+
+  // Form còn "nguyên": cả hai ô vẫn đang chạy theo giờ thực (chưa ai sửa).
+  const pristine = !startTouched && !endTouched
 
   // Ngày đang chọn đã có lịch dự kiến (nhập từ "Nhập lịch tuần") → dùng làm mốc
   // tính trễ. Không nhập giờ lịch tay ở form ngày nữa; ngày không có lịch dự kiến
@@ -67,6 +93,13 @@ export default function ShiftForm({
     })
     setBusy(false)
     if (err) setError(err)
+    else {
+      // Thêm xong → trả ô giờ về CHẠY THEO GIỜ THỰC cho lần nhập kế tiếp.
+      setStartTouched(false)
+      setEndTouched(false)
+      setStartTime(nowHHMM())
+      setEndTime(nowHHMM())
+    }
   }
 
   return (
@@ -91,11 +124,25 @@ export default function ShiftForm({
       <div className="fields check-row">
         <label className="checkin">
           {t('shiftForm.checkin')}
-          <TimeInput value={startTime} onChange={setStartTime} required />
+          <TimeInput
+            value={startTime}
+            onChange={(v) => {
+              setStartTouched(true)
+              setStartTime(v)
+            }}
+            required
+          />
         </label>
         <label className="checkout">
           {t('shiftForm.checkout')}
-          <TimeInput value={endTime} onChange={setEndTime} required />
+          <TimeInput
+            value={endTime}
+            onChange={(v) => {
+              setEndTouched(true)
+              setEndTime(v)
+            }}
+            required
+          />
         </label>
         <label className="holiday-check">
           <input
@@ -107,19 +154,27 @@ export default function ShiftForm({
         </label>
       </div>
 
-      {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập */}
-      <p className="preview-line">
-        {t('shiftForm.preview', {
-          type:
-            hasNightShift && preview.nightHours > preview.dayHours
-              ? t('common.night')
-              : t('common.day'),
-          hours: formatHours(preview.decimalHours),
-          money: formatMoney(preview.pay),
-        })}
-        {equalTimes && t('shiftForm.full24')}
-      </p>
-      {lostText && (
+      {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập.
+          Khi form còn NGUYÊN (ô giờ đang chạy theo giờ thực) thì chỉ hiện gợi ý
+          live — chưa phải ca thật nên không hiện preview lương 24h gây hiểu nhầm. */}
+      {pristine ? (
+        <p className="preview-line muted">
+          {t('shiftForm.live', { now: startTime })}
+        </p>
+      ) : (
+        <p className="preview-line">
+          {t('shiftForm.preview', {
+            type:
+              hasNightShift && preview.nightHours > preview.dayHours
+                ? t('common.night')
+                : t('common.day'),
+            hours: formatHours(preview.decimalHours),
+            money: formatMoney(preview.pay),
+          })}
+          {equalTimes && t('shiftForm.full24')}
+        </p>
+      )}
+      {!pristine && lostText && (
         <p className="lost">
           {lostText} · −{formatMoney(preview.lostPay)}
         </p>
