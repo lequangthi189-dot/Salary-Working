@@ -374,6 +374,28 @@
     box-shadow 0.28s ease;
 }
 
+/* FIX — Viền gradient cho modal là VÙNG CUỘN (.modal-card có overflow-y:auto).
+   Lớp ::before (position:absolute; inset:0) bị ghim theo khung nhìn của vùng cuộn
+   thay vì theo toàn bộ nội dung, nên với modal cao (vd bảng Hướng dẫn 8 bước) cạnh
+   viền cắt NGANG GIỮA nội dung. Cách bền: bỏ ::before riêng cho .modal-card và vẽ
+   viền gradient bằng background-clip (padding-box + border-box) — background tô đúng
+   cả phần cuộn nên không bao giờ bị cắt. Đặt SAU khối :is(...) để thắng nhờ thứ tự. */
+[data-theme='glass'] .modal-card::before {
+  display: none;
+}
+[data-theme='glass'] .modal-card {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--panel), var(--panel)) padding-box,
+    linear-gradient(
+        135deg,
+        rgba(168, 85, 247, 0.9),
+        rgba(34, 211, 238, 0.85) 50%,
+        rgba(236, 72, 153, 0.9)
+      )
+      border-box;
+}
+
 /* MODERN — Tôn trọng người dùng giảm chuyển động: tắt hoạt ảnh nền & transform. */
 @media (prefers-reduced-motion: reduce) {
   [data-theme='glass'] body {
