@@ -34,5 +34,5 @@ export function useDeductions(session, onError) {
     else setDeductions((prev) => prev.filter((d) => d.id !== id))
   }
 
-  return { deductions, reload, addDeduction, deleteDeduction }
+  return { deductions, addDeduction, deleteDeduction }
 }

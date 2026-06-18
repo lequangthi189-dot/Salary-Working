@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as shiftsModel from '../models/shiftsModel.js'
-import { periodClosedError } from '../lib/shiftRules.js'
+import { periodClosedError, overlapError } from '../lib/shiftRules.js'
 
 // CONTROLLER: state + thao tác cho ca làm việc. View gọi các hàm này, không đụng
 // trực tiếp Supabase. Trả lỗi dạng chuỗi cho form, hoặc set loadError cho nền.
@@ -25,6 +25,8 @@ export function useShifts(session) {
   async function addShift(shift) {
     const closedErr = periodClosedError(shift.work_date)
     if (closedErr) return closedErr
+    const overlapErr = overlapError(shift, shifts)
+    if (overlapErr) return overlapErr
     const { error } = await shiftsModel.insertShift(shift, session.user.id)
     if (error) return error.message
     await reload()
@@ -32,6 +34,8 @@ export function useShifts(session) {
   }
 
   async function updateShift(id, fields) {
+    const overlapErr = overlapError(fields, shifts, id)
+    if (overlapErr) return overlapErr
     const { error } = await shiftsModel.updateShift(id, fields)
     if (error) return error.message
     await reload()
@@ -47,6 +51,10 @@ export function useShifts(session) {
   // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI. Trả về mảng lỗi (rỗng nếu OK).
   async function importWeekShifts(rows) {
     const errors = []
+    // Gộp ca đã có + ca vừa chấp nhận trong CHÍNH lần import này để bắt cả chồng
+    // lấn giữa các dòng trong lịch tuần (reload chỉ chạy ở cuối nên `shifts` chưa kịp
+    // cập nhật). Mỗi ca tạm gán id giả để overlapError không tự loại nhầm.
+    const accepted = [...shifts]
     for (const r of rows) {
       const shift = {
         work_date: r.date,
@@ -61,8 +69,14 @@ export function useShifts(session) {
         errors.push(`${r.date}: ${closedErr}`)
         continue
       }
+      const overlapErr = overlapError(shift, accepted)
+      if (overlapErr) {
+        errors.push(`${r.date}: ${overlapErr}`)
+        continue
+      }
       const { error } = await shiftsModel.insertShift(shift, session.user.id)
       if (error) errors.push(`${r.date}: ${error.message}`)
+      else accepted.push(shift)
     }
     await reload()
     return errors
@@ -72,7 +86,6 @@ export function useShifts(session) {
     shifts,
     loadError,
     setLoadError,
-    reload,
     addShift,
     updateShift,
     deleteShift,
