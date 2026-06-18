@@ -91,6 +91,7 @@ export const translations = {
     "shiftForm.checkout": "Check-out",
     "shiftForm.preview": "Current shift ({type}): {hours} h · {money}",
     "shiftForm.full24": " · full 24h (start = end)",
+    "shiftForm.live": "In/out follow the current time ({now}) — type to set your own.",
     "shiftForm.received": "Salary received",
     "shiftForm.receivedTitle": "Payday has arrived — click to mark as received",
     "shiftForm.adding": "Adding…",
@@ -612,6 +613,7 @@ export const translations = {
     "shiftForm.checkout": "Giờ ra",
     "shiftForm.preview": "Ca đang nhập ({type}): {hours} h · {money}",
     "shiftForm.full24": " · full 24h (giờ vào = giờ ra)",
+    "shiftForm.live": "Giờ vào/ra đang chạy theo giờ thực ({now}) — gõ để tự đặt.",
     "shiftForm.received": "Đã nhận lương",
     "shiftForm.receivedTitle":
       "Đã tới ngày nhận lương — bấm để đánh dấu đã nhận",
