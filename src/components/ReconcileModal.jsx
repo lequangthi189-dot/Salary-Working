@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
-import { localTodayStr } from '../lib/payPeriod.js'
+import {
+  localTodayStr,
+  payPeriodKeyOf,
+  payPeriodRange,
+  payPeriodLabel,
+} from '../lib/payPeriod.js'
 import {
   hhmm,
   durationHours,
@@ -87,8 +92,10 @@ export default function ReconcileModal({
   const [scope, setScope] = useState('week')
   // Tuần bắt đầu (Thứ 2). Chế độ nhiều tuần: ảnh thứ i ứng với tuần weekStart+7*i.
   const [weekStart, setWeekStart] = useState(mondayOfThisWeek())
-  // Tháng cần đối chiếu ("YYYY-MM", mặc định tháng này) cho chế độ tháng.
-  const [month, setMonth] = useState(localTodayStr().slice(0, 7))
+  // KỲ LƯƠNG cần đối chiếu. Giá trị = KHÓA kỳ ("YYYY-MM" của tháng KẾT THÚC kỳ),
+  // trùng định dạng <input type="month">. Mặc định kỳ hiện tại. Khoảng ngày thực
+  // (bắt đầu/chốt) suy từ cấu hình hồ sơ qua payPeriodRange.
+  const [month, setMonth] = useState(payPeriodKeyOf(localTodayStr()))
   const [loading, setLoading] = useState(false)
   // Tiến độ thật. indeterminate khi chờ Gemini; ẩn trong finally để không kẹt khi lỗi.
   const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
@@ -177,16 +184,19 @@ export default function ReconcileModal({
     return { ws, dates, resolved: !!r }
   }
 
-  // Một ảnh tháng (data.entries) → các dòng đối chiếu cho mọi ngày trong tháng.
+  // Một ảnh KỲ LƯƠNG (data.entries) → các dòng đối chiếu cho mọi ngày NẰM TRONG kỳ.
+  // Khoảng [start, end] lấy theo cấu hình kỳ lương của hồ sơ (payPeriodRange), nên
+  // kỳ có thể vắt qua 2 tháng (vd 26/05–25/06). So sánh chuỗi "YYYY-MM-DD" là đủ.
   function buildMonthRows(data) {
+    const { start, end } = payPeriodRange(month)
     const imgByDate = new Map()
     for (const e of data.entries || []) {
-      if (!isoRe.test(e.date || '') || e.date.slice(0, 7) !== month) continue
+      if (!isoRe.test(e.date || '') || e.date < start || e.date > end) continue
       imgByDate.set(e.date, (imgByDate.get(e.date) || 0) + imageHours(e))
     }
     const shiftDates = shifts
       .map((s) => s.work_date)
-      .filter((d) => String(d).slice(0, 7) === month)
+      .filter((d) => d >= start && d <= end)
     const dateList = [...new Set([...imgByDate.keys(), ...shiftDates])].sort()
     return compareDates(imgByDate, dateList)
   }
@@ -310,7 +320,14 @@ export default function ReconcileModal({
       const data = await extractOne(
         base64,
         mediaType,
-        scope === 'month' ? { scope: 'month', month } : {}
+        scope === 'month'
+          ? {
+              scope: 'month',
+              month,
+              periodStart: payPeriodRange(month).start,
+              periodEnd: payPeriodRange(month).end,
+            }
+          : {}
       )
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) {
@@ -429,6 +446,9 @@ export default function ReconcileModal({
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
               />
+              {month && (
+                <small className="import-empcode">{payPeriodLabel(month)}</small>
+              )}
             </label>
           ) : (
             <label className="import-week">
