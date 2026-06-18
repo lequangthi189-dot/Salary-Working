@@ -63,7 +63,7 @@ export default function NavBar({ items, active = 0, onSelect }) {
     function onScroll() {
       setVisible(true);
       clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => setVisible(false), 2400);
+      hideTimer = setTimeout(() => setVisible(false), 3000);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
