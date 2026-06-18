@@ -43,5 +43,5 @@ export function useExtraIncome(session, onError) {
     else setExtraIncome((prev) => prev.filter((x) => x.id !== id))
   }
 
-  return { extraIncome, reload, addExtraIncome, updateExtraIncome, deleteExtraIncome }
+  return { extraIncome, addExtraIncome, updateExtraIncome, deleteExtraIncome }
 }

@@ -36,6 +36,9 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     setEditing(false)
   }
 
+  // Nút "Lưu" CHỈ cập nhật ca đang sửa theo đúng id của nó. Không thêm/insert ca mới
+  // (việc thêm ca là chức năng riêng ở ShiftForm). Kiểm tra chồng giờ chạy trong
+  // updateShift (controller) TRƯỚC khi ghi DB và trả lỗi để hiện tại đây.
   async function save() {
     setBusy(true)
     setError(null)

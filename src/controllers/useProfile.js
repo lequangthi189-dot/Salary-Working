@@ -90,7 +90,6 @@ export function useProfile(session) {
 
   return {
     profile,
-    reload,
     savePayday,
     saveEmployeeInfo,
     saveProfileFields,

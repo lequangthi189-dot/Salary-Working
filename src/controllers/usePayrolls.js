@@ -31,5 +31,5 @@ export function usePayrolls(session, onError) {
     await reload()
   }
 
-  return { payrolls, reload, markReceived, unmarkReceived }
+  return { payrolls, markReceived, unmarkReceived }
 }
