@@ -172,6 +172,16 @@
   ) {
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 18px;
+  /* Nền kính KHÔNG chỉ dựa vào blur: lớp gradient bán trong suốt này luôn vẽ được,
+     nên khi trình duyệt tự tắt backdrop-filter (nhiều lớp blur trên nền animation,
+     trong vùng cuộn, lúc transform…) thẻ vẫn ra chất frosted thay vì phẳng như dark. */
+  background-color: rgba(255, 255, 255, 0.06);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0.04) 55%,
+    rgba(255, 255, 255, 0.1)
+  );
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.28),
     0 0 0 1px rgba(255, 255, 255, 0.06),
@@ -277,11 +287,57 @@
     box-shadow 0.2s ease;
 }
 
+/* GLASSMORPHISM cho ô <select> (vd "Đối chiếu theo"): bỏ giao diện native,
+   nền kính mờ trong suốt + blur, bo góc, mũi tên SVG riêng và quầng sáng nhẹ
+   để khớp với các bề mặt kính khác của theme. */
+[data-theme='glass'] select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 12px;
+  padding: 0.5rem 2.2rem 0.5rem 0.8rem;
+  background-color: rgba(255, 255, 255, 0.12);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23f6f8ff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 4px 14px rgba(15, 20, 48, 0.25);
+  cursor: pointer;
+}
+[data-theme='glass'] select:hover {
+  background-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* FIX: menu thả xuống của <select> do hệ điều hành vẽ trên nền trắng. Nếu để
+   color: var(--text) (gần trắng) thì chữ trắng trên nền trắng → không đọc được.
+   Tô tông xanh-tím sâu của glass + chữ sáng để hợp với bề mặt kính mờ. */
+[data-theme='glass'] select option,
+[data-theme='dark'] select option {
+  background: #141a3c;
+  color: var(--text);
+  padding: 6px 10px;
+}
+/* Mục đang trỏ/đang chọn: nền accent cyan dịu, chữ nền tối cho tương phản rõ. */
+[data-theme='glass'] select option:checked,
+[data-theme='glass'] select option:hover {
+  background-color: #7cc4ff;
+  color: #0f1430;
+}
+[data-theme='dark'] select option:checked {
+  background: var(--accent);
+  color: #0f1430;
+}
+
 /* MODERN — Focus glow cho ô nhập: viền accent + quầng sáng cyan mềm. */
 [data-theme='glass'] :is(input, select, textarea):focus,
 [data-theme='glass'] :is(input, select, textarea):focus-visible {
   outline: none;
-  background: rgba(255, 255, 255, 0.18);
+  /* background-color (không phải shorthand) để KHÔNG xoá mũi tên SVG của select. */
+  background-color: rgba(255, 255, 255, 0.18);
   border-color: rgba(124, 196, 255, 0.9);
   box-shadow: 0 0 0 3px rgba(124, 196, 255, 0.25);
 }
