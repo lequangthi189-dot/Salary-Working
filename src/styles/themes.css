@@ -128,25 +128,33 @@
    MODERN: các đốm màu trôi/đảo nhẹ liên tục (aurora) cho cảm giác sống động. */
 [data-theme='glass'] body {
   background:
-    radial-gradient(42% 50% at 14% 18%, rgba(168, 85, 247, 0.5), transparent 70%),
-    radial-gradient(46% 54% at 86% 14%, rgba(34, 211, 238, 0.45), transparent 70%),
-    radial-gradient(50% 52% at 78% 88%, rgba(20, 184, 166, 0.45), transparent 70%),
-    radial-gradient(46% 48% at 18% 92%, rgba(236, 72, 153, 0.45), transparent 70%),
-    linear-gradient(135deg, #0f1430 0%, #141a3c 100%);
+    radial-gradient(58% 62% at 12% 16%, rgba(168, 85, 247, 0.55), transparent 72%),
+    radial-gradient(60% 66% at 88% 12%, rgba(34, 211, 238, 0.5), transparent 72%),
+    radial-gradient(64% 64% at 80% 90%, rgba(20, 184, 166, 0.5), transparent 72%),
+    radial-gradient(60% 60% at 16% 92%, rgba(236, 72, 153, 0.5), transparent 72%),
+    /* wash giữa: lấp khoảng trống tâm để không bị "rỗng" màu */
+    radial-gradient(80% 90% at 50% 50%, rgba(99, 102, 241, 0.3), transparent 78%),
+    /* base sáng hơn navy cũ → mép trái/phải không còn lộ dải tối */
+    linear-gradient(135deg, #1a2050 0%, #1d2358 100%);
   background-attachment: fixed;
   background-size: 200% 200%;
   animation: glass-aurora 28s ease-in-out infinite alternate;
 }
 
+/* Mỗi đốm màu được neo "at 14% 18%/86% 14%/…" tức nằm ở 4 GÓC. Với background-size:200%,
+   để một đốm hiển thị thì background-position phải KÉO VỀ ĐÚNG GÓC của nó (0%/100%);
+   kéo về giữa (50%) sẽ dồn đốm vào tâm rồi trôi ra ngoài viewport → nền xỉn màu.
+   Vì vậy giữ position luôn BÁM GÓC, chỉ "thở" nhẹ ±~8% để có chuyển động mà không mất màu. */
 @keyframes glass-aurora {
+  /* 6 lớp: 4 đốm góc (thở nhẹ) + wash giữa + base — 2 lớp cuối cố định 50% 50%. */
   0% {
-    background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%;
+    background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 50% 50%, 50% 50%;
   }
   50% {
-    background-position: 30% 20%, 70% 30%, 60% 70%, 30% 80%, 50% 50%;
+    background-position: 4% 4%, 96% 4%, 96% 96%, 4% 96%, 50% 50%, 50% 50%;
   }
   100% {
-    background-position: 100% 100%, 0% 100%, 0% 0%, 100% 0%, 100% 100%;
+    background-position: 1% 2%, 99% 1%, 99% 98%, 2% 99%, 50% 50%, 50% 50%;
   }
 }
 
