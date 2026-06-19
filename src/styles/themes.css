@@ -204,6 +204,15 @@
     border-color 0.28s ease;
 }
 
+/* .chat-float là CỬA SỔ NỔI cố định (styles.css: position:fixed, góc dưới phải).
+   Khối kính :is(...) ở trên đặt position:relative cho MỌI bề mặt (để ::before viền
+   gradient có gốc định vị), nhưng với .chat-float điều đó GỠ luôn fixed → khung rơi
+   vào luồng tài liệu, trôi xuống cuối .app (sau danh sách ca). Trả lại fixed; fixed
+   vẫn làm gốc định vị cho ::before nên viền gradient không hỏng. */
+[data-theme='glass'] .chat-float {
+  position: fixed;
+}
+
 /* MODERN — Viền gradient phát sáng: lớp ::before mỏng tô gradient (tím→cyan→hồng)
    rồi dùng mask compositing để chỉ chừa lại viền, không che nội dung. Bo góc kế thừa
    theo thẻ; không bắt sự kiện chuột. */
