@@ -2608,6 +2608,52 @@ input.t-out {
 .extra-summary-row.planned-line strong {
   color: var(--checkin);
 }
+/* Khoản CHƯA NHẬN (treo) — amber, chưa cộng vào tổng kỳ */
+.extra-item.pending {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.1);
+}
+/* Badge trạng thái nhận */
+.recv-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--checkin);
+  background: rgba(255, 159, 67, 0.18);
+  border: 1px solid var(--checkin);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.recv-badge.received {
+  color: var(--ok, #16a34a);
+  background: rgba(22, 163, 74, 0.15);
+  border-color: var(--ok, #16a34a);
+}
+/* Nút đổi trạng thái nhận */
+.recv-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.recv-toggle:hover {
+  border-color: var(--checkin);
+  color: var(--checkin);
+}
+.recv-toggle.on {
+  border-color: var(--ok, #16a34a);
+  color: var(--ok, #16a34a);
+}
+.recv-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .extra-item.editing {
   flex-direction: column;
   align-items: stretch;

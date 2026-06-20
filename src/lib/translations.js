@@ -164,8 +164,13 @@ export const translations = {
     "extra.sumShift": "Shift pay",
     "extra.sumExtra": "Extra income",
     "extra.sumPlanned": "Expected (planned)",
+    "extra.sumPending": "Pending (held)",
     "extra.sumTotal": "Total",
     "extra.plannedBadge": "Planned",
+    "extra.receivedBadge": "Received",
+    "extra.pendingBadge": "Not received",
+    "extra.markReceived": "Mark received",
+    "extra.markPending": "Mark not received",
 
     // pay period page
     "pp.scopeHint": "Tap a period to see its charts and full timesheet.",
@@ -469,6 +474,7 @@ export const translations = {
     "chat.extraHeader": "{label} — extra income received {total}:",
     "chat.extraLine": "• {date} {desc}: {amount}",
     "chat.extraPlannedLine": "Planned (not received yet): {amount}",
+    "chat.extraPendingLine": "Not received yet (held): {amount}",
     "chat.plannedNone": "No planned schedule for this week yet.",
     "chat.plannedHeader": "Planned schedule this week:",
     "chat.plannedLine": "• {date}: {sched}",
@@ -688,8 +694,13 @@ export const translations = {
     "extra.sumShift": "Lương ca",
     "extra.sumExtra": "Thu nhập việc ngoài",
     "extra.sumPlanned": "Dự kiến (chưa nhận)",
+    "extra.sumPending": "Chưa nhận (treo)",
     "extra.sumTotal": "Tổng cộng",
     "extra.plannedBadge": "Dự kiến",
+    "extra.receivedBadge": "Đã nhận",
+    "extra.pendingBadge": "Chưa nhận",
+    "extra.markReceived": "Đánh dấu đã nhận",
+    "extra.markPending": "Đánh dấu chưa nhận",
 
     // pay period page
     "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ và bảng công chi tiết.",
@@ -993,6 +1004,7 @@ export const translations = {
     "chat.extraHeader": "{label} — việc ngoài đã nhận {total}:",
     "chat.extraLine": "• {date} {desc}: {amount}",
     "chat.extraPlannedLine": "Dự kiến (chưa nhận): {amount}",
+    "chat.extraPendingLine": "Chưa nhận (treo): {amount}",
     "chat.plannedNone": "Tuần này chưa có lịch dự kiến.",
     "chat.plannedHeader": "Lịch dự kiến tuần này:",
     "chat.plannedLine": "• {date}: {sched}",

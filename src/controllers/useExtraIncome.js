@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as model from '../models/extraIncomeModel.js'
+import { localTodayStr } from '../lib/payPeriod.js'
 
 // CONTROLLER: state + CRUD cho thu nhập việc ngoài. Tách biệt với ca làm; KHÔNG
 // dính tới shiftMath/rates. View gọi các hàm này, không đụng Supabase trực tiếp.
@@ -43,5 +44,23 @@ export function useExtraIncome(session, onError) {
     else setExtraIncome((prev) => prev.filter((x) => x.id !== id))
   }
 
-  return { extraIncome, addExtraIncome, updateExtraIncome, deleteExtraIncome }
+  // Đổi trạng thái ĐÃ NHẬN ↔ CHƯA NHẬN. Khi nhận: ghi received_at = hôm nay (quyết
+  // định khoản vào KỲ LƯƠNG nào). Khi bỏ nhận: xoá received_at, khoản về treo.
+  async function setReceived(id, received) {
+    const { error } = await model.updateExtraIncome(id, {
+      received,
+      received_at: received ? localTodayStr() : null,
+    })
+    if (error) return error.message
+    await reload()
+    return null
+  }
+
+  return {
+    extraIncome,
+    addExtraIncome,
+    updateExtraIncome,
+    deleteExtraIncome,
+    setReceived,
+  }
 }

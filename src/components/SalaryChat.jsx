@@ -14,7 +14,7 @@ import {
   localTodayStr,
   sumDeductions,
 } from '../lib/payPeriod.js'
-import { sumExtraIncome } from '../lib/extraIncome.js'
+import { sumExtraIncome, sumReceivedExtraIncome } from '../lib/extraIncome.js'
 import {
   fetchRecentMessages,
   insertMessage,
@@ -611,12 +611,12 @@ export default function SalaryChat({
     const dayRate = snapshot.dayRate || 0
     const nightRate = snapshot.nightRate || 0
     if (!dayRate) return t('chat.noRate')
-    // Tổng thu nhập kỳ này = lương ca sau trừ (currentPay) + việc ngoài đã thực nhận.
+    // Tổng thu nhập kỳ này = lương ca sau trừ (currentPay) + việc ngoài đã NHẬN
+    // (tính vào kỳ theo received_at). Khoản chưa nhận (treo) không cộng.
     const key = payPeriodKeyOf(localTodayStr())
-    const today = localTodayStr()
-    const extraNow = sumExtraIncome(
+    const extraNow = sumReceivedExtraIncome(
       (extraIncome || []).filter(
-        (x) => payPeriodKeyOf(x.date) === key && x.date <= today
+        (x) => x.received && payPeriodKeyOf(x.received_at) === key
       )
     )
     const cur = (snapshot.currentPay || 0) + extraNow
@@ -1036,22 +1036,25 @@ export default function SalaryChat({
     bot(lines.join('\n'))
   }
 
-  // TRA CỨU thu nhập việc ngoài của một kỳ: liệt kê + tổng thực nhận + dự kiến.
+  // TRA CỨU thu nhập việc ngoài của một kỳ: liệt kê + tổng đã nhận + treo chưa nhận.
   function handleExtraIncomeQuery({ month, year }) {
     const key = month
       ? `${year || new Date().getFullYear()}-${pad2(month)}`
       : payPeriodKeyOf(localTodayStr())
     const label = payPeriodLabel(key)
-    const list = (extraIncome || []).filter(
-      (x) => payPeriodKeyOf(x.date) === key
+    const all = extraIncome || []
+    // Đã nhận tính vào kỳ này (theo received_at) + mọi khoản chưa nhận (treo).
+    const received = all.filter(
+      (x) => x.received && payPeriodKeyOf(x.received_at) === key
     )
+    const pendingList = all.filter((x) => !x.received)
+    const list = [...received, ...pendingList]
     if (list.length === 0) return bot(t('chat.extraNone', { label }))
-    const today = localTodayStr()
     const sorted = [...list].sort((a, b) =>
       String(a.date).localeCompare(String(b.date))
     )
-    const realized = sumExtraIncome(list.filter((x) => x.date <= today))
-    const planned = sumExtraIncome(list.filter((x) => x.date > today))
+    const realized = sumReceivedExtraIncome(received)
+    const pending = sumExtraIncome(pendingList)
     const lines = [t('chat.extraHeader', { label, total: formatMoney(realized) })]
     for (const x of sorted)
       lines.push(
@@ -1059,9 +1062,9 @@ export default function SalaryChat({
           date: dmy(x.date),
           desc: x.description || '—',
           amount: formatMoney(x.amount),
-        }) + (x.date > today ? ` · ${t('extra.plannedBadge')}` : '')
+        }) + (!x.received ? ` · ${t('extra.pendingBadge')}` : '')
       )
-    if (planned > 0) lines.push(t('chat.extraPlannedLine', { amount: formatMoney(planned) }))
+    if (pending > 0) lines.push(t('chat.extraPendingLine', { amount: formatMoney(pending) }))
     bot(lines.join('\n'))
   }
 
