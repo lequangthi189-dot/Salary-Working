@@ -11,8 +11,15 @@ function fmtDate(d) {
   return `${day}/${m}/${y}`
 }
 
-// Một dòng khoản việc ngoài: xem / sửa inline / xoá / đổi trạng thái nhận.
-function ExtraRow({ item, onUpdate, onDelete, onSetReceived }) {
+// "2025-06-20" -> "20/06" (cho nhãn "Nhận 20/06")
+function fmtDateShort(d) {
+  if (!d) return ''
+  const [, m, day] = String(d).split('-')
+  return `${day}/${m}`
+}
+
+// Một dòng khoản việc ngoài: chọn (tick) / xem / sửa inline / xoá / đổi trạng thái nhận.
+function ExtraRow({ item, onUpdate, onDelete, onSetReceived, selected, onToggleSelect }) {
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const [date, setDate] = useState(item.date)
@@ -99,13 +106,25 @@ function ExtraRow({ item, onUpdate, onDelete, onSetReceived }) {
   }
 
   return (
-    <li className={`extra-item${received ? '' : ' pending'}`}>
+    <li className={`extra-item${received ? '' : ' pending'}${selected ? ' selected' : ''}`}>
+      <input
+        type="checkbox"
+        className="extra-check"
+        checked={selected}
+        onChange={() => onToggleSelect(item.id)}
+        aria-label={t('extra.selectAria')}
+      />
       <div className="extra-item-main">
         <span className="extra-amt">
           {formatMoney(item.amount)}
           <span className={`recv-badge${received ? ' received' : ''}`}>
             {received ? t('extra.receivedBadge') : t('extra.pendingBadge')}
           </span>
+          {received && item.received_at && (
+            <span className="recv-on">
+              {t('extra.receivedOn', { date: fmtDateShort(item.received_at) })}
+            </span>
+          )}
         </span>
         <span className="extra-desc">{item.description}</span>
       </div>
@@ -152,6 +171,7 @@ export default function ExtraIncomeModal({
   onUpdate,
   onDelete,
   onSetReceived,
+  onSetReceivedMany,
   onClose,
 }) {
   const { t } = useI18n()
@@ -160,6 +180,11 @@ export default function ExtraIncomeModal({
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  // CHỌN hàng loạt: tập id được tick. Tick CHỈ để chọn — không đổi gì tới khi bấm
+  // nút "Đánh dấu đã nhận".
+  const [selected, setSelected] = useState(() => new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkError, setBulkError] = useState(null)
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -181,6 +206,38 @@ export default function ExtraIncomeModal({
   const extraTotal = sumExtraIncome(items.filter((x) => x.received))
   const pendingTotal = sumExtraIncome(items.filter((x) => !x.received))
   const total = totalIncome(shiftPay, extraTotal)
+
+  // Bỏ khỏi vùng chọn các id không còn hiển thị (vd sau khi xoá/đổi kỳ).
+  useEffect(() => {
+    const ids = new Set(items.map((x) => x.id))
+    setSelected((prev) => {
+      const next = new Set([...prev].filter((id) => ids.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [items])
+
+  function toggleSelect(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // HÀNG LOẠT: đánh dấu đã nhận cho mọi khoản đang được tick. Lỗi DB → giữ nguyên
+  // UI + báo lỗi; thành công → xoá vùng chọn (badge/tổng tự cập nhật sau reload).
+  async function markSelectedReceived() {
+    setBulkError(null)
+    setBulkBusy(true)
+    const err = await onSetReceivedMany([...selected], true)
+    setBulkBusy(false)
+    if (err) {
+      setBulkError(err)
+      return
+    }
+    setSelected(new Set())
+  }
 
   const amountDisplay = amount ? Number(amount).toLocaleString('vi-VN') : ''
 
@@ -278,6 +335,34 @@ export default function ExtraIncomeModal({
         </div>
         {error && <p className="msg error sm">{error}</p>}
 
+        {/* Thanh hành động hàng loạt: chỉ hiện khi đã tick ≥ 1 khoản */}
+        {selected.size > 0 && (
+          <div className="extra-bulk-bar">
+            <span className="extra-bulk-count">
+              {t('extra.bulkSelected', { n: selected.size })}
+            </span>
+            <div className="extra-bulk-actions">
+              <button
+                type="button"
+                className="extra-bulk-mark"
+                onClick={markSelectedReceived}
+                disabled={bulkBusy}
+              >
+                {bulkBusy ? '…' : t('extra.bulkMark')}
+              </button>
+              <button
+                type="button"
+                className="extra-bulk-clear"
+                onClick={() => setSelected(new Set())}
+                disabled={bulkBusy}
+              >
+                {t('extra.bulkClear')}
+              </button>
+            </div>
+          </div>
+        )}
+        {bulkError && <p className="msg error sm">{bulkError}</p>}
+
         {/* Danh sách khoản việc ngoài của kỳ */}
         {items.length === 0 ? (
           <p className="muted sm">{t('extra.empty')}</p>
@@ -290,6 +375,8 @@ export default function ExtraIncomeModal({
                 onUpdate={onUpdate}
                 onDelete={onDelete}
                 onSetReceived={onSetReceived}
+                selected={selected.has(it.id)}
+                onToggleSelect={toggleSelect}
               />
             ))}
           </ul>
