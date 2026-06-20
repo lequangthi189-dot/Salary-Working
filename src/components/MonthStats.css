@@ -49,6 +49,17 @@
 .stats-panel .salary-hero__penalty {
   color: #f85149;
 }
+/* Dòng THAM KHẢO chênh lệch do trễ/về sớm — tông amber nhẹ, KHÔNG phải đỏ "bị
+   trừ". Đây chỉ là thông tin, không ảnh hưởng lương thực. */
+.stats-panel .salary-hero__shortfall {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--checkin, #ff9f43);
+  font-size: 0.78rem;
+}
+.stats-panel .salary-hero__shortfall.ok {
+  color: #3fb950;
+}
 
 /* ---- Các hàng ô thống kê (CSS Grid) ---- */
 /* 2 hàng giãn đều (flex:1) để lấp đầy chiều cao, kéo giãn từng ô theo cột. */
