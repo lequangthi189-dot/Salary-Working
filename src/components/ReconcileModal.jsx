@@ -121,7 +121,6 @@ export default function ReconcileModal({
   // kiến): công ty CHẶN giờ làm vượt lịch nên phần vượt không được tính — khớp cách
   // công ty ghi công.
   const actualHoursByDate = new Map()
-  const schedHoursByDate = new Map()
   for (const s of shifts) {
     if (s.start_time && s.end_time) {
       const h = computeEffective(
@@ -136,13 +135,6 @@ export default function ReconcileModal({
         (actualHoursByDate.get(s.work_date) || 0) + h
       )
     }
-    if (s.scheduled_start && s.scheduled_end) {
-      const h = durationHours(hhmm(s.scheduled_start), hhmm(s.scheduled_end))
-      schedHoursByDate.set(
-        s.work_date,
-        (schedHoursByDate.get(s.work_date) || 0) + h
-      )
-    }
   }
 
   // Đối chiếu theo TỔNG GIỜ CÔNG: chỉ cần giờ bằng nhau là khớp.
@@ -155,16 +147,17 @@ export default function ReconcileModal({
     return 'off'
   }
 
-  // Tạo dòng đối chiếu cho một tập ngày: gộp giờ ảnh / thực tế / dự kiến theo ngày.
+  // Tạo dòng đối chiếu cho một tập ngày: gộp giờ ảnh / thực tế theo ngày. Bảng đối
+  // chiếu chỉ so 2 nguồn đáng tin là "Thực tế" và "Theo ảnh"; lịch dự kiến KHÔNG
+  // tham gia đối chiếu (chỉ còn vai trò tham khảo, hiển thị ở form/thẻ ca).
   function compareDates(imgByDate, dateList) {
     return dateList.map((date) => {
       const imgHours = imgByDate.get(date) || 0
       // Giờ THỰC TẾ = TỔNG giờ công hiệu dụng mọi ca trong ngày (đã gộp, kẹp lịch).
       const actualHours = actualHoursByDate.get(date) || 0
-      const schedHours = schedHoursByDate.get(date) || 0
       // Kết quả khớp KHÔNG chốt ở đây: tính ở render qua effStatus theo giờ ảnh HIỆU
-      // DỤNG (gồm cả số người dùng sửa tay). Dự kiến không ảnh hưởng kết quả.
-      return { date, imgHours, actualHours, schedHours }
+      // DỤNG (gồm cả số người dùng sửa tay).
+      return { date, imgHours, actualHours }
     })
   }
 
@@ -401,11 +394,9 @@ export default function ReconcileModal({
     if (edit != null) return edit
     return r.imgHours ? formatHours(r.imgHours) : ''
   }
-  // Chỉ bỏ ngày HOÀN TOÀN trống (ảnh hiệu dụng, thực tế, dự kiến đều 0 giờ).
+  // Chỉ bỏ ngày HOÀN TOÀN trống (ảnh hiệu dụng và thực tế đều 0 giờ).
   function visibleOf(rows) {
-    return rows.filter(
-      (r) => effImgHours(r) || r.actualHours || r.schedHours
-    )
+    return rows.filter((r) => effImgHours(r) || r.actualHours)
   }
   // Chuẩn bị dữ liệu render: từng nhóm + tổng kết, cộng tổng kết toàn bộ.
   const view = groups
@@ -597,7 +588,6 @@ export default function ReconcileModal({
                           <th>{t('import.thDate')}</th>
                           <th>{t('reconcile.colActual')}</th>
                           <th>{t('reconcile.colImage')}</th>
-                          <th>{t('reconcile.colSched')}</th>
                           <th>{t('reconcile.colResult')}</th>
                         </tr>
                       </thead>
@@ -632,11 +622,6 @@ export default function ReconcileModal({
                                 }
                               />
                               <span className="rec-img-unit">h</span>
-                            </td>
-                            <td>
-                              {r.schedHours
-                                ? `${formatHours(r.schedHours)}h`
-                                : '—'}
                             </td>
                             <td
                               className={`rec-${
