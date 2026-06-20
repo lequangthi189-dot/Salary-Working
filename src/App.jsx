@@ -134,6 +134,7 @@ export default function App() {
     updateExtraIncome,
     deleteExtraIncome,
     setReceived,
+    setReceivedMany,
   } = useExtraIncome(session, setLoadError)
   const {
     profile,
@@ -462,6 +463,7 @@ export default function App() {
           onUpdate={updateExtraIncome}
           onDelete={deleteExtraIncome}
           onSetReceived={setReceived}
+          onSetReceivedMany={setReceivedMany}
           onClose={() => setShowExtraIncome(false)}
         />
       )}

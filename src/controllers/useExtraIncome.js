@@ -47,10 +47,18 @@ export function useExtraIncome(session, onError) {
   // Đổi trạng thái ĐÃ NHẬN ↔ CHƯA NHẬN. Khi nhận: ghi received_at = hôm nay (quyết
   // định khoản vào KỲ LƯƠNG nào). Khi bỏ nhận: xoá received_at, khoản về treo.
   async function setReceived(id, received) {
-    const { error } = await model.updateExtraIncome(id, {
+    return setReceivedMany([id], received)
+  }
+
+  // HÀNG LOẠT: đặt trạng thái nhận cho nhiều khoản (1 query + reload 1 lần). Trả
+  // message lỗi nếu DB lỗi (caller giữ nguyên UI cũ), null nếu OK.
+  async function setReceivedMany(ids, received) {
+    if (!ids || ids.length === 0) return null
+    const { error } = await model.setReceivedMany(
+      ids,
       received,
-      received_at: received ? localTodayStr() : null,
-    })
+      received ? localTodayStr() : null
+    )
     if (error) return error.message
     await reload()
     return null
@@ -62,5 +70,6 @@ export function useExtraIncome(session, onError) {
     updateExtraIncome,
     deleteExtraIncome,
     setReceived,
+    setReceivedMany,
   }
 }

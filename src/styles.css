@@ -2654,6 +2654,73 @@ input.t-out {
   opacity: 0.5;
   cursor: default;
 }
+/* Checkbox chọn hàng loạt + nhãn ngày nhận */
+.extra-check {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  cursor: pointer;
+  accent-color: var(--ok, #16a34a);
+}
+.extra-item.selected {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: -1px;
+}
+.recv-on {
+  margin-left: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ok, #16a34a);
+  white-space: nowrap;
+}
+/* Thanh hành động hàng loạt */
+.extra-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+  padding: 0.45rem 0.6rem;
+  background: var(--panel-2);
+  border: 1px solid var(--accent, #3b82f6);
+  border-radius: 8px;
+}
+.extra-bulk-count {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.extra-bulk-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+.extra-bulk-mark {
+  background: var(--ok, #16a34a);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.extra-bulk-mark:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.extra-bulk-clear {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.extra-bulk-clear:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
 .extra-item.editing {
   flex-direction: column;
   align-items: stretch;

@@ -173,6 +173,11 @@ export const translations = {
     "extra.pendingBadge": "Not received",
     "extra.markReceived": "Mark received",
     "extra.markPending": "Mark not received",
+    "extra.receivedOn": "Received {date}",
+    "extra.selectAria": "Select entry",
+    "extra.bulkSelected": "{n} selected",
+    "extra.bulkMark": "Mark received",
+    "extra.bulkClear": "Clear",
 
     // pay period page
     "pp.scopeHint": "Tap a period to see its charts and full timesheet.",
@@ -705,6 +710,11 @@ export const translations = {
     "extra.pendingBadge": "Chưa nhận",
     "extra.markReceived": "Đánh dấu đã nhận",
     "extra.markPending": "Đánh dấu chưa nhận",
+    "extra.receivedOn": "Nhận {date}",
+    "extra.selectAria": "Chọn khoản",
+    "extra.bulkSelected": "Đã chọn {n} khoản",
+    "extra.bulkMark": "Đánh dấu đã nhận",
+    "extra.bulkClear": "Bỏ chọn",
 
     // pay period page
     "pp.scopeHint": "Bấm vào một kỳ để xem biểu đồ và bảng công chi tiết.",
