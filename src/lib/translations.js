@@ -105,7 +105,7 @@ export const translations = {
     // month stats
     "monthStats.salaryLabel": "Salary this month:",
     "monthStats.expected": "Expected",
-    "monthStats.penalty": "Penalty",
+    "monthStats.penalty": "Late",
     "monthStats.deduction": "Compensation",
     "monthStats.totalHours": "Total Hours",
     "monthStats.dayHours": "Day Hours",
@@ -628,7 +628,7 @@ export const translations = {
     // month stats
     "monthStats.salaryLabel": "Lương tháng này:",
     "monthStats.expected": "Dự kiến",
-    "monthStats.penalty": "Phạt",
+    "monthStats.penalty": "Trễ",
     "monthStats.deduction": "Bồi thường",
     "monthStats.totalHours": "Tổng Giờ Tháng",
     "monthStats.dayHours": "Giờ Ngày",
