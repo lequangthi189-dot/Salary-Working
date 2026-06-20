@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
+import TimeInput from './TimeInput.jsx'
 
 // Một dòng trống: ngày (mặc định hôm nay) + giờ lịch dự kiến vào/ra.
 function blankRow() {
@@ -75,17 +76,15 @@ export default function ManualScheduleModal({ onImport, onClose, onDone }) {
                 value={r.date}
                 onChange={(e) => updateRow(i, { date: e.target.value })}
               />
-              <input
-                type="time"
+              <TimeInput
                 title={t('tt.schedIn')}
                 value={r.start}
-                onChange={(e) => updateRow(i, { start: e.target.value })}
+                onChange={(v) => updateRow(i, { start: v })}
               />
-              <input
-                type="time"
+              <TimeInput
                 title={t('tt.schedOut')}
                 value={r.end}
-                onChange={(e) => updateRow(i, { end: e.target.value })}
+                onChange={(v) => updateRow(i, { end: v })}
               />
               {rows.length > 1 ? (
                 <button

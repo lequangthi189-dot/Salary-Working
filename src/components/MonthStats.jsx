@@ -54,7 +54,9 @@ export default function MonthStats({
             {t('fx.updatedAt', {
               sym: fxSym,
               rate: fxVndPerUnit.toLocaleString('vi-VN'),
-              time: new Date(fxUpdatedAt).toLocaleString(fxLocale),
+              time: new Date(fxUpdatedAt).toLocaleString(fxLocale, {
+                hourCycle: 'h23',
+              }),
             })}
           </span>
         )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../lib/i18n.jsx'
 import LangToggle from './LangToggle.jsx'
+import TimeInput from './TimeInput.jsx'
 import { DEFAULT_NIGHT_PCT } from '../lib/rates.js'
 import { getRate } from '../lib/currency.jsx'
 
@@ -293,19 +294,17 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
           <div className="emp-period">
             <label>
               {t('emp.nightStart')}
-              <input
-                type="time"
+              <TimeInput
                 value={nightStart}
-                onChange={(e) => setNightStart(e.target.value)}
+                onChange={setNightStart}
                 required
               />
             </label>
             <label>
               {t('emp.nightEnd')}
-              <input
-                type="time"
+              <TimeInput
                 value={nightEnd}
-                onChange={(e) => setNightEnd(e.target.value)}
+                onChange={setNightEnd}
                 required
               />
             </label>

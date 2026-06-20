@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ChangePasswordModal from './ChangePasswordModal.jsx'
+import TimeInput from './TimeInput.jsx'
 import { formatMoney } from '../lib/shiftMath.js'
 import { listAccounts, removeAccount } from '../lib/accounts.js'
 import { useI18n } from '../lib/i18n.jsx'
@@ -49,6 +50,8 @@ function EditableRow({ label, display, initial, type = 'text', onSave }) {
                 <option value="1">{t('common.yes')}</option>
                 <option value="0">{t('common.no')}</option>
               </select>
+            ) : type === 'time' ? (
+              <TimeInput value={val} onChange={setVal} />
             ) : (
               <input
                 type={type}
