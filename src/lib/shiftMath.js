@@ -279,6 +279,12 @@ export function formatHours(h) {
   return Number(h.toFixed(2)).toString()
 }
 
+// Như formatHours nhưng LUÔN giữ đúng 2 chữ số thập phân (vd 8 -> "8.00", 8.5 -> "8.50").
+// Dùng cho bảng tổng kết để các cột giờ hiển thị đồng nhất.
+export function formatHours2(h) {
+  return Number(h).toFixed(2)
+}
+
 // Human-readable lost-hours breakdown (theo ngôn ngữ hiện tại), null nếu không mất.
 // vd "Mất 2h — vào trễ 1h (ngày 1 / đêm 0) · ra sớm 1h (ngày 0 / đêm 1)"
 export function formatLost(lost) {
