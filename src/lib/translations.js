@@ -135,6 +135,7 @@ export const translations = {
     "shiftCard.schedOut": "Sched out",
     "shiftCard.editAria": "Edit shift",
     "shiftCard.deleteAria": "Delete shift",
+    "shiftCard.deleteConfirm": "Delete this shift? This action cannot be undone.",
 
     // deductions card
     "ded.title": "Compensation",
@@ -658,6 +659,7 @@ export const translations = {
     "shiftCard.schedOut": "Lịch ra",
     "shiftCard.editAria": "Sửa ca",
     "shiftCard.deleteAria": "Xóa ca",
+    "shiftCard.deleteConfirm": "Xóa ca này? Hành động này không thể hoàn tác.",
 
     // deductions card
     "ded.title": "Tiền bồi thường",
