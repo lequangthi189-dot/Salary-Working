@@ -26,7 +26,12 @@ export default function MonthStats({
   const fxRate = getRate(fxCur)
   const fxVndPerUnit = fxRate ? Math.round(1 / fxRate) : 0
   // Lương thực nhận của tháng = lương ca − tiền bồi thường (bị trừ) của kỳ.
+  // CHÚ Ý: KHÔNG trừ lostPay ở đây — lostPay chỉ là số THAM KHẢO (xem dưới).
   const netPay = stats.pay - deductionTotal
+  // Số THAM KHẢO: đi trễ/về sớm khiến nhận ÍT HƠN bao nhiêu so với làm đủ lịch dự
+  // kiến (= idealPay − pay = lostPay). KHÔNG phải tiền bị trừ, KHÔNG đụng netPay.
+  const shortfall = Math.round(stats.lostPay)
+  const hasShortfall = shortfall > 0
   return (
     <section className="stats-panel">
       {/* Ô lương lớn */}
@@ -35,10 +40,6 @@ export default function MonthStats({
         <span className="salary-hero__value">{formatMoney(netPay)}</span>
         <span className="salary-hero__sub">
           ({t('monthStats.expected')}: {formatMoney(stats.idealPay)}
-          <span className="salary-hero__sep"> | </span>
-          <span className="salary-hero__penalty">
-            {t('monthStats.penalty')}: −{formatMoney(stats.lostPay)}
-          </span>
           {deductionTotal > 0 && (
             <>
               <span className="salary-hero__sep"> | </span>
@@ -49,6 +50,17 @@ export default function MonthStats({
           )}
           )
         </span>
+        {/* Số THAM KHẢO (không trừ vào lương): chênh lệch do đi trễ/về sớm so với
+            làm đủ lịch dự kiến. Đủ giờ → không hiện số âm, chỉ báo "đủ giờ". */}
+        {hasShortfall ? (
+          <span className="salary-hero__shortfall">
+            {t('monthStats.shortfall', { amount: formatMoney(shortfall) })}
+          </span>
+        ) : (
+          <span className="salary-hero__shortfall ok">
+            {t('monthStats.onSchedule')}
+          </span>
+        )}
         {showFx && (
           <span className="salary-hero__fx">
             {t('fx.updatedAt', {
