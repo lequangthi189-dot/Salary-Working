@@ -1,5 +1,5 @@
 import StatCard from './StatCard.jsx'
-import { formatHours, formatMoney } from '../lib/shiftMath.js'
+import { formatHours2, formatMoney } from '../lib/shiftMath.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { getRate } from '../lib/currency.jsx'
 import './MonthStats.css'
@@ -67,24 +67,24 @@ export default function MonthStats({
         <StatCard
           tone="orange"
           title={t('monthStats.totalHours')}
-          value={`${formatHours(stats.hours)} (h)`}
+          value={`${formatHours2(stats.hours)} (h)`}
         />
         <StatCard
           tone="green"
           title={t('monthStats.dayHours')}
-          value={`${formatHours(stats.dayHours)} (h)`}
+          value={`${formatHours2(stats.dayHours)} (h)`}
         />
         {hasNightShift && (
           <StatCard
             tone="blue"
             title={t('monthStats.nightHours')}
-            value={`${formatHours(stats.nightHours)} (h)`}
+            value={`${formatHours2(stats.nightHours)} (h)`}
           />
         )}
         <StatCard
           tone="red"
           title={t('monthStats.lateHours')}
-          value={`${formatHours(stats.lostHours)} (h)`}
+          value={`${formatHours2(stats.lostHours)} (h)`}
         />
       </div>
 
