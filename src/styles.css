@@ -2553,40 +2553,46 @@ input.t-out {
   flex-direction: column;
   gap: 0.4rem;
 }
+/* Card = 2 CỤM: trái (thông tin) ↔ phải (ngày + nút), đẩy xa nhau bằng
+   space-between. Màn hẹp: cụm phải rớt xuống dòng dưới cụm trái (flex-wrap). */
 .extra-item {
   display: flex;
   align-items: center;
-  flex-wrap: wrap; /* màn hẹp: cụm nút xuống dòng thay vì bị cắt mất */
-  gap: 0.5rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.45rem 0.6rem;
 }
-/* Cụm bên phải (ngày + các nút) luôn dồn phải; khi chật thì cả cụm rớt xuống dòng
-   kế (vẫn hiện), KHÔNG đè lên phần thông tin bên trái. */
-.extra-item-right {
+/* CỤM TRÁI: checkbox + thông tin. Co được (min-width:0) nhưng KHÔNG tràn sang phải. */
+.extra-item-left {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 0.5rem;
-  margin-left: auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
+/* Thông tin khoản xếp DỌC: số tiền → badge → mô tả. align-items:flex-start để badge
+   (pill) co theo nội dung, không kéo giãn cả dòng. */
 .extra-item-main {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  align-items: flex-start;
+  gap: 0.2rem;
   min-width: 0;
 }
-/* Số tiền + badge trạng thái: mỗi phần CHIẾM CHỖ RIÊNG. flex-wrap để badge xuống
-   dòng gọn trong cột thay vì tràn ra ngoài đè lên ngày. */
 .extra-amt {
+  font-weight: 700;
+}
+/* CỤM PHẢI: ngày + các nút, xếp NGANG, dồn hết về phải. Khi xuống dòng vẫn bám phải. */
+.extra-item-right {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.4rem;
-  font-weight: 700;
-  min-width: 0;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .extra-desc {
   color: var(--muted);

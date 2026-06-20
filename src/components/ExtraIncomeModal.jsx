@@ -107,16 +107,17 @@ function ExtraRow({ item, onUpdate, onDelete, onSetReceived, selected, onToggleS
 
   return (
     <li className={`extra-item${received ? '' : ' pending'}${selected ? ' selected' : ''}`}>
-      <input
-        type="checkbox"
-        className="extra-check"
-        checked={selected}
-        onChange={() => onToggleSelect(item.id)}
-        aria-label={t('extra.selectAria')}
-      />
-      <div className="extra-item-main">
-        <span className="extra-amt">
-          {formatMoney(item.amount)}
+      {/* CỤM TRÁI: checkbox + thông tin khoản (số tiền → badge → mô tả), xếp dọc */}
+      <div className="extra-item-left">
+        <input
+          type="checkbox"
+          className="extra-check"
+          checked={selected}
+          onChange={() => onToggleSelect(item.id)}
+          aria-label={t('extra.selectAria')}
+        />
+        <div className="extra-item-main">
+          <span className="extra-amt">{formatMoney(item.amount)}</span>
           <span className={`recv-badge${received ? ' received' : ''}`}>
             {received ? t('extra.receivedBadge') : t('extra.pendingBadge')}
           </span>
@@ -125,9 +126,10 @@ function ExtraRow({ item, onUpdate, onDelete, onSetReceived, selected, onToggleS
               {t('extra.receivedOn', { date: fmtDateShort(item.received_at) })}
             </span>
           )}
-        </span>
-        <span className="extra-desc">{item.description}</span>
+          {item.description && <span className="extra-desc">{item.description}</span>}
+        </div>
       </div>
+      {/* CỤM PHẢI: ngày + các nút, xếp ngang, đẩy hết về bên phải */}
       <div className="extra-item-right">
         <span className="extra-date">{fmtDate(item.date)}</span>
         <div className="extra-actions">
