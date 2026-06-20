@@ -56,7 +56,7 @@ import {
   localTodayStr,
   sumDeductions,
 } from './lib/payPeriod.js'
-import { sumExtraIncome } from './lib/extraIncome.js'
+import { sumReceivedExtraIncome } from './lib/extraIncome.js'
 
 export default function App() {
   const { t, lang, setLang } = useI18n()
@@ -133,6 +133,7 @@ export default function App() {
     addExtraIncome,
     updateExtraIncome,
     deleteExtraIncome,
+    setReceived,
   } = useExtraIncome(session, setLoadError)
   const {
     profile,
@@ -258,10 +259,11 @@ export default function App() {
   // cần làm theo lương 1 giờ) + TB mỗi ca (cho câu hỏi chung).
   const allStats = periodStats(shifts)
   const allShiftCount = allStats.dayShiftCount + allStats.nightShiftCount
-  // Thu nhập việc ngoài ĐÃ THỰC NHẬN trong kỳ hiện tại (ngày ≤ hôm nay).
-  const currentExtraIncome = sumExtraIncome(
+  // Thu nhập việc ngoài ĐÃ NHẬN tính vào kỳ hiện tại (theo received_at = ngày bấm
+  // nhận). Khoản chưa nhận (treo) KHÔNG cộng vào tổng.
+  const currentExtraIncome = sumReceivedExtraIncome(
     extraIncome.filter(
-      (x) => payPeriodKeyOf(x.date) === currentKey && x.date <= localTodayStr()
+      (x) => x.received && payPeriodKeyOf(x.received_at) === currentKey
     )
   )
   // Đổi phút-trong-ngày → "HH:MM" để mô tả cửa sổ đêm cho AI.
@@ -459,6 +461,7 @@ export default function App() {
           onAdd={addExtraIncome}
           onUpdate={updateExtraIncome}
           onDelete={deleteExtraIncome}
+          onSetReceived={setReceived}
           onClose={() => setShowExtraIncome(false)}
         />
       )}

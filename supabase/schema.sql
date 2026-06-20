@@ -299,8 +299,17 @@ create table if not exists public.extra_income (
   date date not null default current_date,
   description text,
   amount bigint not null default 0,
+  -- Trạng thái nhận: CHỈ khoản đã nhận mới cộng vào tổng kỳ lương; khoản chưa
+  -- nhận treo lại qua các kỳ. received_at = ngày bấm nhận (quyết định khoản rơi
+  -- vào KỲ LƯƠNG nào), null khi chưa nhận.
+  received boolean not null default false,
+  received_at date,
   created_at timestamptz not null default now()
 );
+
+-- Migration cho bảng đã tồn tại từ trước (data cũ mặc định CHƯA NHẬN).
+alter table public.extra_income add column if not exists received boolean not null default false;
+alter table public.extra_income add column if not exists received_at date;
 
 alter table public.extra_income enable row level security;
 

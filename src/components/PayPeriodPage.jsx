@@ -3,10 +3,9 @@ import { periodStats, formatHours, formatMoney } from '../lib/shiftMath.js'
 import {
   payPeriodKeyOf,
   payPeriodLabel,
-  localTodayStr,
   sumDeductions,
 } from '../lib/payPeriod.js'
-import { sumExtraIncome } from '../lib/extraIncome.js'
+import { sumReceivedExtraIncome } from '../lib/extraIncome.js'
 import PayPeriodPanel from './PayPeriodPanel.jsx'
 import TimesheetTable from './TimesheetTable.jsx'
 import { useI18n } from '../lib/i18n.jsx'
@@ -444,15 +443,16 @@ export default function PayPeriodPage({
       ? shifts
       : shifts.filter((s) => payPeriodKeyOf(s.work_date) === scope)
 
-  // Tổng thu nhập việc ngoài ĐÃ THỰC NHẬN (ngày <= hôm nay) theo scope; khoản dự
-  // kiến (ngày tương lai) không tính vào biểu đồ thu nhập.
+  // Tổng thu nhập việc ngoài ĐÃ NHẬN theo scope (tính vào kỳ của received_at = ngày
+  // bấm nhận). Khoản chưa nhận (treo) không tính vào biểu đồ thu nhập.
   const extraTotalOf = (scope) => {
-    const today = localTodayStr()
     const scoped =
       scope === 'all'
-        ? extraIncome
-        : extraIncome.filter((x) => payPeriodKeyOf(x.date) === scope)
-    return sumExtraIncome(scoped.filter((x) => x.date <= today))
+        ? extraIncome.filter((x) => x.received)
+        : extraIncome.filter(
+            (x) => x.received && payPeriodKeyOf(x.received_at) === scope
+          )
+    return sumReceivedExtraIncome(scoped)
   }
 
   const openTitle =

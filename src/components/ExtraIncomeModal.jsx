@@ -11,8 +11,8 @@ function fmtDate(d) {
   return `${day}/${m}/${y}`
 }
 
-// Một dòng khoản việc ngoài: xem / sửa inline / xoá.
-function ExtraRow({ item, onUpdate, onDelete }) {
+// Một dòng khoản việc ngoài: xem / sửa inline / xoá / đổi trạng thái nhận.
+function ExtraRow({ item, onUpdate, onDelete, onSetReceived }) {
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const [date, setDate] = useState(item.date)
@@ -20,6 +20,15 @@ function ExtraRow({ item, onUpdate, onDelete }) {
   const [amount, setAmount] = useState(String(item.amount ?? ''))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const received = item.received === true
+
+  async function toggleReceived() {
+    setError(null)
+    setBusy(true)
+    const err = await onSetReceived(item.id, !received)
+    setBusy(false)
+    if (err) setError(err)
+  }
 
   const amountDisplay = amount ? Number(amount).toLocaleString('vi-VN') : ''
 
@@ -89,21 +98,28 @@ function ExtraRow({ item, onUpdate, onDelete }) {
     )
   }
 
-  const isPlanned = item.date > localTodayStr()
-
   return (
-    <li className={`extra-item${isPlanned ? ' planned' : ''}`}>
+    <li className={`extra-item${received ? '' : ' pending'}`}>
       <div className="extra-item-main">
         <span className="extra-amt">
           {formatMoney(item.amount)}
-          {isPlanned && (
-            <span className="planned-badge">{t('extra.plannedBadge')}</span>
-          )}
+          <span className={`recv-badge${received ? ' received' : ''}`}>
+            {received ? t('extra.receivedBadge') : t('extra.pendingBadge')}
+          </span>
         </span>
         <span className="extra-desc">{item.description}</span>
       </div>
       <span className="extra-date">{fmtDate(item.date)}</span>
       <div className="extra-actions">
+        <button
+          type="button"
+          className={`recv-toggle${received ? ' on' : ''}`}
+          onClick={toggleReceived}
+          disabled={busy}
+          title={received ? t('extra.markPending') : t('extra.markReceived')}
+        >
+          {received ? t('extra.markPending') : t('extra.markReceived')}
+        </button>
         <button
           type="button"
           className="edit"
@@ -121,6 +137,7 @@ function ExtraRow({ item, onUpdate, onDelete }) {
           ×
         </button>
       </div>
+      {error && <p className="msg error sm">{error}</p>}
     </li>
   )
 }
@@ -134,6 +151,7 @@ export default function ExtraIncomeModal({
   onAdd,
   onUpdate,
   onDelete,
+  onSetReceived,
   onClose,
 }) {
   const { t } = useI18n()
@@ -149,14 +167,19 @@ export default function ExtraIncomeModal({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Chỉ các khoản thuộc KỲ HIỆN TẠI (theo ngày), mới → cũ.
+  // Hiện trong popup KỲ HIỆN TẠI:
+  //  - Khoản ĐÃ NHẬN có received_at thuộc kỳ này (cộng vào tổng kỳ).
+  //  - Mọi khoản CHƯA NHẬN (treo) bất kể ngày — chờ tới khi bấm nhận; không cộng.
   const items = extraIncome
-    .filter((x) => payPeriodKeyOf(x.date) === periodKey)
+    .filter((x) =>
+      x.received
+        ? payPeriodKeyOf(x.received_at) === periodKey
+        : true
+    )
     .sort((a, b) => String(b.date).localeCompare(String(a.date)))
-  // Ngày tương lai = DỰ KIẾN (chưa thực nhận) → không cộng vào tổng thực nhận.
-  const today = localTodayStr()
-  const extraTotal = sumExtraIncome(items.filter((x) => x.date <= today))
-  const plannedTotal = sumExtraIncome(items.filter((x) => x.date > today))
+  // CHỈ khoản đã nhận mới cộng vào tổng. Khoản treo gộp riêng để hiển thị.
+  const extraTotal = sumExtraIncome(items.filter((x) => x.received))
+  const pendingTotal = sumExtraIncome(items.filter((x) => !x.received))
   const total = totalIncome(shiftPay, extraTotal)
 
   const amountDisplay = amount ? Number(amount).toLocaleString('vi-VN') : ''
@@ -215,10 +238,10 @@ export default function ExtraIncomeModal({
             <span>{t('extra.sumExtra')}</span>
             <strong>{formatMoney(extraTotal)}</strong>
           </div>
-          {plannedTotal > 0 && (
+          {pendingTotal > 0 && (
             <div className="extra-summary-row planned-line">
-              <span>{t('extra.sumPlanned')}</span>
-              <strong>{formatMoney(plannedTotal)}</strong>
+              <span>{t('extra.sumPending')}</span>
+              <strong>{formatMoney(pendingTotal)}</strong>
             </div>
           )}
           <div className="extra-summary-row total">
@@ -266,6 +289,7 @@ export default function ExtraIncomeModal({
                 item={it}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
+                onSetReceived={onSetReceived}
               />
             ))}
           </ul>
