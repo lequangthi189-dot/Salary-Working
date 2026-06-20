@@ -56,14 +56,14 @@ export default function NavBar({ items, active = 0, onSelect }) {
   const itemRefs = useRef([]);
   const indicatorRef = useRef(null);
 
-  // Hiện navbar khi ĐANG cuộn (bất kể hướng); ngừng cuộn ~3s thì tự ẩn. Mỗi lần
+  // Hiện navbar khi ĐANG cuộn (bất kể hướng); ngừng cuộn ~5s thì tự ẩn. Mỗi lần
   // cuộn: hiện + đặt lại timer ẩn → không cuộn thì không hiện.
   useEffect(() => {
     let hideTimer;
     function onScroll() {
       setVisible(true);
       clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => setVisible(false), 3000);
+      hideTimer = setTimeout(() => setVisible(false), 5000);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
