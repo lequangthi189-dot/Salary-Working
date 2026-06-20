@@ -2563,8 +2563,13 @@ input.t-out {
   border-radius: 8px;
   padding: 0.45rem 0.6rem;
 }
-/* Cụm nút luôn dồn phải; khi không đủ chỗ thì cả cụm rớt xuống dòng kế (vẫn hiện) */
-.extra-item .extra-actions {
+/* Cụm bên phải (ngày + các nút) luôn dồn phải; khi chật thì cả cụm rớt xuống dòng
+   kế (vẫn hiện), KHÔNG đè lên phần thông tin bên trái. */
+.extra-item-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-left: auto;
 }
 .extra-item-main {
@@ -2573,8 +2578,15 @@ input.t-out {
   flex: 1;
   min-width: 0;
 }
+/* Số tiền + badge trạng thái: mỗi phần CHIẾM CHỖ RIÊNG. flex-wrap để badge xuống
+   dòng gọn trong cột thay vì tràn ra ngoài đè lên ngày. */
 .extra-amt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
   font-weight: 700;
+  min-width: 0;
 }
 .extra-desc {
   color: var(--muted);
@@ -2620,7 +2632,6 @@ input.t-out {
 }
 /* Badge trạng thái nhận */
 .recv-badge {
-  margin-left: 0.4rem;
   padding: 0.05rem 0.45rem;
   font-size: 0.7rem;
   font-weight: 700;
@@ -2680,7 +2691,6 @@ input.t-out {
   outline-offset: -1px;
 }
 .recv-on {
-  margin-left: 0.4rem;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--ok, #16a34a);

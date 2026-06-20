@@ -128,33 +128,35 @@ function ExtraRow({ item, onUpdate, onDelete, onSetReceived, selected, onToggleS
         </span>
         <span className="extra-desc">{item.description}</span>
       </div>
-      <span className="extra-date">{fmtDate(item.date)}</span>
-      <div className="extra-actions">
-        <button
-          type="button"
-          className={`recv-toggle${received ? ' on' : ''}`}
-          onClick={toggleReceived}
-          disabled={busy}
-          title={received ? t('extra.markPending') : t('extra.markReceived')}
-        >
-          {received ? t('extra.markPending') : t('extra.markReceived')}
-        </button>
-        <button
-          type="button"
-          className="edit"
-          onClick={() => setEditing(true)}
-          aria-label={t('extra.editAria')}
-        >
-          ✎
-        </button>
-        <button
-          type="button"
-          className="delete"
-          onClick={() => onDelete(item.id)}
-          aria-label={t('extra.delAria')}
-        >
-          ×
-        </button>
+      <div className="extra-item-right">
+        <span className="extra-date">{fmtDate(item.date)}</span>
+        <div className="extra-actions">
+          <button
+            type="button"
+            className={`recv-toggle${received ? ' on' : ''}`}
+            onClick={toggleReceived}
+            disabled={busy}
+            title={received ? t('extra.markPending') : t('extra.markReceived')}
+          >
+            {received ? t('extra.markPending') : t('extra.markReceived')}
+          </button>
+          <button
+            type="button"
+            className="edit"
+            onClick={() => setEditing(true)}
+            aria-label={t('extra.editAria')}
+          >
+            ✎
+          </button>
+          <button
+            type="button"
+            className="delete"
+            onClick={() => onDelete(item.id)}
+            aria-label={t('extra.delAria')}
+          >
+            ×
+          </button>
+        </div>
       </div>
       {error && <p className="msg error sm">{error}</p>}
     </li>
