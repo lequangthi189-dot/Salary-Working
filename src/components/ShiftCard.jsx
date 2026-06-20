@@ -6,6 +6,7 @@ import {
   formatLost,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
+import ConfirmModal from './ConfirmModal.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
 
@@ -24,6 +25,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   const [isHoliday, setIsHoliday] = useState(!!shift.is_holiday)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   function cancel() {
     setWorkDate(shift.work_date)
@@ -210,12 +212,21 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
         <button
           type="button"
           className="delete"
-          onClick={() => onDelete(shift.id)}
+          onClick={() => setConfirmDelete(true)}
           aria-label={t('shiftCard.deleteAria')}
         >
           ×
         </button>
       </div>
+      {confirmDelete && (
+        <ConfirmModal
+          message={t('shiftCard.deleteConfirm')}
+          onResult={(ok) => {
+            setConfirmDelete(false)
+            if (ok) onDelete(shift.id)
+          }}
+        />
+      )}
     </div>
   )
 }
