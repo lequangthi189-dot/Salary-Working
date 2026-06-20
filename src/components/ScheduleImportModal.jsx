@@ -5,6 +5,7 @@ import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
 import ManualScheduleModal from './ManualScheduleModal.jsx'
 import ProgressButton from './ProgressButton.jsx'
+import TimeInput from './TimeInput.jsx'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -282,19 +283,17 @@ export default function ScheduleImportModal({
                     <td>{t(`wd.${r.weekday}`)}</td>
                     <td className="muted">{r.date}</td>
                     <td>
-                      <input
-                        type="time"
+                      <TimeInput
                         value={r.start}
                         disabled={r.off}
-                        onChange={(e) => updateRow(i, { start: e.target.value })}
+                        onChange={(v) => updateRow(i, { start: v })}
                       />
                     </td>
                     <td>
-                      <input
-                        type="time"
+                      <TimeInput
                         value={r.end}
                         disabled={r.off}
-                        onChange={(e) => updateRow(i, { end: e.target.value })}
+                        onChange={(v) => updateRow(i, { end: v })}
                       />
                     </td>
                     <td>
