@@ -37,7 +37,7 @@ export default function MonthStats({
           ({t('monthStats.expected')}: {formatMoney(stats.idealPay)}
           <span className="salary-hero__sep"> | </span>
           <span className="salary-hero__penalty">
-            {t('monthStats.penalty')}: {formatHours(stats.lostHours)}h
+            {t('monthStats.penalty')}: −{formatMoney(stats.lostPay)}
           </span>
           {deductionTotal > 0 && (
             <>
