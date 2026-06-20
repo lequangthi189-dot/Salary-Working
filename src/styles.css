@@ -2556,11 +2556,16 @@ input.t-out {
 .extra-item {
   display: flex;
   align-items: center;
+  flex-wrap: wrap; /* màn hẹp: cụm nút xuống dòng thay vì bị cắt mất */
   gap: 0.5rem;
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.45rem 0.6rem;
+}
+/* Cụm nút luôn dồn phải; khi không đủ chỗ thì cả cụm rớt xuống dòng kế (vẫn hiện) */
+.extra-item .extra-actions {
+  margin-left: auto;
 }
 .extra-item-main {
   display: flex;
@@ -2630,25 +2635,33 @@ input.t-out {
   background: rgba(22, 163, 74, 0.15);
   border-color: var(--ok, #16a34a);
 }
-/* Nút đổi trạng thái nhận */
+/* Nút đổi trạng thái nhận. Trạng thái CHƯA NHẬN = nút XANH ĐẶC nổi bật (gọi hành
+   động "Đã nhận"); trạng thái ĐÃ NHẬN = nút viền mờ "Bỏ nhận". */
 .recv-toggle {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--muted);
+  background: var(--ok, #16a34a);
+  border: 1px solid var(--ok, #16a34a);
+  color: #fff;
   cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
   white-space: nowrap;
 }
 .recv-toggle:hover {
+  filter: brightness(1.08);
+}
+/* Đã nhận → nút phụ "Bỏ nhận": viền mờ, không tô đặc */
+.recv-toggle.on {
+  background: none;
+  border-color: var(--border);
+  color: var(--muted);
+  font-weight: 600;
+}
+.recv-toggle.on:hover {
+  filter: none;
   border-color: var(--checkin);
   color: var(--checkin);
-}
-.recv-toggle.on {
-  border-color: var(--ok, #16a34a);
-  color: var(--ok, #16a34a);
 }
 .recv-toggle:disabled {
   opacity: 0.5;
