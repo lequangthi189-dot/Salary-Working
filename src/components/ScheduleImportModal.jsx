@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
+import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ManualScheduleModal from './ManualScheduleModal.jsx'
 import ProgressButton from './ProgressButton.jsx'
@@ -63,6 +64,8 @@ export default function ScheduleImportModal({
   // Tiến độ thật của quá trình đọc lịch. indeterminate = đang chờ Gemini (không
   // ước lượng được %). Reset/ẩn trong finally để KHÔNG kẹt khi lỗi.
   const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
+  // Bước gọi Gemini là "hộp đen" → cho % bò chậm (ước lượng), tiệm cận 90%.
+  const { start: startTrickle, stop: stopTrickle } = useTrickleProgress(setProgress)
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [rows, setRows] = useState(null) // [{weekday,date,start,end,off}]
@@ -97,8 +100,8 @@ export default function ScheduleImportModal({
       // 1) Đọc & mã hoá ảnh (mốc thật).
       const { base64, mediaType } = await readImage(file)
       setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
-      // 2) Gọi Gemini — không biết bao lâu → vòng quay indeterminate.
-      setProgress({ pct: 25, label: t('import.stageAI'), indeterminate: true })
+      // 2) Gọi Gemini — hộp đen, không có % thật → % bò chậm 25→~90% (ước lượng).
+      startTrickle(25, 90, t('import.stageAI'))
       const { data, error: fnErr } = await supabase.functions.invoke(
         'extract-schedule',
         {
@@ -112,7 +115,8 @@ export default function ScheduleImportModal({
           },
         }
       )
-      // 3) Có phản hồi → xử lý/map dữ liệu (mốc thật).
+      // 3) Có phản hồi → dừng trickle, sang mốc % THẬT.
+      stopTrickle()
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (fnErr) {
         // Lỗi non-2xx: thông điệp thật nằm trong error.context (Response).
@@ -171,6 +175,7 @@ export default function ScheduleImportModal({
       // Lỗi (vd Gemini hết quota/timeout) → báo lỗi; finally ẩn vòng tròn, không kẹt.
       setError(String(e.message || e))
     } finally {
+      stopTrickle() // dọn timer trickle dù xong hay lỗi → không kẹt số đang bò
       setLoading(false)
     }
   }
