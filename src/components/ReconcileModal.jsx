@@ -14,6 +14,7 @@ import {
 } from '../lib/shiftMath.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import { resolveWeek, weekSpanWarning, dayInPeriod } from '../lib/reconcileDates.js'
+import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ProgressButton from './ProgressButton.jsx'
 
@@ -99,6 +100,8 @@ export default function ReconcileModal({
   const [loading, setLoading] = useState(false)
   // Tiến độ thật. indeterminate khi chờ Gemini; ẩn trong finally để không kẹt khi lỗi.
   const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
+  // Bước gọi Gemini là "hộp đen" → cho % bò chậm (ước lượng) thay vì vòng quay.
+  const { start: startTrickle, stop: stopTrickle } = useTrickleProgress(setProgress)
   const [error, setError] = useState(null)
   // Kết quả gom theo NHÓM: mỗi nhóm { weekStart, rows, error? }. Chế độ tuần/tháng
   // chỉ có 1 nhóm (weekStart=null cho tháng → không hiện tiêu đề nhóm).
@@ -280,13 +283,15 @@ export default function ReconcileModal({
         const raw = []
         let scheduleConfirmed = false
         for (let i = 0; i < files.length; i++) {
-          setProgress({
-            pct: Math.round((i / files.length) * 90) + 5,
-            label: `${t('import.stageAI')} (${i + 1}/${files.length})`,
-            indeterminate: true,
-          })
+          // Mỗi ảnh là một KHOẢNG % thật [from, to]; trong lúc chờ Gemini đọc ảnh đó
+          // thì cho % bò chậm trong khoảng (ước lượng), không vượt mốc ảnh kế.
+          const from = Math.round((i / files.length) * 90) + 5
+          const to = Math.round(((i + 1) / files.length) * 90) + 5
+          const label = `${t('import.stageAI')} (${i + 1}/${files.length})`
           const { base64, mediaType } = await readImage(files[i])
+          startTrickle(from, to, label)
           const data = await extractOne(base64, mediaType, {})
+          stopTrickle()
           // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
           if (data?.doc_type === 'schedule' && !scheduleConfirmed) {
             const ok = await askConfirm(t('reconcile.warnSchedule'))
@@ -324,7 +329,8 @@ export default function ReconcileModal({
       // MỘT ẢNH (tuần hoặc tháng).
       setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
       const { base64, mediaType } = await readImage(files[0])
-      setProgress({ pct: 25, label: t('import.stageAI'), indeterminate: true })
+      // Gọi Gemini — hộp đen, không có % thật → % bò chậm 25→~90% (ước lượng).
+      startTrickle(25, 90, t('import.stageAI'))
       const data = await extractOne(
         base64,
         mediaType,
@@ -337,6 +343,7 @@ export default function ReconcileModal({
             }
           : {}
       )
+      stopTrickle()
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) {
         setError(t('import.errNotRoster'))
@@ -373,6 +380,7 @@ export default function ReconcileModal({
       // Lỗi (Gemini quota/timeout…) → báo lỗi; finally ẩn vòng tròn, không kẹt.
       setError(String(e.message || e))
     } finally {
+      stopTrickle() // dọn timer trickle dù xong hay lỗi → không kẹt số đang bò
       setLoading(false)
     }
   }
