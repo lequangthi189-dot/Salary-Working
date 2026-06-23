@@ -5,8 +5,12 @@ import './ThemeToggle.css'
 // Nút gạt 1 núc XOAY VÒNG ngôn ngữ (vi ↔ en) — cùng hình thức với nút phong cách
 // (.theme-cycle). Hiện cờ + tên ngôn ngữ; bấm để chuyển sang ngôn ngữ kế tiếp.
 // onChange (App truyền changeLang) lo đổi tại chỗ + lưu theo tài khoản.
-const LANGS = ['vi', 'en']
-const NAMES = { vi: 'Tiếng Việt', en: 'English (UK)' }
+const LANGS = ['vi', 'en', 'au']
+const NAMES = {
+  vi: 'Tiếng Việt',
+  en: 'English (UK)',
+  au: 'English (AU)',
+}
 
 export default function LangCycle({ onChange, className = '' }) {
   const { t, lang, setLang } = useI18n()

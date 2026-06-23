@@ -151,7 +151,7 @@ export default function App() {
   // vậy đăng nhập lại (kể cả máy khác) giữ đúng ngôn ngữ người dùng đã chọn.
   useEffect(() => {
     const saved = profile?.lang
-    if (saved && ['vi', 'en'].includes(saved) && saved !== lang) {
+    if (saved && ['vi', 'en', 'au'].includes(saved) && saved !== lang) {
       setLang(saved)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
