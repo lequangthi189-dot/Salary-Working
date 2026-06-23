@@ -443,6 +443,9 @@ export default function PayPeriodPage({
       ? shifts
       : shifts.filter((s) => payPeriodKeyOf(s.work_date) === scope)
 
+  // Thống kê từng kỳ (tính 1 lần). Hiện HẾT mọi kỳ, kể cả kỳ 0 VND.
+  const periodList = periodKeys.map((key) => ({ key, s: periodStats(shiftsOf(key)) }))
+
   // Tổng thu nhập việc ngoài ĐÃ NHẬN theo scope (tính vào kỳ của received_at = ngày
   // bấm nhận). Khoản chưa nhận (treo) không tính vào biểu đồ thu nhập.
   const extraTotalOf = (scope) => {
@@ -486,28 +489,25 @@ export default function PayPeriodPage({
               )
             })()}
 
-          {/* Mỗi kỳ (tháng) một card */}
-          {periodKeys.map((key) => {
-            const s = periodStats(shiftsOf(key))
-            return (
-              <button
-                type="button"
-                key={key}
-                className="period-stat-card"
-                onClick={() => setOpenScope(key)}
-              >
-                <span className="period-stat-label">{payPeriodLabel(key)}</span>
-                <span className="period-stat-main">
-                  {formatHours(s.hours)} h · {formatMoney(s.pay)}
+          {/* Mỗi kỳ (tháng) một card — hiện hết, kể cả kỳ 0 VND */}
+          {periodList.map(({ key, s }) => (
+            <button
+              type="button"
+              key={key}
+              className="period-stat-card"
+              onClick={() => setOpenScope(key)}
+            >
+              <span className="period-stat-label">{payPeriodLabel(key)}</span>
+              <span className="period-stat-main">
+                {formatHours(s.hours)} h · {formatMoney(s.pay)}
+              </span>
+              {s.lostPay > 0 && (
+                <span className="period-stat-lost">
+                  {t('pp.lostDueLate', { money: formatMoney(s.lostPay) })}
                 </span>
-                {s.lostPay > 0 && (
-                  <span className="period-stat-lost">
-                    {t('pp.lostDueLate', { money: formatMoney(s.lostPay) })}
-                  </span>
-                )}
-              </button>
-            )
-          })}
+              )}
+            </button>
+          ))}
 
           {periodKeys.length === 0 && (
             <p className="muted">{t('pp.noData')}</p>
