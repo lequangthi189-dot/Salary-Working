@@ -5,10 +5,11 @@ import './ThemeToggle.css'
 // Nút gạt 1 núc XOAY VÒNG ngôn ngữ (vi ↔ en) — cùng hình thức với nút phong cách
 // (.theme-cycle). Hiện cờ + tên ngôn ngữ; bấm để chuyển sang ngôn ngữ kế tiếp.
 // onChange (App truyền changeLang) lo đổi tại chỗ + lưu theo tài khoản.
-const LANGS = ['vi', 'en', 'au']
+const LANGS = ['vi', 'en', 'us', 'au']
 const NAMES = {
   vi: 'Tiếng Việt',
   en: 'English (UK)',
+  us: 'English (US)',
   au: 'English (AU)',
 }
 

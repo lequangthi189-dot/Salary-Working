@@ -13,7 +13,7 @@ const STORAGE_KEY = 'app-lang'
 function initialLang() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (['vi', 'en', 'au'].includes(saved)) return saved
+    if (['vi', 'en', 'us', 'au'].includes(saved)) return saved
   } catch {
     /* ignore */
   }
