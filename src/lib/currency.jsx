@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 
 // Tỉ giá quy đổi từ VND sang ngoại tệ (1 VND = rate đơn vị tiền đó).
-// Nguồn: Wise (mid-market) qua Edge Function `fx-rate` (token giữ ở server),
+// Nguồn: open.er-api.com (miễn phí, không cần key) qua Edge Function `fx-rate`,
 // làm mới mỗi 24h. Có cache localStorage + tỉ giá dự phòng để offline/hỏng API
 // không làm vỡ app.
 
