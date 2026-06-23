@@ -1,16 +1,12 @@
 // Supabase Edge Function: fx-rate
-// Lấy tỉ giá mid-market từ Wise cho VND -> GBP/USD/AUD. Token Wise giữ ở server
-// (biến môi trường WISE_API_TOKEN) — KHÔNG bao giờ lộ ra frontend.
-//
-// Lấy token: wise.com -> Settings -> "API tokens" (tạo token read-only).
+// Lấy tỉ giá VND -> GBP/USD/AUD từ open.er-api.com (miễn phí, KHÔNG cần API key).
 //
 // Triển khai:
-//   supabase secrets set WISE_API_TOKEN=xxxxxxxx
 //   supabase functions deploy fx-rate
-//   (môi trường live mặc định api.transferwise.com; sandbox: đặt
-//    WISE_API_BASE=https://api.sandbox.transferwise.com)
 //
 // Gọi từ frontend: supabase.functions.invoke('fx-rate') -> { rates: {GBP,USD,AUD}, time }
+//
+// Ngữ nghĩa rate: 1 VND = rate đơn vị ngoại tệ (giống FALLBACK ở currency.jsx).
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -19,35 +15,36 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
-const BASE = Deno.env.get('WISE_API_BASE') || 'https://api.transferwise.com'
+const BASE = Deno.env.get('FX_API_BASE') || 'https://open.er-api.com/v6'
 const WANT = ['GBP', 'USD', 'AUD']
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
-  const token = Deno.env.get('WISE_API_TOKEN')
-  if (!token) return json({ error: 'Server chưa cấu hình WISE_API_TOKEN' }, 500)
-
+  // FX là tính năng phụ (frontend có tỉ giá fallback). Mọi lỗi nguồn vẫn trả
+  // HTTP 200 với rates:{} + trường error để: (1) console không có dòng đỏ,
+  // (2) client tự dùng fallback. Không bao giờ trả mã lỗi ở đây.
   try {
-    // source=VND → trả tỉ giá VND sang mọi đồng tiền; mỗi phần tử { rate, source, target }.
-    const res = await fetch(`${BASE}/v1/rates?source=VND`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    // base=VND → trả tỉ giá 1 VND sang mọi đồng tiền trong `rates`.
+    const res = await fetch(`${BASE}/latest/VND`)
     if (!res.ok) {
       const txt = await res.text()
-      return json({ error: `Lỗi Wise (${res.status}): ${txt}` }, 502)
+      return json({ rates: {}, error: `Lỗi nguồn tỉ giá (${res.status}): ${txt}` })
     }
-    const arr = (await res.json()) as Array<{
-      rate: number
-      target: string
-    }>
+    const body = (await res.json()) as {
+      result?: string
+      rates?: Record<string, number>
+    }
+    if (body.result !== 'success' || !body.rates) {
+      return json({ rates: {}, error: 'Nguồn tỉ giá trả dữ liệu không hợp lệ' })
+    }
     const rates: Record<string, number> = {}
-    for (const r of arr) {
-      if (WANT.includes(r.target)) rates[r.target] = r.rate
+    for (const cur of WANT) {
+      if (typeof body.rates[cur] === 'number') rates[cur] = body.rates[cur]
     }
-    return json({ rates, time: Date.now() }, 200)
+    return json({ rates, time: Date.now() })
   } catch (e) {
-    return json({ error: `Lỗi xử lý: ${String((e as Error)?.message || e)}` }, 502)
+    return json({ rates: {}, error: `Lỗi xử lý: ${String((e as Error)?.message || e)}` })
   }
 })
 
