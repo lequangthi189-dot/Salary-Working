@@ -155,13 +155,9 @@ export default function ShiftForm({
       </div>
 
       {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập.
-          Khi form còn NGUYÊN (ô giờ đang chạy theo giờ thực) thì chỉ hiện gợi ý
-          live — chưa phải ca thật nên không hiện preview lương 24h gây hiểu nhầm. */}
-      {pristine ? (
-        <p className="preview-line muted">
-          {t('shiftForm.live', { now: startTime })}
-        </p>
-      ) : (
+          Khi form còn NGUYÊN (ô giờ đang chạy theo giờ thực) thì KHÔNG hiện gì —
+          chưa phải ca thật nên không hiện preview lương 24h gây hiểu nhầm. */}
+      {pristine ? null : (
         <p className="preview-line">
           {t('shiftForm.preview', {
             type:
