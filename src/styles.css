@@ -971,16 +971,27 @@ button[type='submit']:disabled {
 }
 /* Trong sidebar: xếp các kỳ theo chiều dọc (1 cột) + bố cục gọn */
 .salary-embedded .period-stat-grid {
-  grid-template-columns: 1fr;
+  /* Lưới 2 cột lấp khoảng trống bên phải; thẻ cùng hàng cao bằng nhau (stretch). */
+  grid-template-columns: repeat(2, 1fr);
+  align-items: stretch;
   gap: 0.5rem;
-  justify-items: start; /* card co vừa nội dung, không kéo full chiều ngang */
+}
+/* "Tất cả các kỳ" chiếm nguyên 1 hàng (full 2 cột) ở trên cùng cho nổi */
+.salary-embedded .period-stat-card.all {
+  grid-column: 1 / -1;
+}
+/* Mobile: thu về 1 cột cho khỏi chật */
+@media (max-width: 480px) {
+  .salary-embedded .period-stat-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .salary-embedded .scope-hint {
   margin: 0 0 0.5rem;
   font-size: 0.78rem;
 }
 .salary-embedded .period-stat-card {
-  padding: 0.6rem 0.75rem;
+  padding: 0.45rem 0.7rem;
   border-radius: 10px;
   background: var(--panel-2);
 }
@@ -2207,15 +2218,17 @@ input.t-out {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.75rem;
 }
+/* Thẻ xếp DỌC: tên kỳ → số liệu → "Mất do trễ", tất cả căn trái. */
 .period-stat-card {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: flex-start;
+  gap: 0.1rem;
   text-align: left;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
   color: var(--text);
   transition: border-color 0.15s ease, transform 0.1s ease;
 }
@@ -2229,17 +2242,20 @@ input.t-out {
   border-color: var(--green);
 }
 .period-stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 .period-stat-main {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--green);
 }
+/* Dòng tham khảo (không trừ tiền) → nhỏ nhưng đỏ SÁNG cho nổi */
 .period-stat-lost {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 400;
   color: var(--danger);
+  opacity: 1;
 }
 
 /* Biểu đồ tròn (donut) — lưới 2×2 gọn trong popup, không cần cuộn */
