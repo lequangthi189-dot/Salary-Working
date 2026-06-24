@@ -183,6 +183,13 @@ button[type='submit']:disabled {
   /* Chừa đáy đủ rộng để dock (fixed) không đè lên thẻ/danh sách ca cuối cùng. */
   padding: 1.5rem 1rem 7rem;
 }
+/* Mobile: dock cao hơn (có nhãn cố định dưới icon) → nới đáy thêm để cuộn tới cuối
+   vẫn thấy hết thẻ ca, dock không che. Cộng safe-area của máy có home-indicator. */
+@media (max-width: 560px) {
+  .app {
+    padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+  }
+}
 
 /* Bố cục chính: một cột nội dung (form + bảng công), căn giữa qua .app */
 .main-col {

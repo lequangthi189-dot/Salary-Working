@@ -9,8 +9,9 @@
 .dock {
   position: fixed;
   left: 50%;
-  bottom: 18px;
+  bottom: 0; /* neo ĐÁY màn hình; nổi nhẹ khỏi mép bằng padding (chừa home-indicator) */
   transform: translateX(-50%);
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
   z-index: 45; /* dưới modal-overlay(50)/sidebar(60) */
@@ -32,21 +33,16 @@
   margin: 0;
   padding: 9px 14px;
   list-style: none;
-  /* Nền ĐẶC theo theme (panel của dark/neumorph vốn mờ-đục) + bóng đổ rõ để dock
-     NỔI hẳn lên trên nội dung, không lẫn vào thẻ ca phía sau. */
-  background: var(--panel);
+  /* Nền ĐẶC, KHÔNG trong suốt — không nhìn xuyên nội dung sau lưng (đây là nguyên
+     nhân icon dock "lọt" vào ô input khi thẻ ca trôi dưới dock). Xếp lớp panel (có
+     thể trong mờ ở glass) LÊN TRÊN var(--bg) (luôn màu đặc ở mọi theme) → kết quả
+     đục hẳn mà KHÔNG hardcode màu nền (an toàn cả theme glass nền gradient). */
+  background: linear-gradient(var(--panel), var(--panel)), var(--bg);
   border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
   /* Ngón tay trượt dọc dock để phóng to → chặn cuộn trang trong lúc thao tác. */
   touch-action: none;
-}
-/* Theme glass: panel vốn TRONG MỜ (nền gradient lộ qua) → thêm blur cho tách nền
-   thay vì tô màu đặc (tránh lỗi nền gradient). Tăng nền một bậc cho dock đỡ chìm. */
-[data-theme="glass"] .dock-list {
-  background: var(--panel-2, var(--panel));
-  backdrop-filter: var(--surface-blur, blur(18px) saturate(150%));
-  -webkit-backdrop-filter: var(--surface-blur, blur(18px) saturate(150%));
 }
 
 .dock-item {
