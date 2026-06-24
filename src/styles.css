@@ -49,6 +49,9 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
+  /* Phòng hờ chặn tràn ngang (gốc đã sửa ở .ui-check/position:relative + loại
+     .ui-check__input khỏi rule input{width:100%}); không dùng để giấu lỗi. */
+  overflow-x: hidden;
 }
 
 /* Khi có bất kỳ popup/sidebar nào mở → khoá cuộn nền, không tác động layout chính. */
@@ -674,6 +677,10 @@ button[type='submit']:disabled {
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  /* Containing block cho .ui-check__input (position:absolute). Thiếu cái này → ô
+     input ẩn lấy viewport làm gốc, gặp rule "input width:100%" thành rộng cả màn
+     hình → tràn ngang cả trang. Có relative → 100% = bề rộng label nhỏ này. */
+  position: relative;
 }
 /* Ẩn input gốc nhưng vẫn click/Tab/Space được (giữ accessibility).
    Reset cả border/padding/nền mà rule label input toàn cục áp lên. */
@@ -1410,7 +1417,9 @@ button[type='submit']:disabled {
 .shift-form .fields label {
   min-width: 0;
 }
-.shift-form .fields input {
+/* Rule này dành cho input THƯỜNG (ngày/giờ) — KHÔNG áp cho checkbox ẩn của
+   component Checkbox (.ui-check__input), nếu không nó bị ép width:100% → tràn. */
+.shift-form .fields input:not(.ui-check__input) {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
