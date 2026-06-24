@@ -1,209 +1,151 @@
-/* Animated pill navbar có indicator.
-   - Thanh pill trắng bo góc, mỗi mục rộng 56px.
-   - Cục tròn accent nhô lên (nửa trên khỏi thanh), trượt ngang: `left` do JS đo
-     theo offsetLeft của ô active (không hardcode chiều rộng); transition 0.5s.
-   - Icon mục active nhấc lên (chỉ translateY) vào trong cục tròn + chuyển trắng.
-   - Nhãn chữ fade + trượt lên ở dưới.
-   - "Vết khoét" quanh cục tròn KHÔNG tô màu nền nữa (cũ: viền/box-shadow = var(--bg)
-     → trên theme nền GRADIENT không có màu đặc để khớp → lòi viền tối). Thay bằng
-     MASK khoét LỖ THẬT trên thanh pill để NỀN TRANG THẬT (kể cả gradient) lộ qua,
-     tạo moat + scoop → hợp mọi theme. Tâm lỗ = --ind-cx (JS đo = tâm ô active),
-     trượt cùng nhịp cục tròn nhờ @property cho transition. */
+/* Dock điều hướng kiểu macOS.
+   - Thanh bo góc lớn, nền + viền theo THEME (var(--panel)/var(--border)) → hợp cả
+     dark/neumorph/glass; KHÔNG hardcode màu nền (theme glass nền gradient, panel
+     của nó vốn trong mờ nên tự ăn nền).
+   - Icon phóng to theo VỊ TRÍ con trỏ/ngón tay: JS ghi custom prop --s cho mỗi
+     <li>, CSS biến --s thành transform (scale + nhấc lên). Chỉ transform → không
+     đụng layout → mượt. transition tạo hiệu ứng "sóng" mượt khi --s đổi từng frame. */
 
-/* Đăng ký --ind-cx là <length> để TRANSITION được (vị trí tâm lỗ mask) → lỗ trượt
-   mượt cùng cục tròn thay vì nhảy giật. */
-@property --ind-cx {
-  syntax: "<length>";
-  inherits: true;
-  initial-value: -100px;
-}
-.navbar {
+.dock {
   position: fixed;
   left: 50%;
   bottom: 18px;
   transform: translateX(-50%);
   display: flex;
   justify-content: center;
-  z-index: 45; /* dưới modal-overlay(50)/sidebar(60) → mở panel sẽ phủ lên navbar */
+  z-index: 45; /* dưới modal-overlay(50)/sidebar(60) */
   transition: transform 0.35s ease, opacity 0.35s ease;
 }
 
-/* Mặc định ẩn: trượt xuống dưới mép màn hình + mờ. Cuộn xuống → bỏ class này. */
-.navbar--hidden {
+/* Mặc định ẩn: trượt xuống dưới mép + mờ. Cuộn → bỏ class này. */
+.dock--hidden {
   transform: translateX(-50%) translateY(calc(100% + 28px));
   opacity: 0;
   pointer-events: none;
 }
 
-.navbar-list {
+.dock-list {
   position: relative;
   display: flex;
-  padding: 0 6px; /* để cục tròn không chạm mép bo của thanh */
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  /* Ngón tay trượt dọc dock để phóng to → chặn cuộn trang trong lúc thao tác. */
+  touch-action: none;
+}
+/* Theme glass: thêm blur cho khớp các bề mặt kính khác (nền vẫn là var(--panel)
+   trong mờ — không tô màu đặc). */
+[data-theme="glass"] .dock-list {
+  backdrop-filter: var(--surface-blur, blur(18px) saturate(150%));
+  -webkit-backdrop-filter: var(--surface-blur, blur(18px) saturate(150%));
 }
 
-/* Mặt phẳng TRẮNG của thanh tách riêng ra ::before để CHỈ nó bị mask khoét lỗ —
-   cục tròn + icon là con thật của <ul> nên KHÔNG bị clip (giữ được nhô lên).
-   ::before nằm dưới cùng (vẽ trước mọi con) nên ô/icon/cục tròn đều đè lên trên.
-   Khoét lỗ tròn ở mép TRÊN ngay dưới cục tròn để lộ NỀN TRANG THẬT (moat ~4px +
-   scoop). Tâm lỗ (--ind-cx) do JS đặt = tâm ô active; bán kính 28px (cục tròn
-   accent 24px → chừa 4px nền). Trượt mượt nhờ transition --ind-cx. */
-.navbar-list::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: #ffffff;
-  border-radius: 28px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
-  -webkit-mask: radial-gradient(circle 29px at var(--ind-cx) 0, transparent 28px, #000 29px);
-          mask: radial-gradient(circle 29px at var(--ind-cx) 0, transparent 28px, #000 29px);
-  transition: --ind-cx 0.5s;
-}
-
-.navbar-item {
+.dock-item {
+  --s: 1;
   position: relative;
-  width: 56px;
-  height: 56px;
-  z-index: 1;
   list-style: none;
 }
 
-.navbar-item button {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  background: none;
-  border: none;
-  padding: 0;
-}
-
-/* Icon: mặc định màu navy đậm, nhấc lên + trắng khi active. */
-.navbar-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  color: #2c3e50;
-  transition: transform 0.5s, color 0.5s;
-}
-.navbar-icon svg {
-  width: 100%;
-  height: 100%;
-}
-.navbar-item.active .navbar-icon {
-  transform: translateY(-28px); /* CHỈ dịch dọc → lọt giữa cục tròn */
-  color: #ffffff;
-}
-
-/* Nhãn chữ: ẩn dưới, fade + trượt lên khi active. */
-.navbar-text {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 7px;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--accent);
-  text-align: center;
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.5s, transform 0.5s;
-  pointer-events: none;
-  white-space: nowrap;
-}
-.navbar-item.active .navbar-text {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Cục tròn indicator: `left` do JS đo (offsetLeft của ô active + căn giữa) — KHÔNG
-   dùng công thức 70px*index cố định. KHÔNG còn viền tô màu nền: moat/scoop nay do
-   lỗ mask trên .navbar-list lo (lộ nền thật), nên hợp cả theme nền gradient. */
-.navbar-indicator {
-  position: absolute;
-  top: -24px; /* tâm cục tròn nằm đúng mép trên thanh → nửa trên nhô lên */
-  left: 0;
-  width: 48px;
-  height: 48px;
-  background: var(--accent);
-  border-radius: 50%;
-  transition: left 0.5s;
-  /* Chỉ trang trí: KHÔNG chặn chuột, nếu không cú bấm đầu trúng indicator (nó nhô
-     xuống đè nút) làm phải bấm 2 lần. */
-  pointer-events: none;
-}
-
-/* Popover chọn (ngôn ngữ / phong cách): neo NGAY TRÊN nút trong navbar, mở lên
-   trên, canh mép phải để không tràn ra ngoài màn hình. Đặt trong .navbar-item
-   (đã position: relative) nên toạ độ tính theo chính nút đó. */
-.navbar-menu-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 44; /* dưới navbar(45) → vẫn bấm được item khác để chuyển menu */
-}
-/* Nâng z-index ô đang mở menu để popover đè lên các ô lân cận. */
-.navbar-item.menu-open {
-  z-index: 5;
-}
-.navbar-menu {
-  position: absolute;
-  bottom: calc(100% + 8px); /* mở lên trên nút, hở 8px */
-  right: 0; /* canh mép phải nút → menu xổ sang trái, không tràn phải */
-  z-index: 46;
-  width: 220px;
-  max-width: calc(100vw - 24px); /* hẹp màn hình thì tự thu */
+.dock-item button {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.3rem;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
-}
-/* Caret nhỏ ở đáy menu trỏ xuống nút quả địa cầu (canh gần tâm nút ~28px từ phải). */
-.navbar-menu::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  right: 22px;
-  border: 7px solid transparent;
-  border-top-color: var(--panel);
-}
-.navbar-menu button {
-  display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 10px 14px;
+  justify-content: flex-end;
+  width: 48px;
+  height: 48px;
+  padding: 0;
   background: none;
   border: none;
-  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Phần PHÓNG TO: scale + nhấc lên theo --s. transform-origin đáy → icon "mọc" lên
+   trên như dock thật. transition để --s đổi từng frame vẫn mượt (hiệu ứng sóng). */
+.dock-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   color: var(--text);
-  font-size: 0.94rem;
-  font-weight: 600;
-  text-align: left;
+  transform: scale(var(--s, 1)) translateY(calc((var(--s, 1) - 1) * -14px));
+  transform-origin: bottom center;
+  transition: transform 0.15s ease-out, color 0.2s ease;
+  will-change: transform;
 }
-.navbar-menu button:hover {
-  background: var(--panel-2);
+.dock-icon svg {
+  width: 100%;
+  height: 100%;
 }
-.navbar-menu button.active {
+.dock-item.active .dock-icon {
   color: var(--accent);
 }
-.navbar-menu-label {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+/* Chấm "đang mở" dưới icon active (kiểu macOS running dot). */
+.dock-item.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateX(-50%);
 }
-.navbar-menu .flag {
-  width: 24px;
+
+/* Nhãn nổi LÊN TRÊN icon đang phóng to. opacity bám theo --s: hiện dần khi icon
+   vượt ~1.28x (tức đang ở gần con trỏ/ngón tay), nên chỉ icon "được chọn" mới hiện
+   nhãn — giống tooltip dock. Không cần state React theo từng move. */
+.dock-label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  background: var(--panel-2, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: clamp(0, calc((var(--s, 1) - 1.42) / 0.16), 1);
+  transition: opacity 0.12s ease-out;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Badge số THẬT ở góc trên-phải icon. Component chỉ render khi badge > 0. */
+.dock-badge {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 16px;
   height: 16px;
-  border-radius: 2px;
-  flex: 0 0 auto;
-  display: block;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger, #f0676b);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-icon,
+  .dock-label {
+    transition: none;
+  }
 }
