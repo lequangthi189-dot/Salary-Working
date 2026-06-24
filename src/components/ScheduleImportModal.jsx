@@ -5,6 +5,7 @@ import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ManualScheduleModal from './ManualScheduleModal.jsx'
+import Checkbox from './Checkbox.jsx'
 import ProgressButton from './ProgressButton.jsx'
 import TimeInput from './TimeInput.jsx'
 
@@ -302,8 +303,7 @@ export default function ScheduleImportModal({
                       />
                     </td>
                     <td>
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={r.off}
                         onChange={(e) => updateRow(i, { off: e.target.checked })}
                       />
