@@ -6,6 +6,7 @@ import {
   formatLost,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
+import Checkbox from './Checkbox.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
 
@@ -144,14 +145,12 @@ export default function ShiftForm({
             required
           />
         </label>
-        <label className="holiday-check">
-          <input
-            type="checkbox"
-            checked={isHoliday}
-            onChange={(e) => setIsHoliday(e.target.checked)}
-          />
-          {t('shiftForm.holiday')}
-        </label>
+        <Checkbox
+          className="holiday-check"
+          checked={isHoliday}
+          onChange={(e) => setIsHoliday(e.target.checked)}
+          label={t('shiftForm.holiday')}
+        />
       </div>
 
       {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập.

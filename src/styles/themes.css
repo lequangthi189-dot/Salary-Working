@@ -591,7 +591,10 @@
 
 /* SOFT UI — Checkbox/radio neumorph: ô lõm mềm; khi chọn nổi lồi + dấu accent.
    Tự vẽ appearance để có bóng nổi/chìm thay cho ô mặc định trình duyệt. */
-[data-theme='neumorph'] :is(input[type='checkbox'], input[type='radio']) {
+/* Loại trừ .ui-check__input (checkbox của component Checkbox.jsx, đã ẩn) khỏi style
+   neumorph để nó không bị vẽ lại thành ô lõm — component tự lo phần hiển thị. */
+[data-theme='neumorph']
+  :is(input[type='checkbox']:not(.ui-check__input), input[type='radio']) {
   -webkit-appearance: none;
   appearance: none;
   width: 20px;
@@ -603,18 +606,22 @@
   position: relative;
   transition: box-shadow 0.18s ease;
 }
-[data-theme='neumorph'] input[type='checkbox'] {
+[data-theme='neumorph'] input[type='checkbox']:not(.ui-check__input) {
   border-radius: 6px;
 }
 [data-theme='neumorph'] input[type='radio'] {
   border-radius: 50%;
 }
-[data-theme='neumorph'] :is(input[type='checkbox'], input[type='radio']):checked {
+[data-theme='neumorph']
+  :is(input[type='checkbox']:not(.ui-check__input), input[type='radio']):checked {
   box-shadow: var(--nm-shadow);
 }
 /* Dấu check: chấm accent mềm ở giữa khi đã chọn. */
 [data-theme='neumorph']
-  :is(input[type='checkbox'], input[type='radio']):checked::after {
+  :is(
+    input[type='checkbox']:not(.ui-check__input),
+    input[type='radio']
+  ):checked::after {
   content: '';
   position: absolute;
   inset: 5px;

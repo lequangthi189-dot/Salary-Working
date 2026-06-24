@@ -6,6 +6,7 @@ import {
   formatLost,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
+import Checkbox from './Checkbox.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
@@ -103,14 +104,12 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
               onChange={setSchedEnd}
             />
           </label>
-          <label className="edit-holiday">
-            <input
-              type="checkbox"
-              checked={isHoliday}
-              onChange={(e) => setIsHoliday(e.target.checked)}
-            />
-            {t('shiftForm.holiday')}
-          </label>
+          <Checkbox
+            className="edit-holiday"
+            checked={isHoliday}
+            onChange={(e) => setIsHoliday(e.target.checked)}
+            label={t('shiftForm.holiday')}
+          />
           <span className="muted">
             {formatHours(preview.decimalHours)}h · {formatMoney(preview.pay)}
           </span>

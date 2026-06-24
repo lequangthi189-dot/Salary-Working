@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatMoney } from '../lib/shiftMath.js'
+import Checkbox from './Checkbox.jsx'
 import { payPeriodKeyOf, payPeriodLabel, localTodayStr } from '../lib/payPeriod.js'
 import { sumExtraIncome, totalIncome } from '../lib/extraIncome.js'
 import { useI18n } from '../lib/i18n.jsx'
@@ -109,8 +110,7 @@ function ExtraRow({ item, onUpdate, onDelete, onSetReceived, selected, onToggleS
     <li className={`extra-item${received ? '' : ' pending'}${selected ? ' selected' : ''}`}>
       {/* CỤM TRÁI: checkbox + thông tin khoản (số tiền → badge → mô tả), xếp dọc */}
       <div className="extra-item-left">
-        <input
-          type="checkbox"
+        <Checkbox
           className="extra-check"
           checked={selected}
           onChange={() => onToggleSelect(item.id)}
