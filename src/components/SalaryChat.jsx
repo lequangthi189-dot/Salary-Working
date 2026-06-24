@@ -20,8 +20,10 @@ import {
   insertMessage,
 } from '../models/chatMessagesModel.js'
 
-// Bộ nhớ chat: số tin nạp lại khi mở (Mức 2) và số tin GỬI kèm mỗi request làm
-// ngữ cảnh cho AI (Mức 1) — giữ nhỏ để khỏi vượt context / tốn token.
+// Bộ nhớ chat: số tin NẠP LẠI khi mở (Mức 2 — lưu/hiển thị, KHÔNG bị cửa sổ trượt
+// đụng tới) và CỬA SỔ TRƯỢT số tin GỬI kèm mỗi request làm ngữ cảnh cho AI (Mức 1)
+// — giữ nhỏ để khỏi vượt context / tốn token / chạm rate limit. Đổi N tại đây; server
+// (salary-chat) còn chốt lại lần nữa bằng WINDOW_TURNS.
 const MAX_HISTORY_LOAD = 30
 const MAX_HISTORY_SEND = 12
 
@@ -1168,12 +1170,16 @@ export default function SalaryChat({
     const msg = input.trim()
     if (!msg || busy) return
     setInput('')
-    // Lịch sử để gửi kèm AI (Mức 1) = các tin TEXT trước câu vừa gõ, lấy ~N tin gần
-    // nhất. Lấy TRƯỚC khi thêm tin mới để không gồm chính nó.
-    const history = messages
+    // CỬA SỔ TRƯỢT (Mức 1) = các tin TEXT trước câu vừa gõ, lấy N tin gần nhất. Lấy
+    // TRƯỚC khi thêm tin mới để không gồm chính nó. Đây CHỈ là phần gửi cho AI —
+    // KHÔNG đụng tới lưu DB/hiển thị (user vẫn cuộn xem toàn bộ lịch sử như cũ).
+    const recent = messages
       .filter((m) => typeof m.text === 'string' && m.text)
       .slice(-MAX_HISTORY_SEND)
       .map((m) => ({ role: m.role === 'user' ? 'user' : 'model', content: m.text }))
+    // Cắt THEO CẶP: bỏ câu trả lời 'model' mồ côi ở đầu cửa sổ (câu hỏi đã bị đẩy ra).
+    while (recent.length && recent[0].role === 'model') recent.shift()
+    const history = recent
     setMessages((m) => [...m, { role: 'user', text: msg }])
     persist('user', msg) // Mức 2: lưu câu hỏi của user
 
