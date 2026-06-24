@@ -180,7 +180,8 @@ button[type='submit']:disabled {
 .app {
   max-width: 980px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
+  /* Chừa đáy đủ rộng để dock (fixed) không đè lên thẻ/danh sách ca cuối cùng. */
+  padding: 1.5rem 1rem 7rem;
 }
 
 /* Bố cục chính: một cột nội dung (form + bảng công), căn giữa qua .app */

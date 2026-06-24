@@ -1,31 +1,43 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import "./NavBar.css";
 
-// Icon SVG (stroke currentColor → đổi màu theo trạng thái). Vẽ trực tiếp để khỏi
-// phụ thuộc thư viện / tránh emoji không render.
+// Bộ icon ĐỒNG BỘ (lucide) — cùng viewBox 24, strokeWidth 2, đầu nét bo tròn → một
+// phong cách. stroke="currentColor" để đổi màu theo trạng thái active/theme.
+const ICON_PROPS = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+};
 const ICONS = {
+  // lucide: calendar-days
   payPeriod: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg {...ICON_PROPS}>
+      <path d="M8 2v4M16 2v4M3 10h18" />
       <rect x="3" y="4" width="18" height="18" rx="2" />
-      <path d="M16 2v4M8 2v4M3 10h18" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
     </svg>
   ),
-  account: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21a8 8 0 0 1 16 0" />
-    </svg>
-  ),
-  guide: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z" />
-      <path d="M8 7h8M8 11h6" />
-    </svg>
-  ),
+  // lucide: wrench
   tools: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M14.7 6.3a4 4 0 0 0 5 5L21 12l-7 7-2-2 5-5" />
-      <path d="M9.3 8.7l-2-2L4 10l2 2zM3 21l6-6" />
+    <svg {...ICON_PROPS}>
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
+  ),
+  // lucide: user
+  account: (
+    <svg {...ICON_PROPS}>
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  // lucide: book-open
+  guide: (
+    <svg {...ICON_PROPS}>
+      <path d="M12 7v14" />
+      <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
     </svg>
   ),
 };
@@ -42,7 +54,7 @@ function scaleFor(dist) {
 }
 
 // Dock điều hướng kiểu macOS. Giữ NGUYÊN hợp đồng cũ:
-//   items  — [{ key, label, icon, badge? }]  (icon = khóa trong ICONS; badge = số THẬT)
+//   items  — [{ key, label, icon }]  (icon = khóa trong ICONS)
 //   active — chỉ số mục đồng bộ view hiện tại (App truyền vào); -1 = không mở gì
 //   onSelect(index) — báo App mở panel/modal tương ứng
 //
@@ -258,15 +270,7 @@ export default function NavBar({ items, active = 0, onSelect }) {
               aria-current={sel === i ? "page" : undefined}
               title={item.label}
             >
-              <span className="dock-icon">
-                {ICONS[item.icon]}
-                {/* Badge số THẬT: chỉ hiện khi > 0 (App tính, không hardcode). */}
-                {item.badge > 0 && (
-                  <span className="dock-badge" aria-hidden="true">
-                    {item.badge > 99 ? "99+" : item.badge}
-                  </span>
-                )}
-              </span>
+              <span className="dock-icon">{ICONS[item.icon]}</span>
               {/* Nhãn nổi lên trên icon đang phóng to (opacity bám theo --s). */}
               <span className="dock-label">{item.label}</span>
             </button>

@@ -28,20 +28,23 @@
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 10px; /* khoảng cách ĐỀU giữa các icon */
   margin: 0;
-  padding: 8px 12px;
+  padding: 9px 14px;
   list-style: none;
+  /* Nền ĐẶC theo theme (panel của dark/neumorph vốn mờ-đục) + bóng đổ rõ để dock
+     NỔI hẳn lên trên nội dung, không lẫn vào thẻ ca phía sau. */
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 22px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
   /* Ngón tay trượt dọc dock để phóng to → chặn cuộn trang trong lúc thao tác. */
   touch-action: none;
 }
-/* Theme glass: thêm blur cho khớp các bề mặt kính khác (nền vẫn là var(--panel)
-   trong mờ — không tô màu đặc). */
+/* Theme glass: panel vốn TRONG MỜ (nền gradient lộ qua) → thêm blur cho tách nền
+   thay vì tô màu đặc (tránh lỗi nền gradient). Tăng nền một bậc cho dock đỡ chìm. */
 [data-theme="glass"] .dock-list {
+  background: var(--panel-2, var(--panel));
   backdrop-filter: var(--surface-blur, blur(18px) saturate(150%));
   -webkit-backdrop-filter: var(--surface-blur, blur(18px) saturate(150%));
 }
@@ -123,24 +126,34 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* Badge số THẬT ở góc trên-phải icon. Component chỉ render khi badge > 0. */
-.dock-badge {
-  position: absolute;
-  top: -5px;
-  right: -7px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--danger, #f0676b);
-  color: #fff;
-  font-size: 0.62rem;
-  font-weight: 700;
-  line-height: 1;
-  border-radius: 999px;
-  box-shadow: 0 0 0 2px var(--panel);
+/* MOBILE / cảm ứng (pointer thô): hiện nhãn CỐ ĐỊNH dưới mỗi icon (không hover để
+   phóng to mà hiện nhãn như desktop). Nhãn nằm trong luồng dưới icon, luôn hiện. */
+@media (pointer: coarse) {
+  .dock-list {
+    align-items: flex-start;
+  }
+  .dock-item button {
+    height: auto;
+    gap: 5px;
+  }
+  .dock-label {
+    position: static;
+    transform: none;
+    opacity: 1;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+  .dock-item.active .dock-label {
+    color: var(--accent);
+  }
+  /* Mobile dùng nhãn để báo active → bỏ chấm tròn (tránh đè lên nhãn). */
+  .dock-item.active::after {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
