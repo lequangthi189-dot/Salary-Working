@@ -21,6 +21,12 @@ const GEMINI_MODELS = (Deno.env.get('GEMINI_MODEL') ||
   .map((s: string) => s.trim())
   .filter(Boolean)
 
+// CỬA SỔ TRƯỢT hội thoại: chỉ gửi N lượt gần nhất làm NGỮ CẢNH cho Gemini (giảm
+// token + giảm nguy cơ chạm rate limit RPD). Đổi N tại đây (gợi ý 10–12). LƯU Ý:
+// cửa sổ này CHỈ áp cho phần GỬI CHO AI — không liên quan tới lưu DB/hiển thị,
+// user vẫn xem được toàn bộ lịch sử ở client.
+const WINDOW_TURNS = 12
+
 const SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -169,22 +175,26 @@ Deno.serve(async (req: Request) => {
     `===== HẾT HƯỚNG DẪN =====\n` +
     `Câu hỏi: ${message}`
 
-  // LỊCH SỬ hội thoại (Mức 1): làm sạch ở server — chỉ giữ role hợp lệ ('user'/
-  // 'model'), content là chuỗi, cắt bớt độ dài, lấy tối đa 12 lượt gần nhất. Đây là
-  // hội thoại của CHÍNH user (gửi từ client của họ) — không trộn dữ liệu user khác.
+  // CỬA SỔ TRƯỢT (Mức 1): làm sạch ở server — chỉ giữ role hợp lệ ('user'/'model'),
+  // content là chuỗi, cắt bớt độ dài. Đây là hội thoại của CHÍNH user (gửi từ client
+  // của họ) — không trộn dữ liệu user khác. System prompt + khối DỮ LIỆU nằm NGOÀI
+  // cửa sổ này (xem systemInstruction + context bên dưới) nên KHÔNG bao giờ bị cắt.
   const history = Array.isArray(body.history) ? body.history : []
-  const historyTurns = history
-    .filter(
-      (m) =>
-        (m?.role === 'user' || m?.role === 'model') &&
-        typeof m?.content === 'string' &&
-        m.content.trim()
-    )
-    .slice(-12)
-    .map((m) => ({
-      role: m.role as string,
-      parts: [{ text: (m.content as string).slice(0, 2000) }],
-    }))
+  const cleaned = history.filter(
+    (m) =>
+      (m?.role === 'user' || m?.role === 'model') &&
+      typeof m?.content === 'string' &&
+      m.content.trim()
+  )
+  // Lấy N lượt gần nhất, rồi CẮT THEO CẶP: bỏ các lượt 'model' (câu trả lời) còn nằm
+  // ở ĐẦU cửa sổ mà câu hỏi 'user' tương ứng đã bị đẩy ra → tránh để lại câu trả lời
+  // mồ côi, giữ ngữ cảnh hỏi-đáp mạch lạc. Cửa sổ luôn bắt đầu bằng lượt 'user'.
+  const windowed = cleaned.slice(-WINDOW_TURNS)
+  while (windowed.length && windowed[0].role === 'model') windowed.shift()
+  const historyTurns = windowed.map((m) => ({
+    role: m.role as string,
+    parts: [{ text: (m.content as string).slice(0, 2000) }],
+  }))
 
   const reqBody = JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM }] },
