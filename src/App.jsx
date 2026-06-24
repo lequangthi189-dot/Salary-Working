@@ -334,9 +334,16 @@ export default function App() {
     { key: 'deductions', icon: 'coin', label: t('nav.deductions'), onClick: () => setShowDeductions(true) },
     { key: 'extra', icon: 'briefcase', label: t('nav.extraIncome'), onClick: () => setShowExtraIncome(true) },
   ]
+  // Badge số THẬT cho dock (chỉ hiện khi > 0; KHÔNG hardcode):
+  //  - payPeriod: số ca đã có lịch dự kiến nhưng CHƯA check-in (chưa nhập giờ thực).
+  //  - tools: số khoản thu nhập việc ngoài CHƯA NHẬN (đang treo).
+  const uncheckedShiftCount = visibleShifts.filter(
+    (s) => (s.scheduled_start || s.scheduled_end) && !s.start_time
+  ).length
+  const pendingExtraCount = extraIncome.filter((x) => !x.received).length
   const navItems = [
-    { key: 'payPeriod', icon: 'payPeriod', label: t('nav.payPeriod') },
-    { key: 'tools', icon: 'tools', label: t('nav.tools') },
+    { key: 'payPeriod', icon: 'payPeriod', label: t('nav.payPeriod'), badge: uncheckedShiftCount },
+    { key: 'tools', icon: 'tools', label: t('nav.tools'), badge: pendingExtraCount },
     { key: 'account', icon: 'account', label: t('nav.account') },
     { key: 'guide', icon: 'guide', label: t('nav.guide') },
   ]
