@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
+import { useDoneHold } from '../lib/useDoneHold.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ManualScheduleModal from './ManualScheduleModal.jsx'
 import Checkbox from './Checkbox.jsx'
@@ -67,6 +68,8 @@ export default function ScheduleImportModal({
   const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
   // Bước gọi Gemini là "hộp đen" → cho % bò chậm (ước lượng), tiệm cận 90%.
   const { start: startTrickle, stop: stopTrickle } = useTrickleProgress(setProgress)
+  // Giữ nút ở trạng thái "Hoàn tất ✓" một nhịp trước khi hiện kết quả (chỉ khi xong).
+  const { done, hold } = useDoneHold()
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [rows, setRows] = useState(null) // [{weekday,date,start,end,off}]
@@ -168,13 +171,18 @@ export default function ScheduleImportModal({
         }
       })
       setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
-      setRows(mapped)
-      setInfo(
-        t('import.infoRead', { code: data.matched_code || employeeCode })
-      )
+      // Xong thật → giữ "Hoàn tất ✓" một nhịp rồi mới hiện bảng lịch + thông báo.
+      const infoMsg = t('import.infoRead', {
+        code: data.matched_code || employeeCode,
+      })
+      hold(() => {
+        setRows(mapped)
+        setInfo(infoMsg)
+      })
     } catch (e) {
-      // Lỗi (vd Gemini hết quota/timeout) → báo lỗi; finally ẩn vòng tròn, không kẹt.
-      setError(String(e.message || e))
+      // Lỗi (vd Gemini hết quota/timeout) → KHÔNG hiện Done; báo lỗi + gợi ý thử lại
+      // sau; finally ẩn progress nên không kẹt ở % dở.
+      setError(`${String(e.message || e)}\n${t('import.errRetry')}`)
     } finally {
       stopTrickle() // dọn timer trickle dù xong hay lỗi → không kẹt số đang bò
       setLoading(false)
@@ -243,7 +251,7 @@ export default function ScheduleImportModal({
             type="button"
             className="account-btn"
             onClick={readSchedule}
-            disabled={loading}
+            disabled={loading || done}
           >
             {loading ? t('import.reading') : t('import.readAI')}
           </button>
@@ -251,13 +259,13 @@ export default function ScheduleImportModal({
             type="button"
             className="account-btn"
             onClick={() => setShowManual(true)}
-            disabled={loading}
+            disabled={loading || done}
           >
             {t('import.enterManual')}
           </button>
         </div>
 
-        {loading && (
+        {(loading || done) && (
           <div className="import-progress">
             <ProgressButton
               value={progress.pct}
