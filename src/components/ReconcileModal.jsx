@@ -15,6 +15,7 @@ import {
 import { useI18n, getLang, translate } from '../lib/i18n.jsx'
 import { resolveWeek, weekSpanWarning, dayInPeriod } from '../lib/reconcileDates.js'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
+import { useDoneHold } from '../lib/useDoneHold.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ProgressButton from './ProgressButton.jsx'
 
@@ -102,6 +103,8 @@ export default function ReconcileModal({
   const [progress, setProgress] = useState({ pct: 0, label: '', indeterminate: false })
   // Bước gọi Gemini là "hộp đen" → cho % bò chậm (ước lượng) thay vì vòng quay.
   const { start: startTrickle, stop: stopTrickle } = useTrickleProgress(setProgress)
+  // Giữ nút ở trạng thái "Hoàn tất ✓" một nhịp trước khi hiện bảng đối chiếu.
+  const { done, hold } = useDoneHold()
   const [error, setError] = useState(null)
   // Kết quả gom theo NHÓM: mỗi nhóm { weekStart, rows, error? }. Chế độ tuần/tháng
   // chỉ có 1 nhóm (weekStart=null cho tháng → không hiện tiêu đề nhóm).
@@ -320,9 +323,13 @@ export default function ReconcileModal({
         result.sort((a, b) => a.weekStart.localeCompare(b.weekStart))
         // Chặn giới hạn "nhảy tháng": nếu các tuần cách xa bất thường hoặc trải ≥3
         // tháng → cảnh báo (không chặn) để người dùng soát lại ô "Tuần đầu".
-        setWarn(weekSpanWarning(result.map((g) => g.weekStart)))
+        const warnVal = weekSpanWarning(result.map((g) => g.weekStart))
         setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
-        setGroups(result)
+        // Xong → giữ "Hoàn tất ✓" một nhịp rồi mới hiện cảnh báo + bảng kết quả.
+        hold(() => {
+          setWarn(warnVal)
+          setGroups(result)
+        })
         return
       }
 
@@ -375,10 +382,13 @@ export default function ReconcileModal({
       }
       setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
       // Tuần → có tiêu đề nhóm theo weekStart; tháng → không tiêu đề (weekStart=null).
-      setGroups([{ weekStart: groupWeek, rows }])
+      // Xong → giữ "Hoàn tất ✓" một nhịp rồi mới hiện bảng đối chiếu.
+      const result = [{ weekStart: groupWeek, rows }]
+      hold(() => setGroups(result))
     } catch (e) {
-      // Lỗi (Gemini quota/timeout…) → báo lỗi; finally ẩn vòng tròn, không kẹt.
-      setError(String(e.message || e))
+      // Lỗi (Gemini quota/timeout…) → KHÔNG hiện Done; báo lỗi + gợi ý thử lại sau;
+      // finally ẩn progress nên không kẹt ở % dở.
+      setError(`${String(e.message || e)}\n${t('import.errRetry')}`)
     } finally {
       stopTrickle() // dọn timer trickle dù xong hay lỗi → không kẹt số đang bò
       setLoading(false)
@@ -529,13 +539,13 @@ export default function ReconcileModal({
             type="button"
             className="account-btn"
             onClick={readAndCompare}
-            disabled={loading || tooManyForScope}
+            disabled={loading || done || tooManyForScope}
           >
             {loading ? t('import.reading') : t('reconcile.check')}
           </button>
         </div>
 
-        {loading && (
+        {(loading || done) && (
           <div className="import-progress">
             <ProgressButton
               value={progress.pct}

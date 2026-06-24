@@ -100,9 +100,17 @@
   }
 }
 
-/* Hoàn tất (value=100): tô đậm hơn cho trạng thái xong. */
+/* Hoàn tất (value=100): đổi sang XANH LÁ (theo theme var(--green)) cho rõ trạng
+   thái xong — fill nền mờ + thanh đáy đậm, phân biệt hẳn với màu accent lúc đang
+   chạy. Dùng biến theme nên nổi rõ trên cả dark/glass/neumorph. */
 .pbtn--done .pbtn-fill {
-  background: rgba(58, 160, 216, 0.32);
+  background: color-mix(in srgb, var(--green) 28%, transparent);
+}
+.pbtn--done .pbtn-bar {
+  background: var(--green);
+}
+.pbtn--done .pbtn-icon {
+  color: var(--green);
 }
 
 @media (prefers-reduced-motion: reduce) {
