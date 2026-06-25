@@ -12,10 +12,12 @@
   position: fixed;
   left: 50%;
   bottom: 0; /* neo ĐÁY màn hình; nổi nhẹ khỏi mép bằng padding (chừa home-indicator) */
-  transform: translateX(-50%);
+  transform: translateX(-50%); /* căn GIỮA màn hình theo chiều ngang */
+  /* CO theo nội dung: thanh chỉ rộng bằng cụm icon + padding, KHÔNG kéo dài cả màn.
+     (Trước đây fixed + display:flex không width → không shrink-wrap → trải dài.) */
+  width: max-content;
+  max-width: calc(100vw - 24px); /* màn hẹp: chừa ~12px mỗi mép, không tràn ngang */
   padding-bottom: max(14px, env(safe-area-inset-bottom));
-  display: flex;
-  justify-content: center;
   z-index: 45; /* dưới modal-overlay(50)/sidebar(60) */
   transition: transform 0.35s ease, opacity 0.35s ease;
 }
@@ -31,9 +33,9 @@
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 10px; /* khoảng cách ĐỀU giữa các icon */
+  gap: 8px; /* khoảng cách ĐỀU, icon xếp SÁT nhau cho gọn (không space-between) */
   margin: 0;
-  padding: 9px 14px;
+  padding: 9px 12px;
   list-style: none;
   /* Nền ĐẶC, KHÔNG trong suốt — không nhìn xuyên nội dung sau lưng (đây là nguyên
      nhân icon dock "lọt" vào ô input khi thẻ ca trôi dưới dock). Xếp lớp panel (có
