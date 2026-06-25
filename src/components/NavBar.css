@@ -1,7 +1,9 @@
 /* Dock điều hướng kiểu macOS.
-   - Thanh bo góc lớn, nền + viền theo THEME (var(--panel)/var(--border)) → hợp cả
-     dark/neumorph/glass; KHÔNG hardcode màu nền (theme glass nền gradient, panel
-     của nó vốn trong mờ nên tự ăn nền).
+   - Nền + viền dùng ĐÚNG biến của thẻ thống kê (.info-card): var(--panel) +
+     var(--border) — chính là bề mặt thẻ ở theme dark, nên dock & thẻ luôn cùng tông
+     và đổi theme là cùng đổi. KHÔNG hardcode màu (theme glass nền gradient, panel
+     của nó vốn trong mờ nên tự ăn nền). Riêng neumorph khớp thêm bóng mềm/convex ở
+     themes.css để không lạc tông với thẻ Soft UI.
    - Icon phóng to theo VỊ TRÍ con trỏ/ngón tay: JS ghi custom prop --s cho mỗi
      <li>, CSS biến --s thành transform (scale + nhấc lên). Chỉ transform → không
      đụng layout → mượt. transition tạo hiệu ứng "sóng" mượt khi --s đổi từng frame. */
@@ -39,7 +41,9 @@
      đục hẳn mà KHÔNG hardcode màu nền (an toàn cả theme glass nền gradient). */
   background: linear-gradient(var(--panel), var(--panel)), var(--bg);
   border: 1px solid var(--border);
-  border-radius: 22px;
+  /* Bo góc đồng bộ với thẻ thống kê (.info-card): 16px glass / 18px neumorph →
+     chọn 18px cho hài hòa cả 3 theme thay vì 22px cũ. */
+  border-radius: 18px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
   /* Ngón tay trượt dọc dock để phóng to → chặn cuộn trang trong lúc thao tác. */
   touch-action: none;
