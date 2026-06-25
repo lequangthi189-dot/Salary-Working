@@ -141,6 +141,13 @@
   animation: glass-aurora 28s ease-in-out infinite alternate;
 }
 
+/* BACKSTOP cho glass: html lấy ĐÚNG màu base của gradient aurora (#1a2050). Trên
+   mobile, nền aurora (fixed) không phủ hết dải đáy dynamic-viewport → trước đây lộ
+   canvas TRẮNG. Nền html cùng tông base → dải đáy liền mạch, hết mảng trắng. */
+[data-theme='glass'] html {
+  background: #1a2050;
+}
+
 /* Mỗi đốm màu được neo "at 14% 18%/86% 14%/…" tức nằm ở 4 GÓC. Với background-size:200%,
    để một đốm hiển thị thì background-position phải KÉO VỀ ĐÚNG GÓC của nó (0%/100%);
    kéo về giữa (50%) sẽ dồn đốm vào tâm rồi trôi ra ngoài viewport → nền xỉn màu.

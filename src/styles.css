@@ -31,6 +31,11 @@ html[data-font='lg'] {
 /* Giữ chỗ thanh cuộn để khi khoá cuộn (mở popup) layout không bị xê dịch ngang. */
 html {
   scrollbar-gutter: stable;
+  /* BACKSTOP nền: html mang nền theo theme để vùng canvas (ngoài body) KHÔNG lòi
+     màn trắng mặc định. Cần ở glass-mobile: nền gradient nằm trên body với
+     background-attachment:fixed nên không phủ hết dải đáy của dynamic-viewport →
+     lộ canvas trắng. Có nền html cùng tông → mất mảng trắng. */
+  background: var(--bg);
 }
 
 /* ===== Thanh cuộn ẨN HẲN (CÁCH 2: không thấy gì nhưng VẪN cuộn được) =====
