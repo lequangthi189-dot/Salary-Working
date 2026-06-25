@@ -199,6 +199,16 @@ Deno.serve(async (req: Request) => {
     )
   }
 
+  // [DEBUG ảnh 1] Kích thước ảnh nhận được (để phát hiện ảnh bị nén/mờ khi upload).
+  // base64 dài ~4/3 số byte gốc → KB ≈ image.length * 0.75 / 1024.
+  console.log('[extract-schedule] inbound image', {
+    mediaType,
+    base64Len: image.length,
+    approxKB: Math.round((image.length * 0.75) / 1024),
+    scope: isMonth ? 'month' : 'week',
+    hasPeriod,
+  })
+
   try {
     const idText =
       'Thông tin nhận dạng nhân viên cần lấy lịch:' +
@@ -318,6 +328,13 @@ Deno.serve(async (req: Request) => {
         502
       )
     }
+    // [DEBUG ảnh 1] Object THÔ model trả về (trước khi parse): finishReason +
+    // toàn văn text. Nếu text rỗng/không phải JSON → trượt ở khâu ĐỌC của AI.
+    console.log('[extract-schedule] raw model output', {
+      finishReason: cand?.finishReason,
+      textLen: text.length,
+      textHead: text.slice(0, 1500),
+    })
     let parsed
     try {
       parsed = JSON.parse(text)
@@ -334,6 +351,19 @@ Deno.serve(async (req: Request) => {
         502
       )
     }
+    // [DEBUG ảnh 1] Object ĐÃ PARSE trả về client: cho thấy AI có đọc ra số giờ
+    // (entries/days với raw/start/end) hay trả rỗng, và phân loại doc_type/found.
+    console.log('[extract-schedule] parsed result', {
+      is_roster: parsed?.is_roster,
+      doc_type: parsed?.doc_type,
+      found: parsed?.found,
+      matched_code: parsed?.matched_code,
+      sheet_month: parsed?.sheet_month,
+      sheet_year: parsed?.sheet_year,
+      daysCount: Array.isArray(parsed?.days) ? parsed.days.length : undefined,
+      entriesCount: Array.isArray(parsed?.entries) ? parsed.entries.length : undefined,
+      sample: (parsed?.entries || parsed?.days || []).slice(0, 5),
+    })
     return json(parsed, 200)
   } catch (e) {
     return json({ error: `Lỗi xử lý: ${String((e as Error)?.message || e)}` }, 502)

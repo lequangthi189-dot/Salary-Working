@@ -255,6 +255,9 @@ export default function ReconcileModal({
       throw new Error(detail)
     }
     if (data?.error) throw new Error(data.error)
+    // [DEBUG ảnh 1] Object THÔ AI trả về cho ảnh này — soi xem AI đọc ra số giờ
+    // (entries/days có raw/start/end) hay trả rỗng, doc_type/found ra sao.
+    console.log('[reconcile] raw AI object', JSON.parse(JSON.stringify(data)))
     return data
   }
 
