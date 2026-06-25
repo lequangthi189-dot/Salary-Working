@@ -137,6 +137,9 @@ export default function ScheduleImportModal({
         throw new Error(detail)
       }
       if (data?.error) throw new Error(data.error)
+      // [DEBUG ảnh 1] Object THÔ AI trả về — soi xem AI đọc ra giờ (days có
+      // start/end/raw) hay rỗng, doc_type/found ra sao.
+      console.log('[import] raw AI object', JSON.parse(JSON.stringify(data)))
       if (data?.is_roster === false) {
         setError(t('import.errNotRoster'))
         setRows(null)
