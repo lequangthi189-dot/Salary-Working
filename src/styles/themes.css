@@ -718,6 +718,16 @@
   transition: box-shadow 0.22s ease;
 }
 
+/* Dock điều hướng: KHỚP bề mặt với thẻ thống kê neumorph — bề mặt lồi (convex) +
+   bóng mềm nổi, KHÔNG viền. Dùng LẠI đúng biến của thẻ (--nm-convex, --nm-shadow)
+   nên đổi theme là cả hai cùng đổi; thay cho bóng đen cứng mặc định của dock vốn
+   lạc tông với Soft UI. */
+[data-theme='neumorph'] .dock-list {
+  background: var(--nm-convex);
+  border: none;
+  box-shadow: var(--nm-shadow);
+}
+
 /* ---------- Nút chọn theme (ô màu xem trước) ---------- */
 .theme-swatch {
   display: inline-block;
