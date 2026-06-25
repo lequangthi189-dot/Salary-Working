@@ -262,6 +262,7 @@ export const translations = {
     "payday.prompt":
       "Salaries are paid on the 1st–10th each month. Which day do you usually get paid? (Optional — you can set it later in Account.)",
     "payday.receiveDay": "Receive day",
+    "payday.none": "Not yet",
     "payday.skip": "Skip",
 
     // salary reminder
@@ -797,6 +798,7 @@ export const translations = {
     "payday.prompt":
       "Lương được trả vào ngày 1–10 hằng tháng. Bạn thường nhận vào ngày nào? (Không bắt buộc — có thể đặt sau trong Tài khoản.)",
     "payday.receiveDay": "Ngày nhận",
+    "payday.none": "Chưa có",
     "payday.skip": "Bỏ qua",
 
     // salary reminder

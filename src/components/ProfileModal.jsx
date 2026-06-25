@@ -108,7 +108,7 @@ function JobInfoModal({ profile, payday, onSavePayday, onSaveField, onClose }) {
   const hasNight = profile?.has_night_shift !== false
 
   const [editPayday, setEditPayday] = useState(false)
-  const [day, setDay] = useState(payday || 5)
+  const [day, setDay] = useState(payday || null)
   const [savingDay, setSavingDay] = useState(false)
   const [paydayErr, setPaydayErr] = useState(null)
 
@@ -147,9 +147,12 @@ function JobInfoModal({ profile, payday, onSavePayday, onSaveField, onClose }) {
             {editPayday ? (
               <span className="payday-edit">
                 <select
-                  value={day}
-                  onChange={(e) => setDay(Number(e.target.value))}
+                  value={day ?? ''}
+                  onChange={(e) =>
+                    setDay(e.target.value === '' ? null : Number(e.target.value))
+                  }
                 >
+                  <option value="">{t('payday.none')}</option>
                   {Array.from({ length: 10 }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>
                       {d}
@@ -187,7 +190,7 @@ function JobInfoModal({ profile, payday, onSavePayday, onSaveField, onClose }) {
                   type="button"
                   className="edit-icon"
                   onClick={() => {
-                    setDay(payday || 5)
+                    setDay(payday || null)
                     setEditPayday(true)
                   }}
                   title={t('common.edit')}
