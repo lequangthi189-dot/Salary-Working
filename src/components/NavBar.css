@@ -33,9 +33,10 @@
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 8px; /* khoảng cách ĐỀU, icon xếp SÁT nhau cho gọn (không space-between) */
+  gap: 12px; /* nới NGANG vừa phải → thanh thuôn dài hơn (vẫn không full màn) */
   margin: 0;
-  padding: 9px 12px;
+  /* MỎNG & THUÔN: padng dọc nhỏ (thấp) + padng ngang lớn (dài) → dáng pill thon. */
+  padding: 6px 22px;
   list-style: none;
   /* Nền ĐẶC, KHÔNG trong suốt — không nhìn xuyên nội dung sau lưng (đây là nguyên
      nhân icon dock "lọt" vào ô input khi thẻ ca trôi dưới dock). Xếp lớp panel (có
@@ -43,9 +44,9 @@
      đục hẳn mà KHÔNG hardcode màu nền (an toàn cả theme glass nền gradient). */
   background: linear-gradient(var(--panel), var(--panel)), var(--bg);
   border: 1px solid var(--border);
-  /* Bo góc đồng bộ với thẻ thống kê (.info-card): 16px glass / 18px neumorph →
-     chọn 18px cho hài hòa cả 3 theme thay vì 22px cũ. */
-  border-radius: 18px;
+  /* Pill dài: bo tròn HẲN 2 đầu (radius lớn tự cắt còn nửa chiều cao) → dáng thanh
+     thuôn, mỏng thay vì khối vuông. */
+  border-radius: 999px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
   /* Ngón tay trượt dọc dock để phóng to → chặn cuộn trang trong lúc thao tác. */
   touch-action: none;
@@ -62,8 +63,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  width: 48px;
-  height: 48px;
+  /* Thấp hơn (40 thay 48) để dock MỎNG lại; bề rộng dock nới bằng padding/gap. */
+  width: 44px;
+  height: 40px;
   padding: 0;
   background: none;
   border: none;
@@ -77,8 +79,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   color: var(--text);
   transform: scale(var(--s, 1)) translateY(calc((var(--s, 1) - 1) * -14px));
   transform-origin: bottom center;
