@@ -46,6 +46,13 @@ const ICONS = {
 // to nhất (MAX_SCALE), càng xa càng về 1x trong bán kính RANGE.
 const MAX_SCALE = 1.6;
 const RANGE = 82; // px: bán kính ảnh hưởng quanh con trỏ
+
+// Ngưỡng phân biệt TAP với TRƯỢT trên cảm ứng. Chạm rồi nhấc mà NGÓN gần như đứng
+// yên (< TAP_MOVE px) và NHANH (< TAP_TIME ms) → TAP → chọn ngay icon dưới ngón.
+// Vượt một trong hai → coi là TRƯỢT (rê xem rồi nhấc tại icon). Để tap thật nhạy,
+// TAP_MOVE nới rộng một chút và TAP_TIME đủ dài cho cú chạm thoải mái.
+const TAP_MOVE = 10; // px: quãng di chuyển tối đa vẫn tính là TAP
+const TAP_TIME = 500; // ms: thời gian chạm tối đa vẫn tính là TAP
 // Hàm giảm dần (quadratic): dist=0 → MAX; dist≥RANGE → 1. Neighbor (~58px) ≈ 1.3x.
 function scaleFor(dist) {
   if (dist >= RANGE) return 1;
@@ -73,6 +80,9 @@ export default function NavBar({ items, active = 0, onSelect }) {
   // 'touch' | 'mouse' | null — loại con trỏ của phiên hiện tại. Dùng để: (1) chỉ
   // CHỌN-KHI-NHẤC trên cảm ứng, (2) bỏ qua ghost-click sau khi touch đã xử lý.
   const sessionType = useRef(null);
+  // Điểm + thời điểm CHẠM XUỐNG (cảm ứng). Dùng ở pointerup để phân biệt
+  // TAP (chạm nhanh, gần như không di chuyển) với TRƯỢT (rê dọc dock để xem).
+  const pressStart = useRef(null); // { x, y, t } | null
 
   // Hiện dock khi đang cuộn; ngừng cuộn ~5s thì tự ẩn.
   useEffect(() => {
@@ -186,6 +196,7 @@ export default function NavBar({ items, active = 0, onSelect }) {
   function onPointerDown(e) {
     if (e.pointerType !== "touch") return; // chuột: chọn bằng click như thường
     sessionType.current = "touch";
+    pressStart.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
     measureCenters();
     pointerX.current = e.clientX;
     try {
@@ -212,17 +223,32 @@ export default function NavBar({ items, active = 0, onSelect }) {
     reset();
   }
 
-  // NHẤC ngón tay (chỉ cảm ứng): chọn icon đang ở DƯỚI ngón tay tại thời điểm nhấc.
-  // Nhấc ngoài vùng dock → indexAtPoint=null → KHÔNG chọn gì (thoát). Có phản hồi
-  // haptic nhẹ khi chọn được. Sau đó mọi icon về 1x.
+  // NHẤC ngón tay (chỉ cảm ứng). Phân biệt 2 cử chỉ — CẢ HAI đều dẫn tới cùng một
+  // hàm selectIndex (không có logic chọn riêng nào lệch nhau):
+  //   • TAP   — chạm gần như đứng yên & nhanh → chọn ngay icon dưới ngón (điểm chạm).
+  //   • TRƯỢT — đã rê đáng kể → chọn icon dưới ngón TẠI ĐIỂM NHẤC; nhấc NGOÀI dock
+  //             (indexAtPoint=null) → huỷ, không chọn gì.
+  // Có phản hồi haptic nhẹ khi chọn được. Sau đó mọi icon về 1x.
   function onPointerUp(e) {
     if (sessionType.current !== "touch") return; // chuột không chọn-khi-nhấc
-    const idx = indexAtPoint(e.clientX, e.clientY);
+    const start = pressStart.current;
+    const dist = start
+      ? Math.hypot(e.clientX - start.x, e.clientY - start.y)
+      : Infinity;
+    const elapsed = start ? e.timeStamp - start.t : Infinity;
+    const isTap = dist < TAP_MOVE && elapsed < TAP_TIME;
+
+    // TAP → dùng ĐIỂM CHẠM (ổn định, không bị ngón trôi vài px). TRƯỢT → điểm nhấc.
+    const idx = isTap
+      ? indexAtPoint(start.x, start.y)
+      : indexAtPoint(e.clientX, e.clientY);
+
     try {
       dockRef.current.releasePointerCapture(e.pointerId);
     } catch {
       /* ignore */
     }
+    pressStart.current = null;
     reset();
     sessionType.current = "touch"; // giữ để onClick (ghost) biết touch đã xử lý
     if (idx != null) {
