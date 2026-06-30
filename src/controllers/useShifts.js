@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as shiftsModel from '../models/shiftsModel.js'
-import { periodClosedError, overlapError } from '../lib/shiftRules.js'
+import {
+  periodClosedError,
+  overlapError,
+  partitionImportShifts,
+} from '../lib/shiftRules.js'
 
 // CONTROLLER: state + thao tác cho ca làm việc. View gọi các hàm này, không đụng
 // trực tiếp Supabase. Trả lỗi dạng chuỗi cho form, hoặc set loadError cho nền.
@@ -65,38 +69,40 @@ export function useShifts(session) {
     else setShifts((prev) => prev.filter((s) => s.id !== id))
   }
 
-  // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI. Trả về mảng lỗi (rỗng nếu OK).
+  // Tạo nhiều ca cùng lúc từ lịch tuần đã đọc bằng AI (hoặc nhập tay). CHỐNG TRÙNG:
+  // ca nào ĐÃ CÓ (trùng/chồng giờ với ca có sẵn trong DB của user, qua RLS) → BỎ QUA,
+  // chỉ insert ca CHƯA CÓ. Trả về { created, skipped, errors } để view báo tóm tắt.
   async function importWeekShifts(rows) {
     const errors = []
-    // Gộp ca đã có + ca vừa chấp nhận trong CHÍNH lần import này để bắt cả chồng
-    // lấn giữa các dòng trong lịch tuần (reload chỉ chạy ở cuối nên `shifts` chưa kịp
-    // cập nhật). Mỗi ca tạm gán id giả để overlapError không tự loại nhầm.
-    const accepted = [...shifts]
+    // Dựng ca DỰ KIẾN từ từng dòng; tách sớm ngày thuộc kỳ ĐÃ CHỐT thành lỗi (không
+    // phải "đã có" — đây là lỗi không nhập được).
+    const candidates = []
     for (const r of rows) {
-      const shift = {
+      const closedErr = periodClosedError(r.date)
+      if (closedErr) {
+        errors.push(`${r.date}: ${closedErr}`)
+        continue
+      }
+      candidates.push({
         work_date: r.date,
         // Lịch tuần chỉ là ca DỰ KIẾN → chỉ đổ vào Sched. start/end.
         start_time: null,
         end_time: null,
         scheduled_start: r.start,
         scheduled_end: r.end,
-      }
-      const closedErr = periodClosedError(r.date)
-      if (closedErr) {
-        errors.push(`${r.date}: ${closedErr}`)
-        continue
-      }
-      const overlapErr = overlapError(shift, accepted)
-      if (overlapErr) {
-        errors.push(`${r.date}: ${overlapErr}`)
-        continue
-      }
+      })
+    }
+    // BỎ QUA ca trùng/chồng giờ với ca đã có (và giữa các dòng trong CHÍNH lượt nhập
+    // này — `shifts` chỉ reload ở cuối). Dùng đúng overlapError; chỉ tạo ca CHƯA CÓ.
+    const { toCreate, skipped } = partitionImportShifts(candidates, shifts)
+    let created = 0
+    for (const shift of toCreate) {
       const { error } = await shiftsModel.insertShift(shift, session.user.id)
-      if (error) errors.push(`${r.date}: ${error.message}`)
-      else accepted.push(shift)
+      if (error) errors.push(`${shift.work_date}: ${error.message}`)
+      else created++
     }
     await reload()
-    return errors
+    return { created, skipped: skipped.length, errors }
   }
 
   return {

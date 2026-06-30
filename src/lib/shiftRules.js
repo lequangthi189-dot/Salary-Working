@@ -75,6 +75,27 @@ export function overlapError(candidate, existing, excludeId = null) {
   return null
 }
 
+// Phân loại các ca chuẩn bị NHẬP (từ lịch tuần đọc bằng ảnh / nhập tay) thành:
+//   - toCreate: ca CHƯA CÓ → cần insert.
+//   - skipped: ca ĐÃ CÓ (trùng/chồng giờ trong cùng work_date với ca có sẵn) → bỏ qua.
+// Dùng ĐÚNG định nghĩa trùng của overlapError (đã xử lý ca qua đêm end<=start), KHÔNG
+// định nghĩa lại. Bắt cả trùng GIỮA CÁC DÒNG trong cùng lượt nhập: ca vừa nhận được
+// gộp vào mốc so cho các ca sau (giống cách importWeekShifts cũ gộp `accepted`).
+export function partitionImportShifts(candidates, existing) {
+  const toCreate = []
+  const skipped = []
+  const accepted = [...(existing || [])]
+  for (const cand of candidates || []) {
+    if (overlapError(cand, accepted)) {
+      skipped.push(cand)
+    } else {
+      toCreate.push(cand)
+      accepted.push(cand)
+    }
+  }
+  return { toCreate, skipped }
+}
+
 // Chặn nhập công cho kỳ lương ĐÃ CHỐT (đã qua ngày 25 của kỳ chứa ngày làm).
 // Trả về chuỗi lỗi nếu kỳ đã đóng, ngược lại null.
 export function periodClosedError(workDate) {

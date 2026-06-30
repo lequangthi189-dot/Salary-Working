@@ -15,6 +15,7 @@ export default function ManualScheduleModal({ onImport, onClose, onDone }) {
   const [rows, setRows] = useState([blankRow()])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [info, setInfo] = useState(null)
 
   function updateRow(i, patch) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
@@ -31,14 +32,19 @@ export default function ManualScheduleModal({ onImport, onClose, onDone }) {
     if (picked.length === 0) return setError(t('import.errNoShift'))
     setSaving(true)
     setError(null)
-    const errs = await onImport(picked)
+    setInfo(null)
+    const { created, skipped, errors } = await onImport(picked)
     setSaving(false)
-    if (errs && errs.length) {
-      setError(t('import.errSome', { errs: errs.join('\n') }))
-    } else {
-      onClose()
-      onDone?.()
+    if (errors && errors.length) {
+      setError(t('import.errSome', { errs: errors.join('\n') }))
+      return
     }
+    // Báo tóm tắt: tạo bao nhiêu ca mới, bỏ qua bao nhiêu ca đã có (chống trùng).
+    setInfo(
+      created === 0
+        ? t('import.allExist')
+        : t('import.importSummary', { created, skipped })
+    )
   }
 
   return (
@@ -102,6 +108,7 @@ export default function ManualScheduleModal({ onImport, onClose, onDone }) {
           ))}
         </div>
 
+        {info && <p className="msg info">{info}</p>}
         {error && (
           <p className="msg error" style={{ whiteSpace: 'pre-wrap' }}>
             {error}
