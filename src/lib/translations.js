@@ -343,6 +343,9 @@ export const translations = {
       'Read schedule for code "{code}". Review/edit then press Create.',
     "import.errNoShift": "No shift to create.",
     "import.errSome": "Some shifts could not be created:\n{errs}",
+    "import.importSummary":
+      "Created {created} new shift(s), skipped {skipped} already existing.",
+    "import.allExist": "All shifts already exist — nothing new was created.",
     "import.errReadImage": "Could not read the image",
     "reconcile.title": "Verify timesheet",
     "reconcile.check": "Read & compare",
@@ -879,6 +882,8 @@ export const translations = {
       'Đã đọc lịch cho mã "{code}". Kiểm tra/sửa rồi bấm Tạo ca.',
     "import.errNoShift": "Không có ca nào để tạo.",
     "import.errSome": "Một số ca không tạo được:\n{errs}",
+    "import.importSummary": "Đã tạo {created} ca mới, bỏ qua {skipped} ca đã có.",
+    "import.allExist": "Tất cả ca đã tồn tại, không tạo thêm.",
     "import.errReadImage": "Không đọc được ảnh",
     "reconcile.title": "Đối chiếu công",
     "reconcile.check": "Đọc & đối chiếu",

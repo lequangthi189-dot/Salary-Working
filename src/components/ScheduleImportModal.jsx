@@ -201,12 +201,19 @@ export default function ScheduleImportModal({
     if (picked.length === 0) return setError(t('import.errNoShift'))
     setSaving(true)
     setError(null)
-    const errs = await onImport(picked)
+    setInfo(null)
+    const { created, skipped, errors } = await onImport(picked)
     setSaving(false)
-    if (errs && errs.length) {
-      setError(t('import.errSome', { errs: errs.join('\n') }))
+    if (errors && errors.length) {
+      setError(t('import.errSome', { errs: errors.join('\n') }))
+      return
+    }
+    // BÁO TÓM TẮT (đừng im lặng): tạo bao nhiêu ca mới, bỏ qua bao nhiêu ca đã có.
+    // Cả tuần đã có hết (không ca nào mới) → báo rõ là KHÔNG phải lỗi.
+    if (created === 0) {
+      setInfo(t('import.allExist'))
     } else {
-      onClose()
+      setInfo(t('import.importSummary', { created, skipped }))
     }
   }
 
