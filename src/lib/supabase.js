@@ -6,6 +6,10 @@ const anonKey =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
+// URL gốc của project — dùng cho upload avatar qua REST endpoint của Storage
+// (XHR để lấy % tiến độ THẬT, thứ mà storage.upload() của SDK không bắn ra).
+export const supabaseUrl = url
+
 if (!url || !anonKey) {
   // Surfaced in the console to make missing env config obvious during setup.
   console.error(

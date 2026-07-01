@@ -256,6 +256,14 @@ export const translations = {
     "profile.payday": "Payday",
     "profile.dayN": "Day {n}",
     "profile.signOut": "Sign out",
+    "avatar.choose": "Choose photo",
+    "avatar.retry": "Try again",
+    "avatar.hint": "JPG, PNG, WEBP — up to 5MB",
+    "avatar.alt": "Profile photo",
+    "avatar.errType": "Unsupported format. Use JPG, PNG or WEBP.",
+    "avatar.errSize": "Image is too large (max 5MB).",
+    "avatar.errUpload": "Upload failed. Please try again.",
+    "avatar.errNoFile": "No file selected.",
 
     // payday prompt
     "payday.title": "Payday",
@@ -795,6 +803,14 @@ export const translations = {
     "profile.payday": "Ngày nhận lương",
     "profile.dayN": "Ngày {n}",
     "profile.signOut": "Đăng xuất",
+    "avatar.choose": "Chọn ảnh",
+    "avatar.retry": "Thử lại",
+    "avatar.hint": "JPG, PNG, WEBP — tối đa 5MB",
+    "avatar.alt": "Ảnh đại diện",
+    "avatar.errType": "Định dạng không hỗ trợ. Dùng JPG, PNG hoặc WEBP.",
+    "avatar.errSize": "Ảnh quá lớn (tối đa 5MB).",
+    "avatar.errUpload": "Tải lên thất bại. Vui lòng thử lại.",
+    "avatar.errNoFile": "Chưa chọn tệp.",
 
     // payday prompt
     "payday.title": "Ngày nhận lương",

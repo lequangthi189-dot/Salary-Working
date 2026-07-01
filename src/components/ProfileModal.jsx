@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ChangePasswordModal from './ChangePasswordModal.jsx'
+import AvatarUpload from './AvatarUpload.jsx'
 import TimeInput from './TimeInput.jsx'
 import { formatMoney } from '../lib/shiftMath.js'
 import { listAccounts, removeAccount } from '../lib/accounts.js'
@@ -370,6 +371,13 @@ export default function ProfileModal({
               ×
             </button>
           </div>
+
+          <AvatarUpload
+            userId={user.id}
+            currentUrl={profile?.avatar_url || null}
+            name={fullName || email}
+            onSave={(url) => onSaveField({ avatar_url: url })}
+          />
 
           <dl className="profile-info">
             <EditableRow
