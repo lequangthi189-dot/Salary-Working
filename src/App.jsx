@@ -334,10 +334,19 @@ export default function App() {
     { key: 'deductions', icon: 'coin', label: t('nav.deductions'), onClick: () => setShowDeductions(true) },
     { key: 'extra', icon: 'briefcase', label: t('nav.extraIncome'), onClick: () => setShowExtraIncome(true) },
   ]
+  // Chữ cái đầu của tên (fallback avatar khi chưa có ảnh) — dùng ở header + dock.
+  const accountName = profile?.full_name || session?.user?.email || '?'
+  const accountInitials = accountName
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+  // Tài khoản mở bằng avatar ở header (không còn mục trong dock).
   const navItems = [
     { key: 'payPeriod', icon: 'payPeriod', label: t('nav.payPeriod') },
     { key: 'tools', icon: 'tools', label: t('nav.tools') },
-    { key: 'account', icon: 'account', label: t('nav.account') },
     { key: 'guide', icon: 'guide', label: t('nav.guide') },
   ]
   // App không dùng router → "route" = panel/modal đang mở. Suy ra mục active theo
@@ -346,18 +355,15 @@ export default function App() {
     ? 'payPeriod'
     : showToolsSheet
       ? 'tools'
-      : showProfile
-        ? 'account'
-        : showWelcome
-          ? 'guide'
-          : null
+      : showWelcome
+        ? 'guide'
+        : null
   const activeNav = activeKey ? navItems.findIndex((it) => it.key === activeKey) : -1
   // Item thường mở modal/sheet tương ứng.
   function onNavSelect(i) {
     const key = navItems[i]?.key
     if (key === 'payPeriod') setShowPayPeriod(true)
     else if (key === 'tools') setShowToolsSheet(true)
-    else if (key === 'account') setShowProfile(true)
     else if (key === 'guide') setShowWelcome(true)
   }
 
@@ -371,6 +377,19 @@ export default function App() {
         <div className="header-actions">
           <ThemeToggle theme={theme} onChange={changeTheme} />
           <LangCycle onChange={changeLang} />
+          <button
+            type="button"
+            className="header-avatar"
+            onClick={() => setShowProfile(true)}
+            title={t('nav.account')}
+            aria-label={t('nav.account')}
+          >
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" />
+            ) : (
+              <span className="avatar-initials">{accountInitials}</span>
+            )}
+          </button>
         </div>
       </header>
 

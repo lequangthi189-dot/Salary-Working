@@ -2880,3 +2880,159 @@ input.t-out {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===================== Avatar upload (Tài khoản) =====================
+   Premium upload UI: preview tròn + vòng % chạy quanh khi upload, thẻ file, nút
+   Chọn ảnh/Hủy, ghi chú định dạng. Dùng biến theme nên hợp cả dark/glass/neumorph. */
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+.avatar-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.avatar-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+.avatar-circle.busy .avatar-img {
+  filter: brightness(0.62);
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-initials {
+  font-weight: 700;
+  font-size: 1.7rem;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+/* Vòng tiến độ: SVG phủ khít avatar, xoay -90° để cung bắt đầu từ đỉnh. */
+.avatar-ring {
+  position: absolute;
+  inset: 0;
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.avatar-ring-track {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 5;
+}
+.avatar-ring-bar {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s ease;
+}
+/* Indeterminate (SDK không đo được %): quay tròn 1 cung, KHÔNG đếm số giả. */
+.avatar-ring-bar.spin {
+  transition: none;
+  transform-origin: 60px 60px;
+  animation: avatarSpin 0.9s linear infinite;
+}
+@keyframes avatarSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.avatar-pct {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 1px 7px;
+  line-height: 1.4;
+}
+.avatar-side {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.avatar-filecard {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.avatar-filename {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.avatar-filemeta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.avatar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.row-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.avatar-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* Avatar nhỏ ở header (góc phải) — bấm mở Tài khoản. Fallback chữ cái đầu. */
+.header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.header-avatar:hover {
+  border-color: var(--accent);
+}
+.header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.header-avatar .avatar-initials {
+  font-size: 0.78rem;
+}

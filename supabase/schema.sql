@@ -132,6 +132,9 @@ alter table public.profiles add column if not exists font_scale text;
 -- Vị trí nút NỔI của trợ lý lương ({x,y} px) — lưu theo tài khoản để đồng bộ nhiều
 -- thiết bị. jsonb cho gọn; null = dùng vị trí mặc định (góc dưới-phải).
 alter table public.profiles add column if not exists chat_fab_pos jsonb;
+-- URL ảnh đại diện (avatar). Lưu URL CÔNG KHAI của file trong bucket "avatars"
+-- (kèm ?t=<timestamp> để phá cache khi ghi đè). null = dùng chữ cái đầu làm fallback.
+alter table public.profiles add column if not exists avatar_url text;
 
 alter table public.profiles enable row level security;
 
@@ -368,6 +371,52 @@ drop policy if exists "delete own chat_messages" on public.chat_messages;
 create policy "delete own chat_messages"
   on public.chat_messages for delete
   using (auth.uid() = user_id);
+
+-- ===================== avatars (ảnh đại diện — Supabase Storage) =====================
+-- Bucket CÔNG KHAI: ảnh avatar đọc công khai (URL ổn định, không hết hạn) để hiện
+-- được ở navbar/header/tài khoản đơn giản nhất. Ghi thì CHỈ chủ sở hữu.
+-- Đường dẫn file quy ước: "<user_id>/avatar" (KHÔNG đuôi) → mỗi user đúng 1 file,
+-- upsert cùng path nên ĐỔI ẢNH LÀ GHI ĐÈ, không rác Storage. Content-Type được set
+-- lúc upload nên trình duyệt vẫn render đúng dù tên file không có đuôi.
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do update set public = true;
+
+-- Đọc công khai: bất kỳ ai có URL đều xem được ảnh trong bucket avatars.
+drop policy if exists "avatar public read" on storage.objects;
+create policy "avatar public read"
+  on storage.objects for select
+  using (bucket_id = 'avatars');
+
+-- Ghi (insert/update/delete): CHỈ trong thư mục mang user_id của chính mình.
+-- storage.foldername(name)[1] = phần thư mục đầu = "<user_id>".
+drop policy if exists "avatar insert own" on storage.objects;
+create policy "avatar insert own"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "avatar update own" on storage.objects;
+create policy "avatar update own"
+  on storage.objects for update
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "avatar delete own" on storage.objects;
+create policy "avatar delete own"
+  on storage.objects for delete
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 -- Làm mới cache schema của PostgREST.
 notify pgrst, 'reload schema';

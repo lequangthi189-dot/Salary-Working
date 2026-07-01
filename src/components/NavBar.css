@@ -91,6 +91,18 @@
   width: 100%;
   height: 100%;
 }
+/* Avatar tròn thay icon 'user' khi tài khoản đã có ảnh (fallback về icon nếu chưa). */
+.dock-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 1px solid var(--border);
+}
+.dock-item.active .dock-avatar {
+  border-color: var(--accent);
+}
 .dock-item.active .dock-icon {
   color: var(--accent);
 }
