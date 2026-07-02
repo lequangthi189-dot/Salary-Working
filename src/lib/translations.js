@@ -323,6 +323,16 @@ export const translations = {
     "import.stageProcessing": "Processing…",
     "import.stageDone": "Done",
     "import.errRetry": "Something went wrong. Please try again later.",
+    "ocr.checking": "Cross-checking with OCR…",
+    "ocr.matchOk": "Matches OCR",
+    "ocr.mismatch": "AI read differs from OCR — please verify",
+    "ocr.cellMatch": "AI value found in image (OCR confirmed)",
+    "ocr.cellMismatch": "AI read \"{value}\" but OCR did not find it in the image",
+    "ocr.warnBanner":
+      "{count} cell(s) where AI and OCR differ — check carefully before saving.",
+    "ocr.unchecked": "Could not cross-check (OCR unreadable) — please double-check.",
+    "ocr.confirmSave":
+      "Some cells differ between AI and OCR and are not verified. Save anyway?",
     "import.readAI": "Read schedule with AI",
     "import.enterManual": "Enter manually",
     "import.manualTitle": "Enter planned schedule",
@@ -452,6 +462,8 @@ export const translations = {
     "chat.btnReconcile": "Reconcile",
     "chat.btnCancel": "Cancel",
     "chat.attachCancelled": "Okay, I discarded the image.",
+    "chat.ocrWarnCreate":
+      "AI and OCR differ on: {days}. I did not create shifts — open \"Import weekly schedule\" to review and confirm.",
     "chat.tsTitle": "Timesheet {label}:",
     "chat.tsEmpty": "No checked-in shifts for {label} yet.",
     "chat.tsNoWeek": "There is no week {week} in {label}.",
@@ -880,6 +892,16 @@ export const translations = {
     "import.stageProcessing": "Đang xử lý…",
     "import.stageDone": "Hoàn tất",
     "import.errRetry": "Có lỗi xảy ra. Vui lòng thử lại sau.",
+    "ocr.checking": "Đang đối chiếu bằng OCR…",
+    "ocr.matchOk": "Khớp OCR",
+    "ocr.mismatch": "AI đọc lệch với OCR — hãy kiểm tra",
+    "ocr.cellMatch": "Giá trị AI có trong ảnh (OCR xác nhận)",
+    "ocr.cellMismatch": "AI đọc \"{value}\" nhưng OCR không thấy trong ảnh",
+    "ocr.warnBanner":
+      "{count} ô lệch giữa AI và OCR — kiểm tra kỹ trước khi lưu.",
+    "ocr.unchecked": "Chưa đối chiếu được (OCR không đọc ra) — hãy kiểm tra kỹ.",
+    "ocr.confirmSave":
+      "Còn ô lệch giữa AI và OCR chưa được xác nhận. Vẫn lưu chứ?",
     "import.readAI": "Đọc lịch",
     "import.enterManual": "Nhập tay",
     "import.manualTitle": "Nhập lịch dự kiến",
@@ -1008,6 +1030,8 @@ export const translations = {
     "chat.btnReconcile": "Đối chiếu",
     "chat.btnCancel": "Hủy",
     "chat.attachCancelled": "Đã bỏ ảnh.",
+    "chat.ocrWarnCreate":
+      "AI và OCR lệch nhau ở: {days}. Mình CHƯA tạo ca — hãy mở \"Nhập lịch tuần\" để soát và xác nhận.",
     "chat.tsTitle": "Bảng công {label}:",
     "chat.tsEmpty": "Chưa có ca đã chấm công cho {label}.",
     "chat.tsNoWeek": "Không có tuần {week} trong {label}.",

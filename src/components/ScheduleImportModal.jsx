@@ -7,6 +7,7 @@ import {
   pickImportRows,
   mondayOfThisWeek,
 } from '../lib/scheduleExtract.js'
+import { ocrTokens, crosscheckRecord } from '../lib/ocrCrosscheck.js'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import { useDoneHold } from '../lib/useDoneHold.js'
 import ConfirmModal from './ConfirmModal.jsx'
@@ -40,6 +41,10 @@ export default function ScheduleImportModal({
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
   const [rows, setRows] = useState(null) // [{weekday,date,start,end,off}]
+  // LỚP ĐỐI CHIẾU OCR (Tesseract) — chạy SONG SONG với Gemini, CHỈ để kiểm tra.
+  // status: 'idle'|'running'|'done'|'failed'. tokens = từ điển giờ/số giờ OCR đọc ra
+  // (null khi chưa xong/không đọc được → bỏ qua đối chiếu, KHÔNG chặn luồng Gemini).
+  const [ocr, setOcr] = useState({ status: 'idle', tokens: null, pct: 0 })
   const [showManual, setShowManual] = useState(false) // popup nhập tay
   const [saving, setSaving] = useState(false)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
@@ -57,6 +62,7 @@ export default function ScheduleImportModal({
     setRows(null)
     setError(null)
     setInfo(null)
+    setOcr({ status: 'idle', tokens: null, pct: 0 }) // ảnh mới → bỏ đối chiếu cũ
   }
 
   async function readSchedule() {
@@ -71,6 +77,18 @@ export default function ScheduleImportModal({
       // 1) Đọc & mã hoá ảnh (mốc thật).
       const { base64, mediaType } = await readImage(file)
       setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
+      // 1b) SONG SONG: khởi động OCR NGAY, chạy nền cùng lúc Gemini đọc — KHÔNG await
+      // để không làm chậm hiển thị kết quả Gemini. OCR fail/rỗng → tokens=null → chỉ
+      // bỏ qua đối chiếu (báo nhẹ "chưa đối chiếu được"), tuyệt đối không chặn luồng.
+      const dataUrl = `data:${mediaType};base64,${base64}`
+      setOcr({ status: 'running', tokens: null, pct: 0 })
+      ocrTokens(dataUrl, (p) =>
+        setOcr((o) => (o.status === 'running' ? { ...o, pct: p } : o))
+      )
+        .then((tokens) =>
+          setOcr({ status: tokens ? 'done' : 'failed', tokens, pct: 1 })
+        )
+        .catch(() => setOcr({ status: 'failed', tokens: null, pct: 1 }))
       // 2) Gọi Gemini — hộp đen, không có % thật → % bò chậm 25→~90% (ước lượng).
       startTrickle(25, 90, t('import.stageAI'))
       const data = await extractSchedule({
@@ -130,9 +148,38 @@ export default function ScheduleImportModal({
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
   }
 
+  // Class tô màu ô theo trạng thái đối chiếu OCR: khớp=xanh nhẹ, lệch=vàng cảnh báo.
+  function ccCellClass(status) {
+    if (status === 'match') return 'cell-match'
+    if (status === 'mismatch') return 'cell-mismatch'
+    return undefined
+  }
+  // Tooltip cho ô: khớp → xác nhận; lệch → nêu rõ AI đọc gì mà OCR không thấy.
+  function ccTitle(status, value) {
+    if (status === 'match') return t('ocr.cellMatch')
+    if (status === 'mismatch') return t('ocr.cellMismatch', { value })
+    return undefined
+  }
+  // Số Ô có ca (không nghỉ) mà AI–OCR LỆCH → hiện banner cảnh báo trên bảng.
+  const ocrWarnCount =
+    rows && ocr.tokens
+      ? rows.reduce(
+          (n, r) => n + (crosscheckRecord(r, ocr.tokens).overall === 'warn' ? 1 : 0),
+          0
+        )
+      : 0
+
   async function createShifts() {
     const picked = pickImportRows(rows)
     if (picked.length === 0) return setError(t('import.errNoShift'))
+    // AN TOÀN LƯƠNG: nếu OCR đối chiếu và còn ô LỆCH ở các ca sắp tạo → bắt user xác
+    // nhận tay trước khi lưu (OCR chỉ cảnh báo, không tự chặn/ghi đè).
+    if (ocr.tokens) {
+      const hasWarn = picked.some(
+        (r) => crosscheckRecord(r, ocr.tokens).overall === 'warn'
+      )
+      if (hasWarn && !(await askConfirm(t('ocr.confirmSave')))) return
+    }
     setSaving(true)
     setError(null)
     setInfo(null)
@@ -222,6 +269,20 @@ export default function ScheduleImportModal({
         {info && <p className="msg info">{info}</p>}
         {error && <p className="msg error" style={{ whiteSpace: 'pre-wrap' }}>{error}</p>}
 
+        {/* Trạng thái lớp đối chiếu OCR: đang chạy / không đọc được. Ô lệch/khớp đánh
+            dấu ngay trên từng ô giờ bên dưới. */}
+        {rows && ocr.status === 'running' && (
+          <p className="msg info ocr-note">{t('ocr.checking')}</p>
+        )}
+        {rows && ocr.status === 'failed' && (
+          <p className="msg info ocr-note">{t('ocr.unchecked')}</p>
+        )}
+        {rows && ocr.status === 'done' && ocrWarnCount > 0 && (
+          <p className="msg error">
+            {t('ocr.warnBanner', { count: ocrWarnCount })}
+          </p>
+        )}
+
         {rows && (
           <>
             <div className="import-table-wrap">
@@ -236,18 +297,22 @@ export default function ScheduleImportModal({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
+                {rows.map((r, i) => {
+                  // Đối chiếu Ở RENDER: dùng giá trị dòng HIỆN TẠI (kể cả user vừa sửa)
+                  // so với từ điển OCR → sửa cho khớp là cảnh báo tự tắt.
+                  const cc = ocr.tokens ? crosscheckRecord(r, ocr.tokens) : null
+                  return (
                   <tr key={r.weekday} className={r.off ? 'off' : ''}>
                     <td>{t(`wd.${r.weekday}`)}</td>
                     <td className="muted">{r.date}</td>
-                    <td>
+                    <td className={ccCellClass(cc?.start)} title={ccTitle(cc?.start, r.start)}>
                       <TimeInput
                         value={r.start}
                         disabled={r.off}
                         onChange={(v) => updateRow(i, { start: v })}
                       />
                     </td>
-                    <td>
+                    <td className={ccCellClass(cc?.end)} title={ccTitle(cc?.end, r.end)}>
                       <TimeInput
                         value={r.end}
                         disabled={r.off}
@@ -261,7 +326,8 @@ export default function ScheduleImportModal({
                       />
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
             </div>

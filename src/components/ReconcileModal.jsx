@@ -19,6 +19,7 @@ import {
   cmpHours,
   actualHoursByDate,
 } from '../lib/scheduleExtract.js'
+import { ocrTokens, crosscheckRecord } from '../lib/ocrCrosscheck.js'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import { useDoneHold } from '../lib/useDoneHold.js'
 import ConfirmModal from './ConfirmModal.jsx'
@@ -83,29 +84,35 @@ export default function ReconcileModal({
   // Tạo dòng đối chiếu cho một tập ngày: gộp giờ ảnh / thực tế theo ngày. Bảng đối
   // chiếu chỉ so 2 nguồn đáng tin là "Thực tế" và "Theo ảnh"; lịch dự kiến KHÔNG
   // tham gia đối chiếu (chỉ còn vai trò tham khảo, hiển thị ở form/thẻ ca).
-  function compareDates(imgByDate, dateList) {
+  function compareDates(imgByDate, dateList, ccByDate) {
     return dateList.map((date) => {
       const imgHours = imgByDate.get(date) || 0
       // Giờ THỰC TẾ = TỔNG giờ công hiệu dụng mọi ca trong ngày (đã gộp, kẹp lịch).
       const actualHours = actualByDate.get(date) || 0
+      // cc = trạng thái đối chiếu OCR cho giá trị AI đọc ở ngày này ('ok'|'warn'|
+      // 'unchecked'|'na'|null=chưa có OCR). Chỉ để tô màu/cảnh báo ô "Theo ảnh".
+      const cc = ccByDate ? ccByDate.get(date) || null : null
       // Kết quả khớp KHÔNG chốt ở đây: tính ở render qua effStatus theo giờ ảnh HIỆU
       // DỤNG (gồm cả số người dùng sửa tay).
-      return { date, imgHours, actualHours }
+      return { date, imgHours, actualHours, cc }
     })
   }
 
   // Một ảnh tuần (data.days) + mảng NGÀY ĐẦY ĐỦ theo cột Mon..Sun (do resolveWeek
   // suy ra) → các dòng đối chiếu 7 ngày.
-  function buildWeekRows(data, dates) {
+  function buildWeekRows(data, dates, tokens) {
     const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
     const imgByDate = new Map()
+    const ccByDate = new Map()
     const dateList = WEEKDAYS.map((wd, i) => {
       const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
       const date = dates[i]
       imgByDate.set(date, imageHours(d))
+      // Đối chiếu record AI của NGÀY này với từ điển OCR của CHÍNH ảnh này.
+      if (tokens) ccByDate.set(date, crosscheckRecord(d, tokens).overall)
       return date
     })
-    return compareDates(imgByDate, dateList)
+    return compareDates(imgByDate, dateList, ccByDate)
   }
   // Suy ngày + weekStart cho 1 ảnh tuần; fallback theo wkStart khi ảnh không có
   // cả ngày lẫn số ngày (resolveWeek trả null).
@@ -119,9 +126,10 @@ export default function ReconcileModal({
   // Một ảnh KỲ LƯƠNG (data.entries) → các dòng đối chiếu cho mọi ngày NẰM TRONG kỳ.
   // Khoảng [start, end] lấy theo cấu hình kỳ lương của hồ sơ (payPeriodRange), nên
   // kỳ có thể vắt qua 2 tháng (vd 26/05–25/06). So sánh chuỗi "YYYY-MM-DD" là đủ.
-  function buildMonthRows(data) {
+  function buildMonthRows(data, tokens) {
     const { start, end } = payPeriodRange(month)
     const imgByDate = new Map()
+    const ccByDate = new Map()
     for (const e of data.entries || []) {
       // Client lo TOÀN BỘ ghép ngày: ưu tiên SỐ NGÀY trần AI đọc (e.day, đáng tin);
       // nếu thiếu thì rút số ngày từ chuỗi date ISO mà ảnh in sẵn (nếu có). Không
@@ -132,12 +140,24 @@ export default function ReconcileModal({
       const date = dayInPeriod(dom, start, end)
       if (!date) continue
       imgByDate.set(date, (imgByDate.get(date) || 0) + imageHours(e))
+      // Một ngày có thể nhiều entry → gộp cc theo mức NẶNG nhất (warn > ok > unchecked).
+      if (tokens) {
+        ccByDate.set(date, mergeCc(ccByDate.get(date), crosscheckRecord(e, tokens).overall))
+      }
     }
     const shiftDates = shifts
       .map((s) => s.work_date)
       .filter((d) => d >= start && d <= end)
     const dateList = [...new Set([...imgByDate.keys(), ...shiftDates])].sort()
-    return compareDates(imgByDate, dateList)
+    return compareDates(imgByDate, dateList, ccByDate)
+  }
+
+  // Gộp 2 trạng thái đối chiếu, ưu tiên mức nặng: warn > ok > unchecked > na.
+  function mergeCc(a, b) {
+    const rank = { warn: 3, ok: 2, unchecked: 1, na: 0 }
+    if (!a) return b
+    if (!b) return a
+    return (rank[a] || 0) >= (rank[b] || 0) ? a : b
   }
 
   function pickFile(e) {
@@ -203,8 +223,15 @@ export default function ReconcileModal({
           const to = Math.round(((i + 1) / files.length) * 90) + 5
           const label = `${t('import.stageAI')} (${i + 1}/${files.length})`
           const { base64, mediaType } = await readImage(files[i])
+          const dataUrl = `data:${mediaType};base64,${base64}`
           startTrickle(from, to, label)
-          const data = await extractOne(base64, mediaType, {})
+          // SONG SONG: Gemini đọc CHÍNH + OCR đối chiếu cùng lúc. OCR fail → null →
+          // bỏ qua đối chiếu ảnh này (không chặn). Token đi KÈM từng ảnh (raw[].tokens)
+          // để không so nhầm ngày ảnh này với chữ ảnh khác khi các nhóm bị sort lại.
+          const [data, tokens] = await Promise.all([
+            extractOne(base64, mediaType, {}),
+            ocrTokens(dataUrl).catch(() => null),
+          ])
           stopTrickle()
           // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
           if (data?.doc_type === 'schedule' && !scheduleConfirmed) {
@@ -215,19 +242,19 @@ export default function ReconcileModal({
             }
             scheduleConfirmed = true
           }
-          raw.push({ data, issue: dataIssue(data) })
+          raw.push({ data, issue: dataIssue(data), tokens })
         }
         // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh suy được ngày (resolveWeek) → lấy
         // tuần thật từ chính SỐ NGÀY trong ảnh, bất kể vị trí chọn. Ảnh KHÔNG có cả
         // ngày lẫn số ngày → fallback theo THỨ TỰ CHỌN FILE, đếm RIÊNG trong nhóm ảnh
         // thiếu ngày (bắt đầu từ ô "Tuần đầu") để ảnh có ngày không chiếm mất khe tuần.
         let datelessRank = 0
-        const result = raw.map(({ data, issue }) => {
+        const result = raw.map(({ data, issue, tokens }) => {
           const r = data ? resolveWeek(data, weekStart) : null
           const realWeek = r ? r.weekStart : addDays(weekStart, 7 * datelessRank++)
           if (issue) return { weekStart: realWeek, rows: [], error: issue }
           const dates = r ? r.dates : WEEKDAYS.map((_, i) => addDays(realWeek, i))
-          return { weekStart: realWeek, rows: buildWeekRows(data, dates) }
+          return { weekStart: realWeek, rows: buildWeekRows(data, dates, tokens) }
         })
         // Sắp xếp các nhóm theo tuần (tăng dần) để hiển thị đúng trình tự thời gian
         // dù người dùng chọn ảnh lộn xộn.
@@ -247,20 +274,25 @@ export default function ReconcileModal({
       // MỘT ẢNH (tuần hoặc tháng).
       setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
       const { base64, mediaType } = await readImage(files[0])
+      const dataUrl = `data:${mediaType};base64,${base64}`
       // Gọi Gemini — hộp đen, không có % thật → % bò chậm 25→~90% (ước lượng).
       startTrickle(25, 90, t('import.stageAI'))
-      const data = await extractOne(
-        base64,
-        mediaType,
-        scope === 'month'
-          ? {
-              scope: 'month',
-              month,
-              periodStart: payPeriodRange(month).start,
-              periodEnd: payPeriodRange(month).end,
-            }
-          : {}
-      )
+      // SONG SONG: Gemini đọc CHÍNH + OCR đối chiếu cùng lúc. OCR fail → null → bỏ qua.
+      const [data, tokens] = await Promise.all([
+        extractOne(
+          base64,
+          mediaType,
+          scope === 'month'
+            ? {
+                scope: 'month',
+                month,
+                periodStart: payPeriodRange(month).start,
+                periodEnd: payPeriodRange(month).end,
+              }
+            : {}
+        ),
+        ocrTokens(dataUrl).catch(() => null),
+      ])
       stopTrickle()
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) {
@@ -285,10 +317,10 @@ export default function ReconcileModal({
       let rows
       let groupWeek = null
       if (scope === 'month') {
-        rows = buildMonthRows(data)
+        rows = buildMonthRows(data, tokens)
       } else {
         const { ws, dates } = weekDatesOf(data, weekStart)
-        rows = buildWeekRows(data, dates)
+        rows = buildWeekRows(data, dates, tokens)
         groupWeek = ws // dùng tuần suy được (theo số ngày/ISO trong ảnh) cho tiêu đề
       }
       setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
@@ -341,6 +373,13 @@ export default function ReconcileModal({
   const showGroupTitles = view.length > 1
   const grandTotal = view.reduce((acc, g) => acc + g.visible.length, 0)
   const grandMatch = view.reduce((acc, g) => acc + g.match, 0)
+  // Số ô "Theo ảnh" mà AI–OCR lệch (chưa sửa tay) → dòng cảnh báo tổng.
+  const grandWarn = view.reduce(
+    (acc, g) =>
+      acc +
+      g.visible.filter((r) => imgEdits[r.date] == null && r.cc === 'warn').length,
+    0
+  )
   // Chọn nhiều ảnh nhưng scope là Tuần/Tháng (mỗi cái chỉ 1 ảnh) → không hợp lệ.
   const tooManyForScope = scope !== 'weeks' && files.length > 1
 
@@ -487,6 +526,9 @@ export default function ReconcileModal({
             >
               {t('reconcile.summary', { match: grandMatch, total: grandTotal })}
             </p>
+            {grandWarn > 0 && (
+              <p className="msg error">{t('ocr.warnBanner', { count: grandWarn })}</p>
+            )}
             {view.map((g) => (
               <div key={g.weekStart || 'single'} className="reconcile-group">
                 {showGroupTitles && (
@@ -534,7 +576,26 @@ export default function ReconcileModal({
                                 ? `${formatHours(r.actualHours)}h`
                                 : '—'}
                             </td>
-                            <td className="rec-img-cell">
+                            <td
+                              className={`rec-img-cell${
+                                imgEdits[r.date] != null
+                                  ? '' /* user đã sửa tay → bỏ cờ OCR */
+                                  : r.cc === 'warn'
+                                    ? ' cell-mismatch'
+                                    : r.cc === 'ok'
+                                      ? ' cell-match'
+                                      : ''
+                              }`}
+                              title={
+                                imgEdits[r.date] != null
+                                  ? undefined
+                                  : r.cc === 'warn'
+                                    ? t('ocr.mismatch')
+                                    : r.cc === 'ok'
+                                      ? t('ocr.matchOk')
+                                      : undefined
+                              }
+                            >
                               {/* Lưới an toàn: gõ đè giờ khi AI đọc nhầm/sót. */}
                               <input
                                 type="text"

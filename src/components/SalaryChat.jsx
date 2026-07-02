@@ -15,6 +15,7 @@ import {
   reconcileWeek,
   mondayOfThisWeek,
 } from '../lib/scheduleExtract.js'
+import { ocrTokens, crosscheckRecord } from '../lib/ocrCrosscheck.js'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import { firstNameOf } from '../lib/name.js'
 import ProgressButton from './ProgressButton.jsx'
@@ -1215,18 +1216,23 @@ export default function SalaryChat({
     setAttachProgress({ pct: 10, label: t('import.stageUpload'), indeterminate: false })
     try {
       const { base64, mediaType } = await readImage(file)
+      const dataUrl = `data:${mediaType};base64,${base64}`
       setAttachProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
       const weekStart = mondayOfThisWeek()
       // Gọi Gemini — hộp đen → % bò chậm 25→~90% (ước lượng), giống modal.
       startTrickle(25, 90, t('import.stageAI'))
-      const data = await extractSchedule({
-        base64,
-        mediaType,
-        employeeCode,
-        fullName,
-        phone,
-        weekStart,
-      })
+      // SONG SONG: Gemini đọc CHÍNH + OCR đối chiếu cùng lúc. OCR fail → null → bỏ qua.
+      const [data, tokens] = await Promise.all([
+        extractSchedule({
+          base64,
+          mediaType,
+          employeeCode,
+          fullName,
+          phone,
+          weekStart,
+        }),
+        ocrTokens(dataUrl).catch(() => null),
+      ])
       stopTrickle()
       setAttachProgress({ pct: 90, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) return bot(t('import.errNotRoster'))
@@ -1236,17 +1242,35 @@ export default function SalaryChat({
         // [Tạo lịch] → tạo ca cả tuần bằng ĐÚNG hàm của luồng Nhập lịch (bỏ ca trùng).
         const picked = pickImportRows(mapScheduleRows(data, weekStart))
         if (picked.length === 0) return bot(t('import.errNoShift'))
+        // AN TOÀN LƯƠNG: chat KHÔNG có bảng sửa tay. Nếu OCR thấy ca AI đọc LỆCH →
+        // KHÔNG tạo ngầm; báo rõ ngày nào lệch và hướng mở 'Nhập lịch tuần' để soát &
+        // xác nhận. (OCR fail → tokens=null → bỏ qua kiểm, tạo như cũ + nhắc kiểm kỹ.)
+        if (tokens) {
+          const warnDays = picked
+            .filter((r) => crosscheckRecord(r, tokens).overall === 'warn')
+            .map((r) => t(`wd.${r.weekday}`))
+          if (warnDays.length)
+            return bot(t('chat.ocrWarnCreate', { days: warnDays.join(', ') }))
+        }
         if (!onImportSchedule) return bot(t('chat.error'))
         const { created, skipped, errors } = await onImportSchedule(picked)
         setAttachProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
         if (errors && errors.length) bot(t('import.errSome', { errs: errors.join('\n') }))
         else if (created === 0) bot(t('import.allExist'))
         else bot(t('import.importSummary', { created, skipped }))
+        if (!tokens) bot(t('ocr.unchecked')) // OCR không đọc được → nhắc kiểm tra kỹ
       } else {
         // [Đối chiếu] → đối chiếu 1 ảnh tuần với bảng công (reconcileWeek dùng chung).
         const { match, total } = reconcileWeek(data, weekStart, shifts)
         setAttachProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
         bot(t('reconcile.summary', { match, total }))
+        // Cảnh báo OCR (không chặn): số ngày AI đọc lệch với OCR.
+        if (tokens) {
+          const warn = (data.days || []).filter(
+            (d) => crosscheckRecord(d, tokens).overall === 'warn'
+          ).length
+          if (warn) bot(t('ocr.warnBanner', { count: warn }))
+        }
       }
       // Xong → bỏ ảnh (kết quả đã báo trong chat).
       if (attach?.url) URL.revokeObjectURL(attach.url)
