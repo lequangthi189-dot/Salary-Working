@@ -505,6 +505,10 @@ export default function App() {
         shifts={shifts}
         deductions={deductions}
         extraIncome={extraIncome}
+        employeeCode={employeeCode}
+        fullName={fullName}
+        phone={profile?.phone || ''}
+        onImportSchedule={importWeekShifts}
         onAddDeduction={addDeduction}
         onAddExtraIncome={addExtraIncome}
         onAddShift={addShift}

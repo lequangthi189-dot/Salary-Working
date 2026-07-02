@@ -8,6 +8,16 @@ import {
   hhmm,
 } from '../lib/shiftMath.js'
 import {
+  readImage,
+  extractSchedule,
+  mapScheduleRows,
+  pickImportRows,
+  reconcileWeek,
+  mondayOfThisWeek,
+} from '../lib/scheduleExtract.js'
+import { useTrickleProgress } from '../lib/useTrickleProgress.js'
+import ProgressButton from './ProgressButton.jsx'
+import {
   payPeriodKeyOf,
   payPeriodLabel,
   payPeriodRange,
@@ -461,6 +471,10 @@ export default function SalaryChat({
   shifts = [],
   deductions = [],
   extraIncome = [],
+  employeeCode = '',
+  fullName = '',
+  phone = '',
+  onImportSchedule,
   onAddDeduction,
   onAddExtraIncome,
   onAddShift,
@@ -480,6 +494,18 @@ export default function SalaryChat({
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState(null) // { date } đang chờ nhập giờ ca ngày
+  // Ảnh đính kèm đang chờ chọn hành động: { file, url }. null = chưa đính kèm.
+  const [attach, setAttach] = useState(null)
+  const [attachBusy, setAttachBusy] = useState(false)
+  // Tiến độ THẬT khi xử lý ảnh trong chat (giống modal): trickle trong lúc chờ Gemini.
+  const [attachProgress, setAttachProgress] = useState({
+    pct: 0,
+    label: '',
+    indeterminate: false,
+  })
+  const { start: startTrickle, stop: stopTrickle } =
+    useTrickleProgress(setAttachProgress)
+  const fileRef = useRef(null)
   const listRef = useRef(null)
   const loadedRef = useRef(false) // đã nạp lịch sử từ DB chưa (chỉ nạp 1 lần)
 
@@ -1171,6 +1197,84 @@ export default function SalaryChat({
     ])
   }
 
+  // ===== LỐI VÀO THỨ HAI: ảnh đính kèm trong chat =====
+  // Chọn ảnh từ nút đính kèm → chỉ hiện preview + 3 nút; KHÔNG tự đọc, chờ user chọn.
+  function pickChatImage(e) {
+    const f = e.target.files?.[0]
+    e.target.value = '' // cho chọn lại cùng ảnh sau khi Hủy
+    if (!f) return
+    if (attach?.url) URL.revokeObjectURL(attach.url)
+    setAttach({ file: f, url: URL.createObjectURL(f) })
+  }
+
+  // [Hủy] → bỏ ảnh, không làm gì.
+  function cancelAttach() {
+    if (attach?.url) URL.revokeObjectURL(attach.url)
+    setAttach(null)
+    bot(t('chat.attachCancelled'))
+  }
+
+  // Đọc ảnh đính kèm rồi GỌI LẠI đúng luồng cũ: kind='create' → Nhập lịch tuần (đọc
+  // ảnh → tạo ca, kèm bỏ ca trùng qua onImportSchedule); kind='reconcile' → Đối chiếu
+  // công. Dùng chung readImage/extractSchedule/mapScheduleRows/reconcileWeek với modal
+  // nên nhất quán tuyệt đối (và dính bug đọc ảnh y hệt — cố ý, xử lý ở nhánh khác).
+  async function runAttach(kind) {
+    const file = attach?.file
+    if (!file || attachBusy) return
+    // Cần định danh NV như modal cũ (mã / tên / SĐT), nếu không server không đọc được.
+    if (![employeeCode, fullName, phone].some((v) => String(v || '').trim())) {
+      bot(t('import.errNoCode'))
+      return
+    }
+    setAttachBusy(true)
+    setAttachProgress({ pct: 10, label: t('import.stageUpload'), indeterminate: false })
+    try {
+      const { base64, mediaType } = await readImage(file)
+      setAttachProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
+      const weekStart = mondayOfThisWeek()
+      // Gọi Gemini — hộp đen → % bò chậm 25→~90% (ước lượng), giống modal.
+      startTrickle(25, 90, t('import.stageAI'))
+      const data = await extractSchedule({
+        base64,
+        mediaType,
+        employeeCode,
+        fullName,
+        phone,
+        weekStart,
+      })
+      stopTrickle()
+      setAttachProgress({ pct: 90, label: t('import.stageProcessing'), indeterminate: false })
+      if (data?.is_roster === false) return bot(t('import.errNotRoster'))
+      if (!data?.found) return bot(t('import.errNotFound', { code: employeeCode }))
+
+      if (kind === 'create') {
+        // [Tạo lịch] → tạo ca cả tuần bằng ĐÚNG hàm của luồng Nhập lịch (bỏ ca trùng).
+        const picked = pickImportRows(mapScheduleRows(data, weekStart))
+        if (picked.length === 0) return bot(t('import.errNoShift'))
+        if (!onImportSchedule) return bot(t('chat.error'))
+        const { created, skipped, errors } = await onImportSchedule(picked)
+        setAttachProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
+        if (errors && errors.length) bot(t('import.errSome', { errs: errors.join('\n') }))
+        else if (created === 0) bot(t('import.allExist'))
+        else bot(t('import.importSummary', { created, skipped }))
+      } else {
+        // [Đối chiếu] → đối chiếu 1 ảnh tuần với bảng công (reconcileWeek dùng chung).
+        const { match, total } = reconcileWeek(data, weekStart, shifts)
+        setAttachProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
+        bot(t('reconcile.summary', { match, total }))
+      }
+      // Xong → bỏ ảnh (kết quả đã báo trong chat).
+      if (attach?.url) URL.revokeObjectURL(attach.url)
+      setAttach(null)
+    } catch (e) {
+      // Lỗi (Gemini/quota RPD…) → báo rõ trong chat; giữ ảnh để thử lại.
+      bot(`${String(e.message || e)}\n${t('import.errRetry')}`)
+    } finally {
+      stopTrickle()
+      setAttachBusy(false)
+    }
+  }
+
   async function send() {
     const msg = input.trim()
     if (!msg || busy) return
@@ -1413,7 +1517,56 @@ export default function SalaryChat({
         {busy && <div className="chat-msg chat-bot chat-typing">…</div>}
       </div>
 
+      {/* Ảnh đính kèm: preview + 3 nút [Tạo lịch] [Đối chiếu] [Hủy]. Đang xử lý →
+          hiện tiến độ THẬT (ProgressButton) thay cho 3 nút. */}
+      {attach && (
+        <div className="chat-attach">
+          <img className="chat-attach-preview" src={attach.url} alt="" />
+          {attachBusy ? (
+            <div className="import-progress">
+              <ProgressButton
+                value={attachProgress.pct}
+                label={attachProgress.label}
+                indeterminate={attachProgress.indeterminate}
+              />
+            </div>
+          ) : (
+            <>
+              <div className="chat-attach-hint">{t('chat.attachHint')}</div>
+              <div className="chat-choice-btns">
+                <button type="button" onClick={() => runAttach('create')}>
+                  {t('chat.btnCreateSchedule')}
+                </button>
+                <button type="button" onClick={() => runAttach('reconcile')}>
+                  {t('chat.btnReconcile')}
+                </button>
+                <button type="button" onClick={cancelAttach}>
+                  {t('chat.btnCancel')}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="chat-input">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={pickChatImage}
+          style={{ display: 'none' }}
+        />
+        <button
+          type="button"
+          className="chat-attach-btn"
+          onClick={() => fileRef.current?.click()}
+          disabled={attachBusy}
+          title={t('chat.attachAria')}
+          aria-label={t('chat.attachAria')}
+        >
+          📎
+        </button>
         <input
           type="text"
           value={input}

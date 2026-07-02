@@ -469,6 +469,43 @@ button[type='submit']:disabled {
   letter-spacing: 0.04em;
   color: var(--muted);
 }
+/* Ảnh đính kèm trong chat: preview + 3 nút (Tạo lịch / Đối chiếu / Hủy) */
+.chat-attach {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.chat-attach-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.chat-attach-hint {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+/* Nút đính kèm 📎 trong thanh nhập */
+.chat-attach-btn {
+  flex: 0 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+.chat-attach-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.chat-attach-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .chat-input {
   display: flex;
   gap: 0.45rem;

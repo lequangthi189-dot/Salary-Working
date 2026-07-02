@@ -1,7 +1,12 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase.js'
-import { localTodayStr } from '../lib/payPeriod.js'
-import { useI18n, getLang, translate } from '../lib/i18n.jsx'
+import { useI18n } from '../lib/i18n.jsx'
+import {
+  readImage,
+  extractSchedule,
+  mapScheduleRows,
+  pickImportRows,
+  mondayOfThisWeek,
+} from '../lib/scheduleExtract.js'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import { useDoneHold } from '../lib/useDoneHold.js'
 import ConfirmModal from './ConfirmModal.jsx'
@@ -9,44 +14,6 @@ import ManualScheduleModal from './ManualScheduleModal.jsx'
 import Checkbox from './Checkbox.jsx'
 import ProgressButton from './ProgressButton.jsx'
 import TimeInput from './TimeInput.jsx'
-
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-function pad2(n) {
-  return String(n).padStart(2, '0')
-}
-
-// Cộng n ngày vào "YYYY-MM-DD" (tính theo UTC để tránh lệch múi giờ).
-function addDays(dateStr, n) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1, d + n))
-  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(
-    dt.getUTCDate()
-  )}`
-}
-
-// Thứ 2 của tuần chứa "today" (theo giờ địa phương).
-function mondayOfThisWeek() {
-  const today = localTodayStr()
-  const [y, m, d] = today.split('-').map(Number)
-  const dow = new Date(y, m - 1, d).getDay() // 0=CN..6=T7
-  const offset = dow === 0 ? -6 : 1 - dow // về Thứ 2
-  return addDays(today, offset)
-}
-
-// Đọc File ảnh -> { base64, mediaType }
-function readImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = String(reader.result)
-      resolve({ base64: dataUrl.split(',')[1], mediaType: file.type })
-    }
-    reader.onerror = () =>
-      reject(new Error(translate(getLang(), 'import.errReadImage')))
-    reader.readAsDataURL(file)
-  })
-}
 
 // Modal: tải ảnh lịch → AI đọc theo mã nhân viên (lấy từ hồ sơ) → xem trước & sửa
 // → tạo ca cả tuần.
@@ -106,37 +73,17 @@ export default function ScheduleImportModal({
       setProgress({ pct: 25, label: t('import.stageUpload'), indeterminate: false })
       // 2) Gọi Gemini — hộp đen, không có % thật → % bò chậm 25→~90% (ước lượng).
       startTrickle(25, 90, t('import.stageAI'))
-      const { data, error: fnErr } = await supabase.functions.invoke(
-        'extract-schedule',
-        {
-          body: {
-            image: base64,
-            mediaType,
-            employeeCode: employeeCode.trim(),
-            fullName,
-            phone,
-            weekStart,
-          },
-        }
-      )
+      const data = await extractSchedule({
+        base64,
+        mediaType,
+        employeeCode,
+        fullName,
+        phone,
+        weekStart,
+      })
       // 3) Có phản hồi → dừng trickle, sang mốc % THẬT.
       stopTrickle()
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
-      if (fnErr) {
-        // Lỗi non-2xx: thông điệp thật nằm trong error.context (Response).
-        let detail = fnErr.message
-        try {
-          const ctx = fnErr.context
-          if (ctx && typeof ctx.json === 'function') {
-            const b = await ctx.json()
-            if (b?.error) detail = b.error
-          }
-        } catch {
-          /* ignore */
-        }
-        throw new Error(detail)
-      }
-      if (data?.error) throw new Error(data.error)
       // [DEBUG ảnh 1] Object THÔ AI trả về — soi xem AI đọc ra giờ (days có
       // start/end/raw) hay rỗng, doc_type/found ra sao.
       console.log('[import] raw AI object', JSON.parse(JSON.stringify(data)))
@@ -159,20 +106,7 @@ export default function ScheduleImportModal({
         return
       }
       // Map theo thứ -> ngày dựa trên tuần bắt đầu (Thứ 2).
-      const byDay = new Map((data.days || []).map((d) => [d.weekday, d]))
-      const isoRe = /^\d{4}-\d{2}-\d{2}$/
-      const mapped = WEEKDAYS.map((wd, i) => {
-        const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
-        // Ưu tiên NGÀY đọc từ ảnh; nếu ảnh không có ngày thì mới tính theo tuần.
-        const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
-        return {
-          weekday: wd,
-          date,
-          start: d.off ? '' : d.start || '',
-          end: d.off ? '' : d.end || '',
-          off: !!d.off || !d.start || !d.end,
-        }
-      })
+      const mapped = mapScheduleRows(data, weekStart)
       setProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
       // Xong thật → giữ "Hoàn tất ✓" một nhịp rồi mới hiện bảng lịch + thông báo.
       const infoMsg = t('import.infoRead', {
@@ -197,7 +131,7 @@ export default function ScheduleImportModal({
   }
 
   async function createShifts() {
-    const picked = rows.filter((r) => !r.off && r.start && r.end)
+    const picked = pickImportRows(rows)
     if (picked.length === 0) return setError(t('import.errNoShift'))
     setSaving(true)
     setError(null)
