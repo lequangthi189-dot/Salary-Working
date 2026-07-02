@@ -1697,6 +1697,35 @@ button[type='submit']:disabled {
   color: var(--text);
 }
 
+/* ===== Đối chiếu OCR: đánh dấu ô khớp/lệch giữa AI và OCR ===== */
+/* Khớp → xanh nhẹ (đáng tin). Lệch → viền vàng + nền vàng nhạt (cần soát tay). */
+.import-table td.cell-match {
+  box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.35);
+  border-radius: 6px;
+}
+.import-table td.cell-mismatch {
+  box-shadow: inset 0 0 0 2px rgba(234, 179, 8, 0.75);
+  background: rgba(234, 179, 8, 0.12);
+  border-radius: 6px;
+}
+/* Cảnh báo ô lệch: dấu ⚠ nhỏ góc trên phải để nhận ra ngay cả khi mù màu. */
+.import-table td.cell-mismatch {
+  position: relative;
+}
+.import-table td.cell-mismatch::after {
+  content: '⚠';
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: #b45309;
+}
+.ocr-note {
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
 /* ===== Tiền bồi thường ===== */
 .deduction-card {
   background: var(--panel-2);
