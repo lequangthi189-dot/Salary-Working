@@ -296,7 +296,13 @@ export default function NavBar({ items, active = 0, onSelect }) {
               aria-current={sel === i ? "page" : undefined}
               title={item.label}
             >
-              <span className="dock-icon">{ICONS[item.icon]}</span>
+              <span className="dock-icon">
+                {item.avatarUrl ? (
+                  <img className="dock-avatar" src={item.avatarUrl} alt="" />
+                ) : (
+                  ICONS[item.icon]
+                )}
+              </span>
               {/* Nhãn nổi lên trên icon đang phóng to (opacity bám theo --s). */}
               <span className="dock-label">{item.label}</span>
             </button>
