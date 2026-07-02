@@ -16,7 +16,9 @@ import {
   mondayOfThisWeek,
 } from '../lib/scheduleExtract.js'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
+import { firstNameOf } from '../lib/name.js'
 import ProgressButton from './ProgressButton.jsx'
+import ChatMenu from './ChatMenu.jsx'
 import {
   payPeriodKeyOf,
   payPeriodLabel,
@@ -488,8 +490,18 @@ export default function SalaryChat({
   onClose,
 }) {
   const { t, lang } = useI18n()
+  // Tin MỞ ĐẦU trong khung chat: chào gọi TÊN GỌI của user (chữ cuối trong họ-và-tên)
+  // + gợi ý bấm ☰ Chức năng. Chưa có tên → chào chung ("Chào bạn,"). Chỉ chèn biến
+  // {greeting}; phần chữ vẫn dịch qua i18n. greetingOnly = đánh dấu đây là tin mở đầu
+  // (chưa có hội thoại) → cho phép cập nhật khi TÊN về trễ / ĐỔI NGÔN NGỮ, nhưng KHÔNG
+  // đụng tới khi đã có lịch sử / user đã nhắn.
+  const firstName = firstNameOf(fullName)
+  const greeting = firstName
+    ? t('chat.introGreetName', { name: firstName })
+    : t('chat.introGreet')
+  const introText = t('chat.intro', { greeting })
   const [messages, setMessages] = useState([
-    { role: 'bot', text: t('chat.intro') },
+    { role: 'bot', greetingOnly: true, text: introText },
   ])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
@@ -525,6 +537,17 @@ export default function SalaryChat({
       alive = false
     }
   }, [])
+
+  // Tên user về TRỄ hoặc ĐỔI NGÔN NGỮ khi chưa chat → cập nhật lại tin mở đầu. CHỈ thay
+  // khi màn hình vẫn đúng một tin mở đầu (greetingOnly); đã có lịch sử / user đã nhắn
+  // thì bỏ qua.
+  useEffect(() => {
+    setMessages((m) =>
+      m.length === 1 && m[0].greetingOnly
+        ? [{ role: 'bot', greetingOnly: true, text: introText }]
+        : m
+    )
+  }, [introText])
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -1147,52 +1170,14 @@ export default function SalaryChat({
     else if (key === 'extra') handleExtraIncomeQuery({ month: m, year: y })
   }
 
-  // MENU "Chức năng": lưới nút mở công cụ + xem nhanh, ngay trong khung chat.
+  // MENU "Chức năng": 2 nhóm nút gom vào 2 DROPDOWN (component ChatMenu tự giữ trạng
+  // thái mở/đóng). Hành động từng mục GIỮ NGUYÊN: quickAction / openTool như trước.
   function pushMenu() {
-    const tools = [
-      { key: 'import', label: t('nav.importWeek') },
-      { key: 'reconcile', label: t('reconcile.title') },
-      { key: 'deductions', label: t('nav.deductions') },
-      { key: 'extra', label: t('nav.extraIncome') },
-      { key: 'payPeriod', label: t('nav.payPeriod') },
-      { key: 'profile', label: t('nav.account') },
-      { key: 'guide', label: t('nav.guide') },
-    ]
-    const quick = [
-      { key: 'timesheet', label: t('chat.qTimesheet') },
-      { key: 'planned', label: t('chat.qPlanned') },
-      { key: 'deductions', label: t('chat.qDeductions') },
-      { key: 'extra', label: t('chat.qExtra') },
-    ]
     setMessages((m) => [
       ...m,
       {
         role: 'bot',
-        node: (
-          <div className="chat-menu">
-            <div className="chat-confirm-line">{t('chat.menuTitle')}</div>
-            <div className="chat-menu-group">{t('chat.menuTools')}</div>
-            <div className="chat-choice-btns">
-              {tools.map((it) => (
-                <button key={it.key} type="button" onClick={() => openTool(it.key)}>
-                  {it.label}
-                </button>
-              ))}
-            </div>
-            <div className="chat-menu-group">{t('chat.menuQuick')}</div>
-            <div className="chat-choice-btns">
-              {quick.map((it) => (
-                <button
-                  key={it.key}
-                  type="button"
-                  onClick={() => quickAction(it.key)}
-                >
-                  {it.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ),
+        node: <ChatMenu onQuick={quickAction} onTool={openTool} />,
       },
     ])
   }

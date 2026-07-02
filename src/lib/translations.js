@@ -439,7 +439,11 @@ export const translations = {
     // salary chatbot
     "chat.title": "Salary assistant",
     "chat.intro":
-      'Hi! Ask me, e.g. "How many shifts to reach 3,000,000?", "can I make 5,000,000 this month?", "timesheet for month 3" / "week 2 month 3", or "shift on 10/6?". Tap ☰ Features to see everything I can do.',
+      "{greeting} how can I help you? Tap ☰ Menu to see everything I can do.",
+    "chat.introGreet": "Hi there,",
+    "chat.introGreetName": "Hi {name},",
+    "chat.greetBubble": "Hi! I'm your Salary Working assistant 😊",
+    "chat.greetBubbleName": "Hi {name}, I'm your Salary Working assistant 😊",
     "chat.placeholder": "Ask about your salary…",
     "chat.send": "Send",
     "chat.attachAria": "Attach an image",
@@ -991,7 +995,11 @@ export const translations = {
     // salary chatbot
     "chat.title": "Trợ lý lương",
     "chat.intro":
-      'Chào! Hỏi mình nhé, vd "Cần làm bao nhiêu ca để được 3.000.000?", "tháng này làm được 5 triệu không?", "bảng công tháng 3" / "tuần 2 tháng 3", hoặc "ngày 10/6 có ca không?". Bấm ☰ Chức năng để xem mọi việc mình làm được.',
+      "{greeting} mình có thể giúp gì được cho bạn? Bấm ☰ Chức năng để xem mọi việc mình làm được nhé.",
+    "chat.introGreet": "Chào bạn,",
+    "chat.introGreetName": "Chào {name},",
+    "chat.greetBubble": "Chào bạn, mình là trợ lý Salary Working 😊",
+    "chat.greetBubbleName": "Chào {name}, mình là trợ lý Salary Working 😊",
     "chat.placeholder": "Hỏi về lương của bạn…",
     "chat.send": "Gửi",
     "chat.attachAria": "Đính kèm ảnh",

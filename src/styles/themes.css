@@ -184,7 +184,8 @@
     .stats-panel,
     .lang-menu,
     .account-btn,
-    .dock-list
+    .dock-list,
+    .chat-greet-bubble
   ) {
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 18px;
@@ -239,7 +240,8 @@
     .deduction-card,
     .shift-card,
     .shift-form,
-    .lang-menu
+    .lang-menu,
+    .chat-greet-bubble
   )::before {
   content: '';
   position: absolute;

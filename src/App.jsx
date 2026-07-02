@@ -25,6 +25,7 @@ import Loader from './components/Loader.jsx'
 import ReconcileModal from './components/ReconcileModal.jsx'
 import { APP_VERSION, entriesSince } from './lib/changelog.js'
 import { useI18n } from './lib/i18n.jsx'
+import { firstNameOf } from './lib/name.js'
 import { useCurrency } from './lib/currency.jsx'
 import { useShifts } from './controllers/useShifts.js'
 import { usePayrolls } from './controllers/usePayrolls.js'
@@ -322,6 +323,8 @@ export default function App() {
     ''
   const employeeCode =
     profile?.employee_code || session.user.user_metadata?.employee_code || ''
+  // Tên GỌI cho bong bóng chào (tiếng Việt: chữ CUỐI). Rỗng → câu chào chung.
+  const chatFirstName = firstNameOf(fullName)
 
   // Mục điều hướng cho NavBar pill: 3 mục từ sidebar cũ (Kỳ lương / Tài khoản /
   // Hướng dẫn) + Công cụ. Phong cách & Ngôn ngữ đã chuyển ra thanh gạt
@@ -495,6 +498,12 @@ export default function App() {
           initialPos={profile?.chat_fab_pos || null}
           onPersist={(p) => saveProfileFields({ chat_fab_pos: p })}
           label={t('chat.title')}
+          greetMessage={
+            chatFirstName
+              ? t('chat.greetBubbleName', { name: chatFirstName })
+              : t('chat.greetBubble')
+          }
+          greetCloseLabel={t('common.close')}
         />
       )}
 
