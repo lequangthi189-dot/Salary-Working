@@ -641,6 +641,22 @@ button[type='submit']:disabled {
   align-items: center;
   gap: 0.4rem;
 }
+
+/* Mobile: cụm 3 nút (theme / ngôn ngữ / avatar) XUỐNG HÀNG RIÊNG dưới logo, căn
+   trái thẳng với logo. Desktop giữ nguyên (cùng hàng, đẩy phải qua space-between).
+   Có đủ chỗ nên chữ tên theme ("Sleek Dark"…) hiện lại — xem ThemeToggle.css. */
+@media (max-width: 560px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+}
 /* Nút avatar Trợ lý lương, kế bên dropdown Công cụ */
 .chat-avatar-btn {
   background: none;
