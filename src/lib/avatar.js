@@ -71,10 +71,40 @@ export async function uploadAvatar({ file, userId, onProgress, signal }) {
       onProgress(e.lengthComputable ? Math.round((e.loaded / e.total) * 100) : null)
     }
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve()
-      else reject(new Error(`upload-failed-${xhr.status}`))
+      if (xhr.status >= 200 && xhr.status < 300) return resolve()
+      // Supabase Storage trả JSON lỗi trong body: { statusCode, error, message }.
+      // ĐỪNG nuốt — parse ra + IN NGUYÊN để chốt nguyên nhân (thiếu policy? sai
+      // bucket? sai path?). 403=thiếu policy, 404=sai bucket/path, 400=sai tham số.
+      let body = xhr.responseText
+      let parsed = null
+      try {
+        parsed = JSON.parse(body)
+      } catch {
+        // body không phải JSON → giữ nguyên text.
+      }
+      console.error('[avatar upload] LỖI Supabase Storage', {
+        httpStatus: xhr.status,
+        statusText: xhr.statusText,
+        endpoint,
+        path,
+        bucket: 'avatars',
+        contentType: file.type,
+        responseBody: parsed || body,
+      })
+      const err = new Error(`upload-failed-${xhr.status}`)
+      err.httpStatus = xhr.status
+      err.storageError = parsed || body
+      reject(err)
     }
-    xhr.onerror = () => reject(new Error('network')) // mạng/CORS/quota
+    xhr.onerror = () => {
+      // Mạng/CORS/quota — không có response HTTP nào để đọc.
+      console.error('[avatar upload] LỖI mạng/CORS (không có response)', {
+        endpoint,
+        path,
+        bucket: 'avatars',
+      })
+      reject(new Error('network'))
+    }
     xhr.onabort = () => reject(new Error('aborted'))
 
     if (signal) {
