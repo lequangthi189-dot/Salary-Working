@@ -118,6 +118,14 @@ export default function AvatarUpload({ userId, currentUrl, name, onSave }) {
         setStatus('idle')
         return
       }
+      // IN NGUYÊN lỗi thật ra console (message + httpStatus + body Supabase) TRƯỚC
+      // khi hiển thị thông báo chung "Tải lên thất bại" cho người dùng.
+      console.error('[avatar upload] thất bại', {
+        message: err?.message,
+        httpStatus: err?.httpStatus,
+        storageError: err?.storageError,
+        error: err,
+      })
       // Mạng/quota/HTTP lỗi → ẩn vòng %, báo thử lại, GIỮ ảnh cũ nguyên vẹn.
       setStatus('error')
       setError(t('avatar.errUpload'))
