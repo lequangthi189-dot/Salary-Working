@@ -24,8 +24,11 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // Danh sách model Gemini thử lần lượt (env GEMINI_MODEL, ngăn cách bằng dấu phẩy).
 // Hết quota (429) / quá tải (503) / không tồn tại (404) ở model nào → thử model kế.
 // Mặc định gồm cả bản "flash-lite" (quota free cao hơn) để tránh hết hạn mức.
+// Lite ĐỨNG ĐẦU: hạn free/ngày cao hơn bản thường → đỡ 429 khi đọc nhiều ảnh.
+// Khớp thứ tự với salary-chat. (KHÔNG để model "xịn" hạn free thấp — vd 3.5-flash
+// chỉ 5 lượt/ngày — đứng đầu, vì mỗi ảnh sẽ đốt sạch quota đó rồi mới rớt xuống.)
 const GEMINI_MODELS = (Deno.env.get('GEMINI_MODEL') ||
-  'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash')
+  'gemini-2.5-flash-lite,gemini-2.5-flash,gemini-2.0-flash')
   .split(',')
   .map((s: string) => s.trim())
   .filter(Boolean)
@@ -285,7 +288,16 @@ Deno.serve(async (req: Request) => {
         const errText = await resp.text()
         return json({ error: `Lỗi gọi Gemini (${resp.status}): ${errText}` }, 502)
       }
-      if (resp && resp.ok) break
+      // [DEBUG] Ghi RÕ kết quả từng model: model nào 429 (hết quota) / 404 / trả lời.
+      // Trước đây vòng này im lặng nên `functions logs` không lộ chuỗi fallback 429.
+      if (resp && resp.ok) {
+        console.log('[extract-schedule] model answered', { model })
+        break
+      }
+      console.log('[extract-schedule] model failed → next', {
+        model,
+        status: resp?.status,
+      })
     }
 
     // Hết danh sách mà vẫn không OK.
