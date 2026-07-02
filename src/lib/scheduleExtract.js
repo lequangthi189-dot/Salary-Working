@@ -99,12 +99,16 @@ export function mapScheduleRows(data, weekStart) {
   return WEEKDAYS.map((wd, i) => {
     const d = byDay.get(wd) || { off: true, start: '', end: '', raw: '' }
     const date = isoRe.test(d.date || '') ? d.date : addDays(weekStart, i)
+    // `off` theo ĐÚNG AI báo (nguồn thẩm quyền). KHÔNG tự coi là nghỉ chỉ vì thiếu
+    // một đầu giờ — làm vậy sẽ GIẤU luôn ngày AI đọc-ra-có-công khỏi bảng, người dùng
+    // tưởng "đọc không ra". Ngày làm nhưng thiếu start/end → vẫn hiện (off=false) để
+    // sửa tay; pickImportRows vẫn lọc ra ngày đủ start+end trước khi tạo ca.
     return {
       weekday: wd,
       date,
       start: d.off ? '' : d.start || '',
       end: d.off ? '' : d.end || '',
-      off: !!d.off || !d.start || !d.end,
+      off: !!d.off,
     }
   })
 }
