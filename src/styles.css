@@ -469,6 +469,95 @@ button[type='submit']:disabled {
   letter-spacing: 0.04em;
   color: var(--muted);
 }
+
+/* DROPDOWN nhóm nút trong menu chức năng (accordion, mặc định đóng) */
+.chat-dd {
+  margin-top: 0.5rem;
+}
+.chat-dd-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.chat-dd-head:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Mũi tên ▼ xoay 180° khi mở */
+.chat-dd-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.25s ease;
+}
+.chat-dd.is-open .chat-dd-arrow {
+  transform: rotate(180deg);
+}
+/* Panel xổ/thu mượt bằng max-height */
+.chat-dd-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.28s ease;
+}
+.chat-dd.is-open .chat-dd-panel {
+  max-height: 420px; /* đủ chứa danh sách dài nhất (7 mục) */
+}
+.chat-dd-items {
+  margin-top: 0.4rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-dd-panel,
+  .chat-dd-arrow {
+    transition: none;
+  }
+}
+/* Ảnh đính kèm trong chat: preview + 3 nút (Tạo lịch / Đối chiếu / Hủy) */
+.chat-attach {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.chat-attach-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.chat-attach-hint {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+/* Nút đính kèm 📎 trong thanh nhập */
+.chat-attach-btn {
+  flex: 0 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+.chat-attach-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.chat-attach-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .chat-input {
   display: flex;
   gap: 0.45rem;

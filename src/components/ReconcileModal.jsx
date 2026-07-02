@@ -1,80 +1,35 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase.js'
 import {
   localTodayStr,
   payPeriodKeyOf,
   payPeriodRange,
   payPeriodLabel,
 } from '../lib/payPeriod.js'
-import {
-  hhmm,
-  durationHours,
-  formatHours,
-  computeEffective,
-} from '../lib/shiftMath.js'
-import { useI18n, getLang, translate } from '../lib/i18n.jsx'
+import { formatHours } from '../lib/shiftMath.js'
+import { useI18n } from '../lib/i18n.jsx'
 import { resolveWeek, weekSpanWarning, dayInPeriod } from '../lib/reconcileDates.js'
+import {
+  WEEKDAYS,
+  addDays,
+  mondayOfThisWeek,
+  readImage,
+  extractSchedule,
+  parseHours,
+  imageHours,
+  cmpHours,
+  actualHoursByDate,
+} from '../lib/scheduleExtract.js'
 import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import { useDoneHold } from '../lib/useDoneHold.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ProgressButton from './ProgressButton.jsx'
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const isoRe = /^\d{4}-\d{2}-\d{2}$/
-
-function pad2(n) {
-  return String(n).padStart(2, '0')
-}
-function addDays(dateStr, n) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1, d + n))
-  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`
-}
-// Thứ 2 của tuần chứa dateStr ("YYYY-MM-DD").
-function mondayOf(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const dow = new Date(y, m - 1, d).getDay()
-  const offset = dow === 0 ? -6 : 1 - dow
-  return addDays(dateStr, offset)
-}
-function mondayOfThisWeek() {
-  return mondayOf(localTodayStr())
-}
-
-function readImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = String(reader.result)
-      resolve({ base64: dataUrl.split(',')[1], mediaType: file.type })
-    }
-    reader.onerror = () =>
-      reject(new Error(translate(getLang(), 'import.errReadImage')))
-    reader.readAsDataURL(file)
-  })
-}
 
 // "05/06"
 function dmShort(date) {
   const [, m, d] = String(date).split('-')
   return `${d}/${m}`
-}
-
-// Đọc số giờ từ chuỗi thô trong ảnh (vd "7.55", "7,55", "8h") → số thập phân.
-function parseHours(raw) {
-  if (!raw) return 0
-  const n = parseFloat(String(raw).replace(',', '.').replace(/[^\d.]/g, ''))
-  return Number.isFinite(n) ? n : 0
-}
-
-// Số giờ "theo ảnh" cho một entry/ngày. ƯU TIÊN tổng giờ in sẵn trên ảnh (đã trừ
-// nghỉ giải lao) khi nó là số hợp lý (0–24h). Chỉ khi ảnh KHÔNG có cột tổng mới
-// suy từ khoảng giờ vào–ra (durationHours) — vốn gồm cả giờ nghỉ nên dễ dư ~1h.
-function imageHours(rec) {
-  if (rec.off) return 0
-  const total = parseHours(rec.raw)
-  if (total > 0 && total <= 24) return total
-  return rec.start && rec.end ? durationHours(rec.start, rec.end) : 0
 }
 
 // Modal ĐỐI CHIẾU CÔNG: tải ảnh bảng phân ca → AI đọc theo mã NV → so với các ca
@@ -121,37 +76,9 @@ export default function ReconcileModal({
     return new Promise((resolve) => setConfirmState({ message, resolve }))
   }
 
-  // Map ngày -> TỔNG giờ THỰC TẾ và TỔNG giờ DỰ KIẾN trong bảng công. Một ngày có
-  // thể có NHIỀU ca (tách ca sáng/chiều) → CỘNG DỒN mọi ca, không lấy mỗi ca đầu,
-  // để khớp tổng giờ trên ảnh. Giờ THỰC TẾ dùng computeEffective (kẹp theo lịch dự
-  // kiến): công ty CHẶN giờ làm vượt lịch nên phần vượt không được tính — khớp cách
-  // công ty ghi công.
-  const actualHoursByDate = new Map()
-  for (const s of shifts) {
-    if (s.start_time && s.end_time) {
-      const h = computeEffective(
-        hhmm(s.scheduled_start),
-        hhmm(s.scheduled_end),
-        hhmm(s.start_time),
-        hhmm(s.end_time),
-        !!s.is_holiday
-      ).decimalHours
-      actualHoursByDate.set(
-        s.work_date,
-        (actualHoursByDate.get(s.work_date) || 0) + h
-      )
-    }
-  }
-
-  // Đối chiếu theo TỔNG GIỜ CÔNG: chỉ cần giờ bằng nhau là khớp.
-  function cmpHours(imgH, appH) {
-    const imgHas = imgH > 0
-    const appHas = appH > 0
-    if (imgHas && appHas) return Math.abs(imgH - appH) < 0.02 ? 'match' : 'diff'
-    if (imgHas && !appHas) return 'missing'
-    if (!imgHas && appHas) return 'extra'
-    return 'off'
-  }
+  // Map ngày -> TỔNG giờ THỰC TẾ trong bảng công (gộp mọi ca, kẹp lịch dự kiến). Dùng
+  // hàm chung actualHoursByDate để lối vào chatbot đối chiếu y hệt modal này.
+  const actualByDate = actualHoursByDate(shifts)
 
   // Tạo dòng đối chiếu cho một tập ngày: gộp giờ ảnh / thực tế theo ngày. Bảng đối
   // chiếu chỉ so 2 nguồn đáng tin là "Thực tế" và "Theo ảnh"; lịch dự kiến KHÔNG
@@ -160,7 +87,7 @@ export default function ReconcileModal({
     return dateList.map((date) => {
       const imgHours = imgByDate.get(date) || 0
       // Giờ THỰC TẾ = TỔNG giờ công hiệu dụng mọi ca trong ngày (đã gộp, kẹp lịch).
-      const actualHours = actualHoursByDate.get(date) || 0
+      const actualHours = actualByDate.get(date) || 0
       // Kết quả khớp KHÔNG chốt ở đây: tính ở render qua effStatus theo giờ ảnh HIỆU
       // DỤNG (gồm cả số người dùng sửa tay).
       return { date, imgHours, actualHours }
@@ -226,35 +153,16 @@ export default function ReconcileModal({
     setImgEdits({}) // ảnh mới → bỏ các số sửa tay của lần trước
   }
 
-  // Gọi Edge Function đọc 1 ảnh; ném lỗi nếu function trả lỗi.
+  // Gọi Edge Function đọc 1 ảnh (dùng hàm chung extractSchedule); ném lỗi nếu lỗi.
   async function extractOne(base64, mediaType, opts) {
-    const { data, error: fnErr } = await supabase.functions.invoke(
-      'extract-schedule',
-      {
-        body: {
-          image: base64,
-          mediaType,
-          employeeCode: employeeCode.trim(),
-          fullName,
-          phone,
-          ...opts,
-        },
-      }
-    )
-    if (fnErr) {
-      let detail = fnErr.message
-      try {
-        const ctx = fnErr.context
-        if (ctx && typeof ctx.json === 'function') {
-          const b = await ctx.json()
-          if (b?.error) detail = b.error
-        }
-      } catch {
-        /* ignore */
-      }
-      throw new Error(detail)
-    }
-    if (data?.error) throw new Error(data.error)
+    const data = await extractSchedule({
+      base64,
+      mediaType,
+      employeeCode,
+      fullName,
+      phone,
+      ...opts,
+    })
     // [DEBUG ảnh 1] Object THÔ AI trả về cho ảnh này — soi xem AI đọc ra số giờ
     // (entries/days có raw/start/end) hay trả rỗng, doc_type/found ra sao.
     console.log('[reconcile] raw AI object', JSON.parse(JSON.stringify(data)))

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import ChatbotAvatar from './ChatbotAvatar.jsx'
+import ChatGreetingBubble from './ChatGreetingBubble.jsx'
 import './FloatingChatButton.css'
 
 // NÚT NỔI mở trợ lý lương: position:fixed, kéo-thả bằng POINTER EVENTS (chạy cả
@@ -10,6 +11,12 @@ import './FloatingChatButton.css'
 const SIZE = 56 // đường kính nút (px) — khớp CSS
 const MARGIN = 12 // chừa mép viewport (px)
 const DRAG_THRESHOLD = 5 // di chuyển ≤ ngưỡng (px) coi là CHẠM, hơn là KÉO
+const GREET_MS = 10000 // bong bóng chào tự ẩn sau 10s
+const GREET_FADE_MS = 260 // thời lượng fade-out (khớp CSS)
+// Cờ cấp MODULE: hiện bong bóng chào MỘT LẦN mỗi lần TẢI TRANG. Reload → module nạp
+// lại → cờ về false → chào lại. Đóng/mở chat (component remount) trong cùng phiên tải
+// KHÔNG reset cờ → không hiện lại gây phiền.
+let greetShownThisLoad = false
 
 // Kẹp (x,y) để nút luôn NẰM TRONG màn hình (chừa MARGIN ở mọi cạnh).
 function clamp(x, y) {
@@ -45,6 +52,8 @@ export default function FloatingChatButton({
   initialPos = null,
   onPersist,
   label = 'Chat',
+  greetMessage = '',
+  greetCloseLabel = 'Close',
 }) {
   // pos = null tới khi đo được viewport (tránh nhảy vị trí lúc mount).
   const [pos, setPos] = useState(null)
@@ -54,6 +63,29 @@ export default function FloatingChatButton({
   const drag = useRef(null) // { startX, startY, originX, originY, moved }
   const btnRef = useRef(null)
   const snapTimer = useRef(null)
+
+  // BONG BÓNG CHÀO: 'in' đang hiện, 'out' đang fade-out, null đã tắt. Chỉ hiện 1
+  // lần/phiên (sessionStorage) để không phiền khi user đóng/mở chat nhiều lần.
+  const [greet, setGreet] = useState(null)
+  const greetTimers = useRef([])
+
+  // Ẩn bong bóng: fade-out rồi gỡ khỏi DOM. An toàn khi gọi nhiều lần.
+  const hideGreet = useCallback(() => {
+    setGreet((g) => (g === 'in' ? 'out' : g))
+    greetTimers.current.push(setTimeout(() => setGreet(null), GREET_FADE_MS))
+  }, [])
+
+  // Vào/tải trang (chatbot chưa mở) → hiện bong bóng 1 lần mỗi lần tải, tự ẩn sau 10s.
+  useEffect(() => {
+    if (!greetMessage || greetShownThisLoad) return
+    greetShownThisLoad = true
+    setGreet('in')
+    greetTimers.current.push(setTimeout(hideGreet, GREET_MS))
+    return () => {
+      greetTimers.current.forEach(clearTimeout)
+      greetTimers.current = []
+    }
+  }, [greetMessage, hideGreet])
 
   // Khởi tạo vị trí: đã lưu theo user (initialPos) → HÍT MÉP (giữ dính cạnh, phòng
   // đổi kích thước màn hình giữa các thiết bị); chưa có → mặc định góc dưới-phải.
@@ -81,6 +113,7 @@ export default function FloatingChatButton({
 
   const onPointerDown = useCallback((e) => {
     if (e.button != null && e.button !== 0) return // chỉ nút trái / chạm
+    hideGreet() // chạm/kéo nút → thôi hiện bong bóng chào
     clearTimeout(snapTimer.current)
     setSnapping(false) // kéo phải bám con trỏ tức thì (không transition)
     const rect = btnRef.current.getBoundingClientRect()
@@ -94,7 +127,7 @@ export default function FloatingChatButton({
     setDragging(true)
     // Giữ pointer để move/up vẫn bắn dù con trỏ rời khỏi nút.
     btnRef.current.setPointerCapture?.(e.pointerId)
-  }, [])
+  }, [hideGreet])
 
   const onPointerMove = useCallback((e) => {
     const d = drag.current
@@ -133,20 +166,46 @@ export default function FloatingChatButton({
 
   if (!pos) return null
 
+  // Bong bóng nằm PHÍA TRÊN nút (mũi nhọn trỏ XUỐNG avatar). Bám cạnh nút đang dính:
+  // nút ở nửa TRÁI → canh mép trái nút (mũi nhọn lệch trái); nửa PHẢI → canh mép phải.
+  const onLeftHalf = pos.x + SIZE / 2 < window.innerWidth / 2
+  const bubbleStyle = {
+    bottom: window.innerHeight - pos.y + 12, // ngay trên đỉnh nút, chừa 12px
+    ...(onLeftHalf
+      ? { left: pos.x }
+      : { right: window.innerWidth - (pos.x + SIZE) }),
+  }
+
   return (
-    <button
-      ref={btnRef}
-      type="button"
-      className={`chat-fab${dragging ? ' chat-fab--dragging' : ''}${snapping ? ' chat-fab--snapping' : ''}`}
-      style={{ left: pos.x, top: pos.y }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      aria-label={label}
-      title={label}
-    >
-      <ChatbotAvatar size={36} />
-    </button>
+    <>
+      {greet && (
+        <ChatGreetingBubble
+          message={greetMessage}
+          tail={onLeftHalf ? 'down-left' : 'down-right'}
+          closing={greet === 'out'}
+          style={bubbleStyle}
+          closeLabel={greetCloseLabel}
+          onClick={() => {
+            hideGreet()
+            onOpen?.()
+          }}
+          onClose={hideGreet}
+        />
+      )}
+      <button
+        ref={btnRef}
+        type="button"
+        className={`chat-fab${dragging ? ' chat-fab--dragging' : ''}${snapping ? ' chat-fab--snapping' : ''}`}
+        style={{ left: pos.x, top: pos.y }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        aria-label={label}
+        title={label}
+      >
+        <ChatbotAvatar size={36} />
+      </button>
+    </>
   )
 }
