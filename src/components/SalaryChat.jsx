@@ -1221,18 +1221,16 @@ export default function SalaryChat({
       const weekStart = mondayOfThisWeek()
       // Gọi Gemini — hộp đen → % bò chậm 25→~90% (ước lượng), giống modal.
       startTrickle(25, 90, t('import.stageAI'))
-      // SONG SONG: Gemini đọc CHÍNH + OCR đối chiếu cùng lúc. OCR fail → null → bỏ qua.
-      const [data, tokens] = await Promise.all([
-        extractSchedule({
-          base64,
-          mediaType,
-          employeeCode,
-          fullName,
-          phone,
-          weekStart,
-        }),
-        ocrTokens(dataUrl).catch(() => null),
-      ])
+      // CHỈ await GEMINI ở luồng chính — OCR KHÔNG chặn. OCR đối chiếu chạy NỀN sau khi
+      // đã báo kết quả (hậu kiểm), có timeout nội bộ nên không bao giờ treo chat.
+      const data = await extractSchedule({
+        base64,
+        mediaType,
+        employeeCode,
+        fullName,
+        phone,
+        weekStart,
+      })
       stopTrickle()
       setAttachProgress({ pct: 90, label: t('import.stageProcessing'), indeterminate: false })
       if (data?.is_roster === false) return bot(t('import.errNotRoster'))
@@ -1242,37 +1240,37 @@ export default function SalaryChat({
         // [Tạo lịch] → tạo ca cả tuần bằng ĐÚNG hàm của luồng Nhập lịch (bỏ ca trùng).
         const picked = pickImportRows(mapScheduleRows(data, weekStart))
         if (picked.length === 0) return bot(t('import.errNoShift'))
-        // AN TOÀN LƯƠNG: chat KHÔNG có bảng sửa tay. Nếu OCR thấy ca AI đọc LỆCH →
-        // KHÔNG tạo ngầm; báo rõ ngày nào lệch và hướng mở 'Nhập lịch tuần' để soát &
-        // xác nhận. (OCR fail → tokens=null → bỏ qua kiểm, tạo như cũ + nhắc kiểm kỹ.)
-        if (tokens) {
-          const warnDays = picked
-            .filter((r) => crosscheckRecord(r, tokens).overall === 'warn')
-            .map((r) => t(`wd.${r.weekday}`))
-          if (warnDays.length)
-            return bot(t('chat.ocrWarnCreate', { days: warnDays.join(', ') }))
-        }
         if (!onImportSchedule) return bot(t('chat.error'))
         const { created, skipped, errors } = await onImportSchedule(picked)
         setAttachProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
         if (errors && errors.length) bot(t('import.errSome', { errs: errors.join('\n') }))
         else if (created === 0) bot(t('import.allExist'))
         else bot(t('import.importSummary', { created, skipped }))
-        if (!tokens) bot(t('ocr.unchecked')) // OCR không đọc được → nhắc kiểm tra kỹ
+        // OCR HẬU KIỂM (nền, KHÔNG chặn): sau khi đã tạo, nếu có ngày AI–OCR lệch thì
+        // báo để user mở 'Nhập lịch tuần' soát lại. OCR fail/quá giờ → nhắc kiểm tra kỹ.
+        ocrTokens(dataUrl).then((tokens) => {
+          if (!tokens) return bot(t('ocr.unchecked'))
+          const warnDays = picked
+            .filter((r) => crosscheckRecord(r, tokens).overall === 'warn')
+            .map((r) => t(`wd.${r.weekday}`))
+          if (warnDays.length) bot(t('chat.ocrWarnCreate', { days: warnDays.join(', ') }))
+        })
       } else {
         // [Đối chiếu] → đối chiếu 1 ảnh tuần với bảng công (reconcileWeek dùng chung).
         const { match, total } = reconcileWeek(data, weekStart, shifts)
         setAttachProgress({ pct: 100, label: t('import.stageDone'), indeterminate: false })
         bot(t('reconcile.summary', { match, total }))
-        // Cảnh báo OCR (không chặn): số ngày AI đọc lệch với OCR.
-        if (tokens) {
+        // OCR cảnh báo (nền, KHÔNG chặn): số ngày AI đọc lệch với OCR.
+        ocrTokens(dataUrl).then((tokens) => {
+          if (!tokens) return
           const warn = (data.days || []).filter(
             (d) => crosscheckRecord(d, tokens).overall === 'warn'
           ).length
           if (warn) bot(t('ocr.warnBanner', { count: warn }))
-        }
+        })
       }
-      // Xong → bỏ ảnh (kết quả đã báo trong chat).
+      // Xong → bỏ ảnh (kết quả đã báo trong chat). OCR nền dùng dataUrl (biến cục bộ),
+      // không phụ thuộc attach nên vẫn chạy sau khi bỏ ảnh.
       if (attach?.url) URL.revokeObjectURL(attach.url)
       setAttach(null)
     } catch (e) {
