@@ -463,7 +463,7 @@ export const translations = {
     "chat.btnCancel": "Cancel",
     "chat.attachCancelled": "Okay, I discarded the image.",
     "chat.ocrWarnCreate":
-      "AI and OCR differ on: {days}. I did not create shifts — open \"Import weekly schedule\" to review and confirm.",
+      "Heads up: AI and OCR differ on {days}. Shifts were created — please open \"Import weekly schedule\" to review those days.",
     "chat.tsTitle": "Timesheet {label}:",
     "chat.tsEmpty": "No checked-in shifts for {label} yet.",
     "chat.tsNoWeek": "There is no week {week} in {label}.",
@@ -1031,7 +1031,7 @@ export const translations = {
     "chat.btnCancel": "Hủy",
     "chat.attachCancelled": "Đã bỏ ảnh.",
     "chat.ocrWarnCreate":
-      "AI và OCR lệch nhau ở: {days}. Mình CHƯA tạo ca — hãy mở \"Nhập lịch tuần\" để soát và xác nhận.",
+      "Lưu ý: AI và OCR lệch ở {days}. Ca đã được tạo — hãy mở \"Nhập lịch tuần\" để soát lại mấy ngày đó.",
     "chat.tsTitle": "Bảng công {label}:",
     "chat.tsEmpty": "Chưa có ca đã chấm công cho {label}.",
     "chat.tsNoWeek": "Không có tuần {week} trong {label}.",

@@ -4,7 +4,24 @@ import {
   normalizeHours,
   buildTokenSet,
   crosscheckRecord,
+  withTimeout,
 } from './ocrCrosscheck.js'
+
+describe('withTimeout — OCR không bao giờ treo luồng', () => {
+  it('trả giá trị thật khi promise xong TRƯỚC hạn', async () => {
+    const res = await withTimeout(Promise.resolve('hello'), 1000)
+    expect(res).toBe('hello')
+  })
+  it('promise TREO mãi → resolve sentinel timeout, KHÔNG treo', async () => {
+    const never = new Promise(() => {}) // không bao giờ resolve
+    const res = await withTimeout(never, 20)
+    expect(res).toEqual({ __ocrTimeout: true })
+  })
+  it('promise reject → resolve sentinel error, KHÔNG throw', async () => {
+    const res = await withTimeout(Promise.reject(new Error('boom')), 1000)
+    expect(res).toEqual({ __ocrError: true })
+  })
+})
 
 describe('normalizeTime', () => {
   it('coi "06:00" và "6:00" là cùng một giờ', () => {

@@ -143,13 +143,29 @@ export async function ocrImage(dataUrl, onProgress) {
   return data?.text || ''
 }
 
-// Tiện ích: đọc ảnh + trích token trong 1 bước. Trả token set, hoặc null khi OCR fail
-// (bên gọi coi null = "chưa đối chiếu được", vẫn dùng kết quả Gemini).
-export async function ocrTokens(dataUrl, onProgress) {
-  try {
-    const text = await ocrImage(dataUrl, onProgress)
-    return buildTokenSet(text)
-  } catch {
-    return null
-  }
+// Bọc TIMEOUT: OCR (kể cả tải model lần đầu / worker treo) TUYỆT ĐỐI không được làm
+// treo luồng gọi. Quá hạn hoặc lỗi → resolve về sentinel, KHÔNG throw, KHÔNG reject.
+export function withTimeout(promise, ms) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve({ __ocrTimeout: true }), ms)
+    promise.then(
+      (v) => {
+        clearTimeout(timer)
+        resolve(v)
+      },
+      () => {
+        clearTimeout(timer)
+        resolve({ __ocrError: true })
+      }
+    )
+  })
+}
+
+// Tiện ích: đọc ảnh + trích token trong 1 bước, CÓ timeout. Trả token set, hoặc NULL
+// khi OCR fail/quá giờ (bên gọi coi null = "chưa đối chiếu được", vẫn dùng Gemini).
+// Hàm này KHÔNG BAO GIỜ throw và KHÔNG BAO GIỜ treo quá timeoutMs.
+export async function ocrTokens(dataUrl, onProgress, timeoutMs = 15000) {
+  const res = await withTimeout(ocrImage(dataUrl, onProgress), timeoutMs)
+  if (typeof res !== 'string') return null // timeout / lỗi / không phải text
+  return buildTokenSet(res)
 }
