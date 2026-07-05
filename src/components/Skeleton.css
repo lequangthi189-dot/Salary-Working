@@ -1,0 +1,85 @@
+/* SKELETON DÙNG CHUNG — khối xám nhấp nháy giữ chỗ lúc chờ tải dữ liệu.
+   Màu lấy qua biến theme (khai báo mặc định ở :root trong styles.css) để hợp
+   mọi theme: dark dùng xám đặc; theme nền gradient/glass có thể override
+   --skeleton-base sang bán trong suốt cho hợp nền. */
+
+.skeleton {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base, #222c38);
+  border-radius: 8px;
+  /* Không cho lớp shimmer làm thay đổi kích thước dòng */
+  line-height: 1;
+}
+
+/* Vệt sáng chạy ngang tạo hiệu ứng shimmer */
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--skeleton-sheen, rgba(255, 255, 255, 0.08)),
+    transparent
+  );
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Biến thể ---------------------------------------------------------------- */
+
+/* Dòng chữ giả — cao bằng một dòng text, bo mềm */
+.skeleton-text {
+  height: 0.85em;
+  border-radius: 6px;
+}
+
+/* Nhóm nhiều dòng chữ */
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+/* Avatar tròn */
+.skeleton-circle {
+  flex: none;
+}
+
+/* Thẻ giữ chỗ — khung viền/nền như thẻ thật */
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--skeleton-card-bg, var(--panel, #1c2128));
+  border: 1px solid var(--border, #2d333b);
+  border-radius: 12px;
+  padding: 0.85rem 0.9rem;
+}
+
+/* Người dùng chọn giảm chuyển động → tắt vệt chạy, dùng nhịp mờ nhẹ thay thế */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+  .skeleton {
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+}

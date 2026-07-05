@@ -18,6 +18,7 @@ export const translations = {
     'common.no': 'No',
     'common.warning': 'Warning',
     'common.continue': 'Continue',
+    'common.loading': 'Loading…',
 
     // nav / app
     'nav.importWeek': 'Import weekly schedule',
@@ -362,6 +363,7 @@ export const translations = {
     'common.no': 'Không',
     'common.warning': 'Cảnh báo',
     'common.continue': 'Tiếp tục',
+    'common.loading': 'Đang tải…',
 
     // nav / app
     'nav.importWeek': 'Nhập lịch tuần',

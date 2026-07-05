@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import * as profileModel from '../models/profileModel.js'
 import { setRates } from '../lib/rates.js'
 
@@ -30,20 +30,35 @@ function applyRates(p) {
 export function useProfile(session) {
   const [profile, setProfile] = useState(null)
   const [showPaydayPrompt, setShowPaydayPrompt] = useState(false)
+  // `loading` = true tới khi tải hồ sơ lần đầu xong (hiện skeleton ở trang Tài khoản).
+  const [loading, setLoading] = useState(true)
+  const [profileError, setProfileError] = useState(null)
+  const loadedFor = useRef(null)
 
   const reload = useCallback(async () => {
     if (!session) return
-    const { data } = await profileModel.fetchProfile(session.user.id)
+    const { data, error } = await profileModel.fetchProfile(session.user.id)
+    setProfileError(error ? error.message : null)
     setProfile(data ?? null)
     applyRates(data)
     // Hỏi ngày nhận lương nếu chưa đặt và chưa từng bỏ qua trên máy này.
     const skipped = localStorage.getItem(`payday-skipped-${session.user.id}`)
     if (data && data.payday == null && !skipped) setShowPaydayPrompt(true)
+    setLoading(false) // xong (kể cả lỗi) → thoát skeleton
   }, [session])
 
   useEffect(() => {
-    if (session) reload()
-    else setProfile(null)
+    if (!session) {
+      setProfile(null)
+      loadedFor.current = null
+      setLoading(false)
+      return
+    }
+    if (loadedFor.current !== session.user.id) {
+      loadedFor.current = session.user.id
+      setLoading(true)
+    }
+    reload()
   }, [session, reload])
 
   async function savePayday(day) {
@@ -78,6 +93,8 @@ export function useProfile(session) {
 
   return {
     profile,
+    loading,
+    profileError,
     reload,
     savePayday,
     saveEmployeeInfo,

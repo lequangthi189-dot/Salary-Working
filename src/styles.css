@@ -10,6 +10,11 @@
   --border: #2b3542;
   --checkin: #ff9f43;
   --checkout: #58b3ff;
+  /* Skeleton (khung xám lúc chờ tải). Base = màu khối; sheen = vệt sáng chạy qua.
+     Theme khác (neumorph/glass) có thể override 2 biến này: glass nền gradient thì
+     đặt --skeleton-base sang màu bán trong suốt cho hợp nền. */
+  --skeleton-base: #222c38;
+  --skeleton-sheen: rgba(255, 255, 255, 0.09);
 }
 
 * {
@@ -982,6 +987,32 @@ button[type='submit']:disabled {
     margin-top: 0.5rem;
   }
 }
+/* ---- Skeleton trang Tài khoản (lúc chờ tải hồ sơ) ---- */
+.profile-skeleton__head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.profile-skeleton__id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+.profile-skeleton__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.profile-skeleton__row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
 .danger-link {
   color: var(--danger);
 }
