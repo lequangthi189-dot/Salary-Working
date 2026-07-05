@@ -1,0 +1,126 @@
+/* Nút tiến độ. Nền + viền theo theme (--panel/--border); lớp fill accent #3aa0d8
+   mờ chạy đầy dần từ trái theo %, thanh đáy đậm theo %. Đăng ký --pbtn-p để chuyển
+   % mượt khi value đổi theo mốc thật. */
+@property --pbtn-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.pbtn {
+  position: relative;
+  overflow: hidden; /* để lớp fill không tràn ra ngoài bo góc */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  /* Chữ theo theme (sáng ở dark/glass, đậm ở neumorph nền sáng) để đọc rõ ở cả 3. */
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: default;
+  /* disabled nhưng vẫn giữ tông sáng đầy đủ (đây là chỉ báo tiến độ, không phải nút bấm). */
+  opacity: 1;
+}
+
+/* Lớp màu mờ chạy đầy dần từ trái sang theo %. */
+.pbtn-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  width: calc(var(--pbtn-p, 0) * 1%);
+  background: rgba(58, 160, 216, 0.22);
+  transition: width 0.4s ease;
+  pointer-events: none;
+}
+
+/* Nội dung (icon + chữ + %) nằm trên lớp fill. */
+.pbtn-content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1;
+}
+.pbtn-icon {
+  display: inline-flex;
+  font-size: 1rem;
+}
+.pbtn-label {
+  white-space: nowrap;
+}
+.pbtn-pct {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.95;
+}
+
+/* Thanh mảnh ở đáy nút chạy theo %. */
+.pbtn-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: calc(var(--pbtn-p, 0) * 1%);
+  background: #3aa0d8;
+  transition: width 0.4s ease;
+  pointer-events: none;
+}
+
+/* Indeterminate: ẩn số (component không render .pbtn-pct), lớp fill chạy qua lại
+   liên tục làm hiệu ứng đang xử lý; icon ⟳ xoay; thanh đáy cũng quét qua lại. */
+.pbtn--indeterminate .pbtn-fill {
+  width: 45%;
+  transition: none;
+  animation: pbtn-sweep 1.4s ease-in-out infinite;
+}
+.pbtn--indeterminate .pbtn-bar {
+  width: 45%;
+  transition: none;
+  animation: pbtn-sweep 1.4s ease-in-out infinite;
+}
+.pbtn--indeterminate .pbtn-icon {
+  animation: pbtn-spin 0.9s linear infinite;
+}
+@keyframes pbtn-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(calc(100% / 0.45));
+  }
+}
+@keyframes pbtn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hoàn tất (value=100): đổi sang XANH LÁ (theo theme var(--green)) cho rõ trạng
+   thái xong — fill nền mờ + thanh đáy đậm, phân biệt hẳn với màu accent lúc đang
+   chạy. Dùng biến theme nên nổi rõ trên cả dark/glass/neumorph. */
+.pbtn--done .pbtn-fill {
+  background: color-mix(in srgb, var(--green) 28%, transparent);
+}
+.pbtn--done .pbtn-bar {
+  background: var(--green);
+}
+.pbtn--done .pbtn-icon {
+  color: var(--green);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pbtn--indeterminate .pbtn-fill,
+  .pbtn--indeterminate .pbtn-bar {
+    animation: none;
+    width: 35%;
+    transform: none;
+  }
+  .pbtn--indeterminate .pbtn-icon {
+    animation: none;
+  }
+}

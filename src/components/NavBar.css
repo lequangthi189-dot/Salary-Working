@@ -1,0 +1,180 @@
+/* Dock điều hướng kiểu macOS.
+   - Nền + viền dùng ĐÚNG biến của thẻ thống kê (.info-card): var(--panel) +
+     var(--border) — chính là bề mặt thẻ ở theme dark, nên dock & thẻ luôn cùng tông
+     và đổi theme là cùng đổi. KHÔNG hardcode màu (theme glass nền gradient, panel
+     của nó vốn trong mờ nên tự ăn nền). Riêng neumorph khớp thêm bóng mềm/convex ở
+     themes.css để không lạc tông với thẻ Soft UI.
+   - Icon phóng to theo VỊ TRÍ con trỏ/ngón tay: JS ghi custom prop --s cho mỗi
+     <li>, CSS biến --s thành transform (scale + nhấc lên). Chỉ transform → không
+     đụng layout → mượt. transition tạo hiệu ứng "sóng" mượt khi --s đổi từng frame. */
+
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: 0; /* neo ĐÁY màn hình; nổi nhẹ khỏi mép bằng padding (chừa home-indicator) */
+  transform: translateX(-50%); /* căn GIỮA màn hình theo chiều ngang */
+  /* CO theo nội dung: thanh chỉ rộng bằng cụm icon + padding, KHÔNG kéo dài cả màn.
+     (Trước đây fixed + display:flex không width → không shrink-wrap → trải dài.) */
+  width: max-content;
+  max-width: calc(100vw - 24px); /* màn hẹp: chừa ~12px mỗi mép, không tràn ngang */
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 45; /* dưới modal-overlay(50)/sidebar(60) */
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+/* Mặc định ẩn: trượt xuống dưới mép + mờ. Cuộn → bỏ class này. */
+.dock--hidden {
+  transform: translateX(-50%) translateY(calc(100% + 28px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dock-list {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px; /* nới NGANG vừa phải → thanh thuôn dài hơn (vẫn không full màn) */
+  margin: 0;
+  /* MỎNG & THUÔN: padng dọc nhỏ (thấp) + padng ngang lớn (dài) → dáng pill thon. */
+  padding: 6px 22px;
+  list-style: none;
+  /* Nền ĐẶC, KHÔNG trong suốt — không nhìn xuyên nội dung sau lưng (đây là nguyên
+     nhân icon dock "lọt" vào ô input khi thẻ ca trôi dưới dock). Xếp lớp panel (có
+     thể trong mờ ở glass) LÊN TRÊN var(--bg) (luôn màu đặc ở mọi theme) → kết quả
+     đục hẳn mà KHÔNG hardcode màu nền (an toàn cả theme glass nền gradient). */
+  background: linear-gradient(var(--panel), var(--panel)), var(--bg);
+  border: 1px solid var(--border);
+  /* Pill dài: bo tròn HẲN 2 đầu (radius lớn tự cắt còn nửa chiều cao) → dáng thanh
+     thuôn, mỏng thay vì khối vuông. */
+  border-radius: 999px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
+  /* Ngón tay trượt dọc dock để phóng to → chặn cuộn trang trong lúc thao tác. */
+  touch-action: none;
+}
+
+.dock-item {
+  --s: 1;
+  position: relative;
+  list-style: none;
+}
+
+.dock-item button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  /* Thấp hơn (40 thay 48) để dock MỎNG lại; bề rộng dock nới bằng padding/gap. */
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Phần PHÓNG TO: scale + nhấc lên theo --s. transform-origin đáy → icon "mọc" lên
+   trên như dock thật. transition để --s đổi từng frame vẫn mượt (hiệu ứng sóng). */
+.dock-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--text);
+  transform: scale(var(--s, 1)) translateY(calc((var(--s, 1) - 1) * -14px));
+  transform-origin: bottom center;
+  transition: transform 0.15s ease-out, color 0.2s ease;
+  will-change: transform;
+}
+.dock-icon svg {
+  width: 100%;
+  height: 100%;
+}
+/* Avatar tròn thay icon 'user' khi tài khoản đã có ảnh (fallback về icon nếu chưa). */
+.dock-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 1px solid var(--border);
+}
+.dock-item.active .dock-avatar {
+  border-color: var(--accent);
+}
+.dock-item.active .dock-icon {
+  color: var(--accent);
+}
+
+/* Chấm "đang mở" dưới icon active (kiểu macOS running dot). */
+.dock-item.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateX(-50%);
+}
+
+/* Nhãn nổi LÊN TRÊN icon đang phóng to. opacity bám theo --s: hiện dần khi icon
+   vượt ~1.28x (tức đang ở gần con trỏ/ngón tay), nên chỉ icon "được chọn" mới hiện
+   nhãn — giống tooltip dock. Không cần state React theo từng move. */
+.dock-label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  background: var(--panel-2, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: clamp(0, calc((var(--s, 1) - 1.42) / 0.16), 1);
+  transition: opacity 0.12s ease-out;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* MOBILE / cảm ứng (pointer thô): hiện nhãn CỐ ĐỊNH dưới mỗi icon (không hover để
+   phóng to mà hiện nhãn như desktop). Nhãn nằm trong luồng dưới icon, luôn hiện. */
+@media (pointer: coarse) {
+  .dock-list {
+    align-items: flex-start;
+  }
+  .dock-item button {
+    height: auto;
+    gap: 5px;
+  }
+  .dock-label {
+    position: static;
+    transform: none;
+    opacity: 1;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+  .dock-item.active .dock-label {
+    color: var(--accent);
+  }
+  /* Mobile dùng nhãn để báo active → bỏ chấm tròn (tránh đè lên nhãn). */
+  .dock-item.active::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-icon,
+  .dock-label {
+    transition: none;
+  }
+}

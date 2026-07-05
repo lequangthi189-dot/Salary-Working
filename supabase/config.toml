@@ -4,7 +4,7 @@
 [functions.extract-schedule]
 verify_jwt = false
 
-# Tỉ giá Wise: hàm công khai (không cần đăng nhập) — chỉ trả tỉ giá, không lộ token.
+# Tỉ giá ngoại tệ: hàm công khai (không cần đăng nhập) — chỉ trả tỉ giá.
 [functions.fx-rate]
 verify_jwt = false
 

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import {
   payPeriodKeyOf,
   payPeriodRange,
@@ -6,6 +6,7 @@ import {
   isPeriodEnded,
   payPeriodLabel,
   sumDeductions,
+  setPayPeriod,
 } from './payPeriod.js'
 
 describe('sumDeductions', () => {
@@ -88,5 +89,38 @@ describe('payPeriodLabel', () => {
   // Mặc định ngôn ngữ là English (xem i18n.jsx) nên nhãn ra tiếng Anh.
   it('định dạng nhãn', () => {
     expect(payPeriodLabel('2025-05')).toBe('Salary month 5 (26/04 – 25/05)')
+  })
+})
+
+describe('setPayPeriod (kỳ lương cấu hình được)', () => {
+  afterEach(() => setPayPeriod({ startDay: 26, endDay: 25 })) // reset về mặc định
+
+  it('chốt ngày 20 (start 21 → end 20): ngày > 20 thuộc kỳ sau', () => {
+    setPayPeriod({ startDay: 21, endDay: 20 })
+    expect(payPeriodKeyOf('2025-05-20')).toBe('2025-05')
+    expect(payPeriodKeyOf('2025-05-21')).toBe('2025-06')
+    expect(payPeriodRange('2025-05')).toEqual({
+      start: '2025-04-21',
+      end: '2025-05-20',
+    })
+  })
+
+  it('kỳ theo tháng dương lịch (start 1, end 28)', () => {
+    setPayPeriod({ startDay: 1, endDay: 28 })
+    expect(payPeriodKeyOf('2025-05-28')).toBe('2025-05')
+    expect(payPeriodKeyOf('2025-05-01')).toBe('2025-05')
+    expect(payPeriodRange('2025-05')).toEqual({
+      start: '2025-05-01',
+      end: '2025-05-28',
+    })
+  })
+
+  it('giá trị không hợp lệ → về mặc định 26/25', () => {
+    setPayPeriod({ startDay: 0, endDay: 99 })
+    expect(payPeriodKeyOf('2025-05-26')).toBe('2025-06')
+    expect(payPeriodRange('2025-05')).toEqual({
+      start: '2025-04-26',
+      end: '2025-05-25',
+    })
   })
 })

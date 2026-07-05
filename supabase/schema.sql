@@ -93,6 +93,14 @@ create table if not exists public.profiles (
   holiday_day_pct integer,
   holiday_night_pct integer,
   has_night_shift boolean not null default true,
+  -- Cửa sổ ca đêm theo từng người (mặc định 22:00–06:00). Có thể vắt qua nửa đêm.
+  night_start time not null default '22:00',
+  night_end time not null default '06:00',
+  lang text,
+  -- Kỳ lương theo từng người: ngày bắt đầu / ngày chốt (kết thúc) tính công.
+  -- Mặc định 26 → 25 (kỳ vắt qua 2 tháng). Việc gom ca vào kỳ phụ thuộc ngày chốt.
+  period_start_day smallint not null default 26,
+  period_end_day smallint not null default 25,
   email_confirmed boolean not null default false,
   phone_confirmed boolean not null default false,
   created_at timestamptz not null default now()
@@ -108,8 +116,25 @@ alter table public.profiles add column if not exists night_pct integer;
 alter table public.profiles add column if not exists holiday_day_pct integer;
 alter table public.profiles add column if not exists holiday_night_pct integer;
 alter table public.profiles add column if not exists has_night_shift boolean not null default true;
+alter table public.profiles add column if not exists night_start time not null default '22:00';
+alter table public.profiles add column if not exists night_end time not null default '06:00';
 alter table public.profiles add column if not exists email_confirmed boolean not null default false;
 alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
+-- Ngôn ngữ ưa thích của người dùng (vi/en/us/au) — đăng nhập lại giữ đúng ngôn ngữ.
+alter table public.profiles add column if not exists lang text;
+-- Phong cách giao diện ưa thích (dark/glass/neumorph) — lưu theo tài khoản.
+alter table public.profiles add column if not exists theme text;
+-- Kỳ lương theo từng người (ngày bắt đầu / chốt tính công). Mặc định 26 / 25.
+alter table public.profiles add column if not exists period_start_day smallint not null default 26;
+alter table public.profiles add column if not exists period_end_day smallint not null default 25;
+-- Cỡ chữ ưa thích ('sm' | 'md' | 'lg') — lưu theo tài khoản, áp ngay khi đăng nhập.
+alter table public.profiles add column if not exists font_scale text;
+-- Vị trí nút NỔI của trợ lý lương ({x,y} px) — lưu theo tài khoản để đồng bộ nhiều
+-- thiết bị. jsonb cho gọn; null = dùng vị trí mặc định (góc dưới-phải).
+alter table public.profiles add column if not exists chat_fab_pos jsonb;
+-- URL ảnh đại diện (avatar). Lưu URL CÔNG KHAI của file trong bucket "avatars"
+-- (kèm ?t=<timestamp> để phá cache khi ghi đè). null = dùng chữ cái đầu làm fallback.
+alter table public.profiles add column if not exists avatar_url text;
 
 alter table public.profiles enable row level security;
 
@@ -148,9 +173,11 @@ begin
     new.phone_confirmed_at is not null
   )
   on conflict (id) do update set
-    full_name       = excluded.full_name,
+    -- GIỮ tên/điện thoại do app đã đặt (form thông tin NV) khi metadata auth không
+    -- có — tránh trigger ghi đè full_name/phone về NULL mỗi lần auth.users cập nhật.
+    full_name       = coalesce(excluded.full_name, public.profiles.full_name),
     employee_code   = coalesce(excluded.employee_code, public.profiles.employee_code),
-    phone           = excluded.phone,
+    phone           = coalesce(excluded.phone, public.profiles.phone),
     email           = excluded.email,
     email_confirmed = excluded.email_confirmed,
     phone_confirmed = excluded.phone_confirmed;
@@ -180,12 +207,19 @@ select
   u.phone_confirmed_at is not null
 from auth.users u
 on conflict (id) do update set
-  full_name       = excluded.full_name,
+  full_name       = coalesce(excluded.full_name, public.profiles.full_name),
   employee_code   = coalesce(excluded.employee_code, public.profiles.employee_code),
-  phone           = excluded.phone,
+  phone           = coalesce(excluded.phone, public.profiles.phone),
   email           = excluded.email,
   email_confirmed = excluded.email_confirmed,
   phone_confirmed = excluded.phone_confirmed;
+
+-- Backfill: dòng có họ/tên nhưng full_name trống (do trigger cũ ghi đè) → ghép lại
+-- "Họ Tên". An toàn lặp lại: chỉ đụng dòng full_name đang null/rỗng.
+update public.profiles
+set full_name = trim(coalesce(last_name, '') || ' ' || coalesce(first_name, ''))
+where coalesce(full_name, '') = ''
+  and coalesce(first_name, '') || coalesce(last_name, '') <> '';
 
 -- ===================== payrolls (kỳ lương đã nhận) =====================
 -- period_key: "YYYY-MM" của tháng kết thúc kỳ. received_on: ngày thực nhận.
@@ -257,6 +291,132 @@ drop policy if exists "delete own deductions" on public.deductions;
 create policy "delete own deductions"
   on public.deductions for delete
   using (auth.uid() = user_id);
+
+-- ===================== extra_income (thu nhập việc ngoài) =====================
+-- Khoản tiền từ việc làm thêm KHÔNG cố định: không theo giờ ngày/đêm, không nhân
+-- đơn giá. Chỉ gồm ngày + mô tả + số tiền (VND, số nguyên). Hoàn toàn TÁCH khỏi
+-- phép tính lương ca (shiftMath). amount: VND.
+create table if not exists public.extra_income (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  date date not null default current_date,
+  description text,
+  amount bigint not null default 0,
+  -- Trạng thái nhận: CHỈ khoản đã nhận mới cộng vào tổng kỳ lương; khoản chưa
+  -- nhận treo lại qua các kỳ. received_at = ngày bấm nhận (quyết định khoản rơi
+  -- vào KỲ LƯƠNG nào), null khi chưa nhận.
+  received boolean not null default false,
+  received_at date,
+  created_at timestamptz not null default now()
+);
+
+-- Migration cho bảng đã tồn tại từ trước (data cũ mặc định CHƯA NHẬN).
+alter table public.extra_income add column if not exists received boolean not null default false;
+alter table public.extra_income add column if not exists received_at date;
+
+alter table public.extra_income enable row level security;
+
+drop policy if exists "select own extra_income" on public.extra_income;
+create policy "select own extra_income"
+  on public.extra_income for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "insert own extra_income" on public.extra_income;
+create policy "insert own extra_income"
+  on public.extra_income for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "update own extra_income" on public.extra_income;
+create policy "update own extra_income"
+  on public.extra_income for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "delete own extra_income" on public.extra_income;
+create policy "delete own extra_income"
+  on public.extra_income for delete
+  using (auth.uid() = user_id);
+
+-- ===================== chat_messages (lịch sử trợ lý lương) =====================
+-- Bộ NHỚ của chatbot: lưu từng tin hỏi/đáp để nạp lại qua nhiều phiên.
+-- role: 'user' (người dùng gõ) | 'bot' (trợ lý trả lời — cả AI lẫn câu app tự tính).
+-- content: nội dung text của tin. user_id mặc định auth.uid() — CLIENT KHÔNG gửi
+-- user_id; DB tự điền theo phiên đăng nhập nên không thể giả mạo người khác.
+create table if not exists public.chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  role text not null check (role in ('user', 'bot')),
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+-- Nạp lịch sử gần đây của ĐÚNG user nhanh hơn (lọc user_id + sắp theo thời gian).
+create index if not exists chat_messages_user_created_idx
+  on public.chat_messages (user_id, created_at);
+
+alter table public.chat_messages enable row level security;
+
+-- RLS: mỗi user CHỈ đọc/ghi/xoá tin của CHÍNH MÌNH (cả USING lẫn WITH CHECK).
+drop policy if exists "select own chat_messages" on public.chat_messages;
+create policy "select own chat_messages"
+  on public.chat_messages for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "insert own chat_messages" on public.chat_messages;
+create policy "insert own chat_messages"
+  on public.chat_messages for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "delete own chat_messages" on public.chat_messages;
+create policy "delete own chat_messages"
+  on public.chat_messages for delete
+  using (auth.uid() = user_id);
+
+-- ===================== avatars (ảnh đại diện — Supabase Storage) =====================
+-- Bucket CÔNG KHAI: ảnh avatar đọc công khai (URL ổn định, không hết hạn) để hiện
+-- được ở navbar/header/tài khoản đơn giản nhất. Ghi thì CHỈ chủ sở hữu.
+-- Đường dẫn file quy ước: "<user_id>/avatar" (KHÔNG đuôi) → mỗi user đúng 1 file,
+-- upsert cùng path nên ĐỔI ẢNH LÀ GHI ĐÈ, không rác Storage. Content-Type được set
+-- lúc upload nên trình duyệt vẫn render đúng dù tên file không có đuôi.
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do update set public = true;
+
+-- Đọc công khai: bất kỳ ai có URL đều xem được ảnh trong bucket avatars.
+drop policy if exists "avatar public read" on storage.objects;
+create policy "avatar public read"
+  on storage.objects for select
+  using (bucket_id = 'avatars');
+
+-- Ghi (insert/update/delete): CHỈ trong thư mục mang user_id của chính mình.
+-- storage.foldername(name)[1] = phần thư mục đầu = "<user_id>".
+drop policy if exists "avatar insert own" on storage.objects;
+create policy "avatar insert own"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "avatar update own" on storage.objects;
+create policy "avatar update own"
+  on storage.objects for update
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "avatar delete own" on storage.objects;
+create policy "avatar delete own"
+  on storage.objects for delete
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 -- Làm mới cache schema của PostgREST.
 notify pgrst, 'reload schema';

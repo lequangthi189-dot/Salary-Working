@@ -2,7 +2,7 @@ import { useI18n } from '../lib/i18n.jsx'
 
 // Modal hướng dẫn nhanh cho người mới. Tự hiện lần đầu (App lưu trạng thái đã xem
 // trong localStorage) và có thể mở lại bằng nút "Hướng dẫn" trong sidebar.
-const STEP_ICONS = ['📝', '🗓️', '💰', '➖', '📊', '⚙️']
+const STEP_ICONS = ['📝', '🗓️', '💰', '➖', '💵', '📊', '🤖', '⚙️']
 
 export default function WelcomeGuide({ onClose }) {
   const { t } = useI18n()

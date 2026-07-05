@@ -6,6 +6,9 @@ import {
   formatLost,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
+import Checkbox from './Checkbox.jsx'
+import ConfirmModal from './ConfirmModal.jsx'
+import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
 
 function hhmm(v) {
@@ -23,6 +26,7 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   const [isHoliday, setIsHoliday] = useState(!!shift.is_holiday)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   function cancel() {
     setWorkDate(shift.work_date)
@@ -35,6 +39,9 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
     setEditing(false)
   }
 
+  // Nút "Lưu" CHỈ cập nhật ca đang sửa theo đúng id của nó. Không thêm/insert ca mới
+  // (việc thêm ca là chức năng riêng ở ShiftForm). Kiểm tra chồng giờ chạy trong
+  // updateShift (controller) TRƯỚC khi ghi DB và trả lỗi để hiện tại đây.
   async function save() {
     setBusy(true)
     setError(null)
@@ -97,14 +104,12 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
               onChange={setSchedEnd}
             />
           </label>
-          <label className="edit-holiday">
-            <input
-              type="checkbox"
-              checked={isHoliday}
-              onChange={(e) => setIsHoliday(e.target.checked)}
-            />
-            {t('shiftForm.holiday')}
-          </label>
+          <Checkbox
+            className="edit-holiday"
+            checked={isHoliday}
+            onChange={(e) => setIsHoliday(e.target.checked)}
+            label={t('shiftForm.holiday')}
+          />
           <span className="muted">
             {formatHours(preview.decimalHours)}h · {formatMoney(preview.pay)}
           </span>
@@ -142,15 +147,33 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
   // Ca mới nhập từ lịch (chưa check-in/out) → hiện lịch dự kiến + nhãn "chưa check-in".
   const noActual = !s || !e
 
+  // Ca chưa chấm công:
+  //  - TƯƠNG LAI (> hôm nay) = lịch dự kiến → amber.
+  //  - ĐÃ QUA (< hôm nay) mà chưa chấm = QUÁ HẠN → cảnh báo đỏ rõ.
+  //  - HÔM NAY = chưa check-in (đỏ nhẹ, vẫn còn kịp).
+  const today = localTodayStr()
+  const isPlanned = noActual && shift.work_date > today
+  const isOverdue = noActual && shift.work_date < today
+
   return (
-    <div className={`shift-card${noActual ? ' not-checked-in' : ''}`}>
+    <div
+      className={`shift-card${
+        noActual ? (isPlanned ? ' planned' : ' not-checked-in') : ''
+      }`}
+    >
       <div className="shift-times">
         {noActual ? (
           <>
             <span className="t-in muted">{schedS || '—'}</span>
             <span className="dash"> – </span>
             <span className="t-out muted">{schedE || '—'}</span>
-            <span className="next-day"> {t('shiftCard.notCheckedIn')}</span>
+            {isPlanned ? (
+              <span className="planned-badge">{t('shiftCard.plannedBadge')}</span>
+            ) : isOverdue ? (
+              <span className="overdue-badge">{t('shiftCard.overdueBadge')}</span>
+            ) : (
+              <span className="next-day"> {t('shiftCard.notCheckedIn')}</span>
+            )}
           </>
         ) : (
           <>
@@ -188,12 +211,21 @@ export default function ShiftCard({ shift, onDelete, onUpdate }) {
         <button
           type="button"
           className="delete"
-          onClick={() => onDelete(shift.id)}
+          onClick={() => setConfirmDelete(true)}
           aria-label={t('shiftCard.deleteAria')}
         >
           ×
         </button>
       </div>
+      {confirmDelete && (
+        <ConfirmModal
+          message={t('shiftCard.deleteConfirm')}
+          onResult={(ok) => {
+            setConfirmDelete(false)
+            if (ok) onDelete(shift.id)
+          }}
+        />
+      )}
     </div>
   )
 }

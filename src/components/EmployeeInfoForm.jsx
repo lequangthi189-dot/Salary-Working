@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../lib/i18n.jsx'
 import LangToggle from './LangToggle.jsx'
+import TimeInput from './TimeInput.jsx'
 import { DEFAULT_NIGHT_PCT } from '../lib/rates.js'
 import { getRate } from '../lib/currency.jsx'
 
@@ -96,6 +97,19 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
   const [hasNightShift, setHasNightShift] = useState(
     pick('hasNightShift', initial.has_night_shift != null ? initial.has_night_shift : true)
   )
+  // Giờ bắt đầu/kết thúc ca đêm ("HH:MM"). DB trả "HH:MM:SS" → cắt còn "HH:MM".
+  const [nightStart, setNightStart] = useState(
+    pick('nightStart', (initial.night_start || '22:00').slice(0, 5))
+  )
+  const [nightEnd, setNightEnd] = useState(
+    pick('nightEnd', (initial.night_end || '06:00').slice(0, 5))
+  )
+  const [periodStartDay, setPeriodStartDay] = useState(
+    pick('periodStartDay', String(initial.period_start_day ?? 26))
+  )
+  const [periodEndDay, setPeriodEndDay] = useState(
+    pick('periodEndDay', String(initial.period_end_day ?? 25))
+  )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -120,6 +134,10 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
       holidayDayPct,
       holidayNightPct,
       hasNightShift,
+      nightStart,
+      nightEnd,
+      periodStartDay,
+      periodEndDay,
     })
   }, [
     onBack,
@@ -131,7 +149,17 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
     holidayDayPct,
     holidayNightPct,
     hasNightShift,
+    nightStart,
+    nightEnd,
+    periodStartDay,
+    periodEndDay,
   ])
+
+  // Ngày tính công hợp lệ 1–28 (tránh lệ thuộc độ dài tháng).
+  const clampDay = (v, fallback) => {
+    const n = Math.round(Number(v))
+    return Number.isInteger(n) && n >= 1 && n <= 28 ? n : fallback
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -160,6 +188,11 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
       holidayDayPct: pct(holidayDayPct),
       holidayNightPct: pct(holidayNightPct),
       hasNightShift,
+      // Chỉ lưu giờ ca đêm khi có ca đêm; không thì để mặc định 22:00–06:00.
+      nightStart: hasNightShift ? nightStart : '22:00',
+      nightEnd: hasNightShift ? nightEnd : '06:00',
+      periodStartDay: clampDay(periodStartDay, 26),
+      periodEndDay: clampDay(periodEndDay, 25),
     })
     setBusy(false)
     if (err) setError(err)
@@ -257,6 +290,26 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
             />
           </label>
         )}
+        {hasNightShift && (
+          <div className="emp-period">
+            <label>
+              {t('emp.nightStart')}
+              <TimeInput
+                value={nightStart}
+                onChange={setNightStart}
+                required
+              />
+            </label>
+            <label>
+              {t('emp.nightEnd')}
+              <TimeInput
+                value={nightEnd}
+                onChange={setNightEnd}
+                required
+              />
+            </label>
+          </div>
+        )}
         <label>
           {t('emp.holidayDayPct')}
           <input
@@ -283,6 +336,36 @@ export default function EmployeeInfoForm({ initial = {}, onSave, onCancel, onBac
             />
           </label>
         )}
+
+        <div className="emp-period">
+          <label>
+            {t('emp.periodStartDay')}
+            <input
+              type="number"
+              min="1"
+              max="28"
+              step="1"
+              inputMode="numeric"
+              value={periodStartDay}
+              onChange={(e) => setPeriodStartDay(e.target.value)}
+              required
+            />
+          </label>
+          <label>
+            {t('emp.periodEndDay')}
+            <input
+              type="number"
+              min="1"
+              max="28"
+              step="1"
+              inputMode="numeric"
+              value={periodEndDay}
+              onChange={(e) => setPeriodEndDay(e.target.value)}
+              required
+            />
+          </label>
+        </div>
+        <p className="planned-hint">{t('emp.periodHint')}</p>
 
         <div className="emp-actions">
           <button type="submit" disabled={busy}>

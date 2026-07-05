@@ -11,6 +11,25 @@ function pad2(n) {
   return String(n).padStart(2, '0')
 }
 
+// Cấu hình kỳ lương THEO TỪNG NGƯỜI (nạp từ hồ sơ qua setPayPeriod). endDay là
+// NGÀY CHỐT (kỳ kết thúc); startDay là ngày bắt đầu kỳ (chỉ để hiển thị khoảng).
+// Mặc định 26 → 25 (giữ nguyên hành vi cũ). Việc gom ca vào kỳ CHỈ phụ thuộc endDay.
+let cfg = { startDay: 26, endDay: 25 }
+
+function clampDay(v, fallback) {
+  const n = Math.round(Number(v))
+  return Number.isInteger(n) && n >= 1 && n <= 28 ? n : fallback
+}
+
+// Nạp cấu hình kỳ lương từ hồ sơ. Giá trị không hợp lệ → mặc định 26/25.
+export function setPayPeriod({ startDay, endDay } = {}) {
+  cfg = { startDay: clampDay(startDay, 26), endDay: clampDay(endDay, 25) }
+}
+
+export function getPayPeriodConfig() {
+  return { ...cfg }
+}
+
 // Ngày hôm nay theo giờ ĐỊA PHƯƠNG dạng "YYYY-MM-DD".
 export function localTodayStr() {
   const d = new Date()
@@ -23,12 +42,12 @@ function parts(dateStr) {
 }
 
 // Key kỳ lương cho một ngày làm việc "YYYY-MM-DD".
-// d >= 26 → thuộc kỳ tháng sau; d <= 25 → thuộc kỳ tháng hiện tại.
+// Ngày SAU ngày chốt (d > endDay) → thuộc kỳ tháng sau; còn lại → kỳ tháng hiện tại.
 export function payPeriodKeyOf(dateStr) {
   const { y, m, d } = parts(dateStr)
   let year = y
   let month = m
-  if (d >= 26) {
+  if (d > cfg.endDay) {
     month += 1
     if (month > 12) {
       month = 1
@@ -38,17 +57,21 @@ export function payPeriodKeyOf(dateStr) {
   return `${year}-${pad2(month)}`
 }
 
-// Khoảng ngày làm việc của kỳ: { start: (tháng-1)-26, end: tháng-25 }.
+// Khoảng ngày làm việc của kỳ: { start: ngày bắt đầu, end: ngày chốt }. Nếu kỳ vắt
+// qua 2 tháng (startDay > endDay, vd 26→25) thì start nằm ở THÁNG TRƯỚC.
 export function payPeriodRange(key) {
   const [y, m] = key.split('-').map(Number)
-  const end = `${y}-${pad2(m)}-25`
+  const end = `${y}-${pad2(m)}-${pad2(cfg.endDay)}`
   let sy = y
-  let sm = m - 1
-  if (sm < 1) {
-    sm = 12
-    sy -= 1
+  let sm = m
+  if (cfg.startDay > cfg.endDay) {
+    sm -= 1
+    if (sm < 1) {
+      sm = 12
+      sy -= 1
+    }
   }
-  const start = `${sy}-${pad2(sm)}-26`
+  const start = `${sy}-${pad2(sm)}-${pad2(cfg.startDay)}`
   return { start, end }
 }
 

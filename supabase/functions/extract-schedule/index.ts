@@ -12,8 +12,6 @@
 // Gọi từ frontend (kèm Authorization: Bearer <user access token>):
 //   POST { image: "<base64 không gồm tiền tố data:>", mediaType: "image/png", employeeCode: "..." }
 
-import { createClient } from 'npm:@supabase/supabase-js@2'
-
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -26,42 +24,88 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // Danh sách model Gemini thử lần lượt (env GEMINI_MODEL, ngăn cách bằng dấu phẩy).
 // Hết quota (429) / quá tải (503) / không tồn tại (404) ở model nào → thử model kế.
 // Mặc định gồm cả bản "flash-lite" (quota free cao hơn) để tránh hết hạn mức.
+// Lite ĐỨNG ĐẦU: hạn free/ngày cao hơn bản thường → đỡ 429 khi đọc nhiều ảnh.
+// Khớp thứ tự với salary-chat. (KHÔNG để model "xịn" hạn free thấp — vd 3.5-flash
+// chỉ 5 lượt/ngày — đứng đầu, vì mỗi ảnh sẽ đốt sạch quota đó rồi mới rớt xuống.)
 const GEMINI_MODELS = (Deno.env.get('GEMINI_MODEL') ||
-  'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash')
+  'gemini-2.5-flash-lite,gemini-2.5-flash,gemini-2.0-flash')
   .split(',')
   .map((s: string) => s.trim())
   .filter(Boolean)
 
 // responseSchema theo định dạng OpenAPI của Gemini (type viết HOA).
-const SCHEMA = {
+// CHẾ ĐỘ TUẦN: trả về 7 thứ Mon..Sun.
+const SCHEMA_WEEK = {
   type: 'OBJECT',
   properties: {
     is_roster: { type: 'BOOLEAN' },
     doc_type: { type: 'STRING', enum: ['schedule', 'timesheet', 'other'] },
     found: { type: 'BOOLEAN' },
     matched_code: { type: 'STRING' },
+    // Tháng/năm đọc được ở TIÊU ĐỀ bảng (nếu có). 0 = không thấy.
+    sheet_month: { type: 'INTEGER' },
+    sheet_year: { type: 'INTEGER' },
     days: {
       type: 'ARRAY',
       items: {
         type: 'OBJECT',
         properties: {
           weekday: { type: 'STRING', enum: WEEKDAYS },
+          // SỐ NGÀY TRẦN (1–31) đọc nguyên ở header cột; 0 = cột không ghi ngày.
+          day: { type: 'INTEGER' },
           date: { type: 'STRING' },
           start: { type: 'STRING' },
           end: { type: 'STRING' },
           off: { type: 'BOOLEAN' },
           raw: { type: 'STRING' },
         },
-        required: ['weekday', 'date', 'start', 'end', 'off', 'raw'],
+        required: ['weekday', 'day', 'date', 'start', 'end', 'off', 'raw'],
       },
     },
   },
-  required: ['is_roster', 'doc_type', 'found', 'matched_code', 'days'],
+  required: [
+    'is_roster',
+    'doc_type',
+    'found',
+    'matched_code',
+    'sheet_month',
+    'sheet_year',
+    'days',
+  ],
 }
 
-const SYSTEM = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
+// CHẾ ĐỘ THÁNG: trả về MẢNG NGÀY (entries) theo ngày tháng, không ràng buộc thứ.
+const SCHEMA_MONTH = {
+  type: 'OBJECT',
+  properties: {
+    is_roster: { type: 'BOOLEAN' },
+    doc_type: { type: 'STRING', enum: ['schedule', 'timesheet', 'other'] },
+    found: { type: 'BOOLEAN' },
+    matched_code: { type: 'STRING' },
+    entries: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          // SỐ NGÀY TRẦN (1–31) đọc nguyên trên ảnh; 0 = ô không ghi số ngày.
+          // Client tự ghép thành ngày đầy đủ trong kỳ (KHÔNG để AI tính ngày).
+          day: { type: 'INTEGER' },
+          date: { type: 'STRING' },
+          start: { type: 'STRING' },
+          end: { type: 'STRING' },
+          off: { type: 'BOOLEAN' },
+          raw: { type: 'STRING' },
+        },
+        required: ['day', 'date', 'start', 'end', 'off', 'raw'],
+      },
+    },
+  },
+  required: ['is_roster', 'doc_type', 'found', 'matched_code', 'entries'],
+}
+
+const SYSTEM_WEEK = `Bạn là công cụ đọc bảng phân ca làm việc (work roster) từ ảnh.
 Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
-0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, doc_type="other", found=false, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp.
+0. Trước tiên xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không (có lưới thứ–ngày và giờ ca). Nếu KHÔNG phải (vd ảnh chân dung, phong cảnh, ảnh màn hình khác, văn bản không liên quan) thì đặt is_roster=false, doc_type="other", found=false, sheet_month=0, sheet_year=0, days=[] rồi dừng. Nếu phải thì is_roster=true và làm tiếp.
 0b. Phân loại doc_type:
    - "schedule" = LỊCH PHÂN CA / LỊCH ĐI LÀM (giờ vào–ra DỰ KIẾN cho tuần, thường là kế hoạch sắp tới; ô ghi khung giờ như "09:00-17:00").
    - "timesheet" = BẢNG CÔNG / CHẤM CÔNG (ghi nhận công ĐÃ làm; thường có TỔNG GIỜ mỗi ngày như "7.55", "8.0", hoặc giờ check-in/out thực tế, có tiêu đề kiểu "Bảng công"/"Chấm công").
@@ -71,27 +115,53 @@ Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhi
    - Chuẩn hoá về "HH:MM" 24 giờ (vd "9h"->"09:00", "5pm"->"17:00", "9-17"-> start 09:00 end 17:00).
    - Nếu ô ghi nghỉ/trống/"OFF"/"X" thì off=true, start="" , end="".
    - Nếu ảnh không có thứ nào đó, vẫn trả về thứ đó với off=true.
-3. Đọc NGÀY THÁNG ghi cho từng thứ trong ảnh (nếu có) và trả về field "date" dạng
-   "YYYY-MM-DD". Nếu ảnh chỉ ghi số ngày hoặc dd/mm (thiếu năm/tháng) thì suy ra
-   dựa trên "Tuần bắt đầu" được cung cấp. Nếu ảnh KHÔNG ghi ngày thì để date="".
-4. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
+   - "raw": NẾU ảnh có in sẵn TỔNG GIỜ CÔNG của ngày đó (vd "7.55", "8.0", "8h"),
+     hãy ghi CHỈ con số tổng giờ đó vào "raw" (vd "7.55"). Con số tổng này đã trừ
+     giờ nghỉ giải lao nên là nguồn đúng nhất — luôn ghi nó kể cả khi đã có start/end.
+     Nếu ảnh KHÔNG in tổng giờ thì để raw="". KHÔNG ghi khoảng giờ vào "raw".
+3. "day" = SỐ NGÀY (số nguyên 1–31) ghi ở header của cột thứ đó (vd cột ghi
+   "8 T2 Mon" → day=8). CHỈ đọc đúng con số HIỆN trên ảnh; TUYỆT ĐỐI KHÔNG tự suy,
+   KHÔNG tự tính, KHÔNG cộng/trừ, KHÔNG ghép tháng/năm. Cột không ghi số ngày → day=0.
+4. "date": CHỈ điền khi ảnh in SẴN ngày ĐẦY ĐỦ có cả ngày-tháng-năm (vd "08/06/2026"
+   hoặc "2026-06-08") → chuẩn hoá "YYYY-MM-DD". Nếu ảnh không in đủ năm thì để date=""
+   (đừng bịa tháng/năm — phần ghép ngày do hệ thống tự làm dựa trên "day").
+5. "sheet_month"/"sheet_year": nếu TIÊU ĐỀ / đầu bảng có ghi THÁNG (và NĂM) áp dụng
+   cho cả bảng (vd "Bảng công tháng 6/2026", "THÁNG 06", "Kỳ công 06/2026") thì đặt
+   sheet_month=6, sheet_year=2026. Chỉ điền khi thấy rõ; không thấy tháng → sheet_month=0;
+   không thấy năm → sheet_year=0.
+6. Luôn trả đủ 7 thứ Mon..Sun, không bịa giờ khi không chắc (để off=true).
 Chỉ trả JSON đúng schema, không thêm chữ.`
+
+const SYSTEM_MONTH = `Bạn là công cụ đọc BẢNG CÔNG / BẢNG PHÂN CA cả KỲ (nhiều tuần) từ ảnh.
+Người dùng cung cấp THÔNG TIN NHẬN DẠNG nhân viên (một hoặc nhiều trong: mã nhân viên, họ tên, số điện thoại). Nhiệm vụ:
+0. Xác định ảnh CÓ PHẢI bảng phân ca / lịch làm việc / bảng chấm công không. Nếu KHÔNG phải thì is_roster=false, doc_type="other", found=false, entries=[] rồi dừng. Nếu phải thì is_roster=true.
+0b. Phân loại doc_type: "schedule" = lịch phân ca (giờ vào–ra dự kiến); "timesheet" = bảng công đã làm (tổng giờ/ngày hoặc giờ check-in/out). Chọn loại khớp nhất.
+1. Tìm DÒNG/Ô ứng với nhân viên khớp nhất theo bất kỳ thông tin nào (ưu tiên mã, rồi họ tên, rồi SĐT). Bỏ qua khác biệt hoa thường/khoảng trắng/dấu. Không khớp → found=false, entries=[].
+2. Đọc TẤT CẢ CÁC NGÀY có công của người đó. Mỗi ngày trả về MỘT entry:
+   - "day" = SỐ NGÀY (số nguyên 1–31) GHI TRÊN ẢNH cho ô đó (vd ô "27" → day=27). CHỈ đọc đúng con số HIỆN trên ảnh; TUYỆT ĐỐI KHÔNG tự suy, KHÔNG tính, KHÔNG cộng/trừ, KHÔNG ghép tháng/năm. Hệ thống tự ghép ngày đầy đủ. Ô không đọc được số ngày → day=0.
+   - "date": CHỈ điền khi ảnh in SẴN ngày ĐẦY ĐỦ có cả ngày-tháng-NĂM (vd "27/05/2026" hoặc "2026-05-27") → chuẩn hoá "YYYY-MM-DD". Nếu ảnh KHÔNG in đủ năm thì để date="" (đừng bịa tháng/năm).
+   - "raw": NẾU ảnh có in sẵn TỔNG GIỜ CÔNG của ngày (vd "7.55", "8.0", "8h") thì ghi CHỈ con số tổng giờ đó vào "raw" (vd "7.55"). Tổng này đã trừ giờ nghỉ nên là nguồn đúng nhất — luôn ghi kể cả khi đã có start/end. Nếu ảnh KHÔNG in tổng giờ thì raw="". KHÔNG ghi khoảng giờ vào "raw".
+   - "start"/"end": nếu ảnh ghi giờ vào–ra thì chuẩn hoá "HH:MM" 24 giờ (vd "9h"->"09:00"). Nếu ảnh chỉ ghi TỔNG GIỜ thì để start="" end="".
+   - Ngày nghỉ/trống/"OFF"/"X" → off=true, start="", end="", raw="".
+3. CHỈ trả các ngày THỰC SỰ có trong ảnh cho người đó; KHÔNG bịa ngày, KHÔNG cần liệt kê ngày không xuất hiện.
+4. Không bịa giờ khi không chắc (off=true). Chỉ trả JSON đúng schema, không thêm chữ.`
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  // Xác thực người dùng qua JWT của Supabase (chỉ user đã đăng nhập mới gọi được).
+  // Xác thực người dùng qua JWT (chỉ user đã đăng nhập mới gọi được). Gọi GoTrue
+  // REST /auth/v1/user thay vì SDK npm:@supabase/supabase-js để hàm là Deno THUẦN
+  // → deploy KHÔNG cần Docker bundling (giống salary-chat).
   const authHeader = req.headers.get('Authorization') || ''
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } }
-  )
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return json({ error: 'Unauthorized' }, 401)
+  const userResp = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/user`, {
+    headers: {
+      Authorization: authHeader,
+      apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+    },
+  })
+  const user = userResp.ok ? await userResp.json() : null
+  if (!user?.id) return json({ error: 'Unauthorized' }, 401)
 
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) return json({ error: 'Server chưa cấu hình GEMINI_API_KEY' }, 500)
@@ -103,13 +173,25 @@ Deno.serve(async (req: Request) => {
     fullName?: string
     phone?: string
     weekStart?: string
+    scope?: string
+    month?: string
+    // Chế độ KỲ LƯƠNG: khoảng ngày thật của kỳ ("YYYY-MM-DD"), có thể vắt 2 tháng.
+    periodStart?: string
+    periodEnd?: string
   }
   try {
     body = await req.json()
   } catch {
     return json({ error: 'Body JSON không hợp lệ' }, 400)
   }
-  const { image, mediaType, employeeCode, fullName, phone, weekStart } = body
+  // weekStart không còn dùng ở server (chế độ tuần): client tự ghép số ngày → ngày
+  // đầy đủ dựa trên ô "Tuần đầu" / tháng đọc trong ảnh.
+  const { image, mediaType, employeeCode, fullName, phone, scope, month } = body
+  const periodStart = (body.periodStart || '').trim()
+  const periodEnd = (body.periodEnd || '').trim()
+  const isoRe = /^\d{4}-\d{2}-\d{2}$/
+  const hasPeriod = isoRe.test(periodStart) && isoRe.test(periodEnd)
+  const isMonth = scope === 'month'
   const hasId = [employeeCode, fullName, phone].some(
     (v) => v && String(v).trim()
   )
@@ -120,29 +202,55 @@ Deno.serve(async (req: Request) => {
     )
   }
 
+  // [DEBUG ảnh 1] Kích thước ảnh nhận được (để phát hiện ảnh bị nén/mờ khi upload).
+  // base64 dài ~4/3 số byte gốc → KB ≈ image.length * 0.75 / 1024.
+  console.log('[extract-schedule] inbound image', {
+    mediaType,
+    base64Len: image.length,
+    approxKB: Math.round((image.length * 0.75) / 1024),
+    scope: isMonth ? 'month' : 'week',
+    hasPeriod,
+  })
+
   try {
+    const idText =
+      'Thông tin nhận dạng nhân viên cần lấy lịch:' +
+      (employeeCode ? ` Mã: "${employeeCode}".` : '') +
+      (fullName ? ` Họ tên: "${fullName}".` : '') +
+      (phone ? ` SĐT: "${phone}".` : '')
+    // Chế độ kỳ lương: AI CHỈ đọc số ngày trần (day) + tổng giờ; client tự ghép ngày
+    // đầy đủ trong kỳ (dayInPeriod) nên KHÔNG bắt AI tính tháng/năm nữa — đây là gốc
+    // rễ giúp scan ra công ổn định. Chỉ nêu khoảng kỳ để AI biết phạm vi bảng.
+    const periodHint = hasPeriod
+      ? ` Bảng công này thuộc kỳ TỪ ${periodStart} ĐẾN ${periodEnd}.`
+      : month
+        ? ` Tháng cần đọc: ${month}.`
+        : ''
+    const userText = isMonth
+      ? idText +
+        ' Trả về MỌI ngày có công của người đó (mỗi ngày một entry). Với mỗi ngày,' +
+        ' "day" = SỐ NGÀY trần (1–31) GHI TRÊN ẢNH (không tự suy/ghép tháng) và "raw"' +
+        ' = tổng giờ công nếu ảnh in sẵn. Hệ thống tự ghép ngày đầy đủ.' +
+        periodHint
+      : idText +
+        ' Trả về ca từng thứ Mon..Sun. Với mỗi cột đọc "day" = SỐ NGÀY trần ghi ở' +
+        ' header (1–31, không có thì 0) và đọc tháng/năm ở tiêu đề nếu có' +
+        ' (sheet_month/sheet_year). KHÔNG tự suy hay ghép ngày — hệ thống tự ghép.'
+
     const reqBody = JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
+      systemInstruction: { parts: [{ text: isMonth ? SYSTEM_MONTH : SYSTEM_WEEK }] },
       contents: [
         {
           role: 'user',
           parts: [
             { inline_data: { mime_type: mediaType, data: image } },
-            {
-              text:
-                'Thông tin nhận dạng nhân viên cần lấy lịch:' +
-                (employeeCode ? ` Mã: "${employeeCode}".` : '') +
-                (fullName ? ` Họ tên: "${fullName}".` : '') +
-                (phone ? ` SĐT: "${phone}".` : '') +
-                ' Trả về ca từng thứ Mon..Sun.' +
-                (weekStart ? ` Tuần bắt đầu (Thứ 2) khoảng: ${weekStart}.` : ''),
-            },
+            { text: userText },
           ],
         },
       ],
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: SCHEMA,
+        responseSchema: isMonth ? SCHEMA_MONTH : SCHEMA_WEEK,
         temperature: 0,
         // Đủ rộng để JSON không bị cắt (model flash mới tốn token cho "thinking").
         maxOutputTokens: 8192,
@@ -180,7 +288,16 @@ Deno.serve(async (req: Request) => {
         const errText = await resp.text()
         return json({ error: `Lỗi gọi Gemini (${resp.status}): ${errText}` }, 502)
       }
-      if (resp && resp.ok) break
+      // [DEBUG] Ghi RÕ kết quả từng model: model nào 429 (hết quota) / 404 / trả lời.
+      // Trước đây vòng này im lặng nên `functions logs` không lộ chuỗi fallback 429.
+      if (resp && resp.ok) {
+        console.log('[extract-schedule] model answered', { model })
+        break
+      }
+      console.log('[extract-schedule] model failed → next', {
+        model,
+        status: resp?.status,
+      })
     }
 
     // Hết danh sách mà vẫn không OK.
@@ -223,6 +340,13 @@ Deno.serve(async (req: Request) => {
         502
       )
     }
+    // [DEBUG ảnh 1] Object THÔ model trả về (trước khi parse): finishReason +
+    // toàn văn text. Nếu text rỗng/không phải JSON → trượt ở khâu ĐỌC của AI.
+    console.log('[extract-schedule] raw model output', {
+      finishReason: cand?.finishReason,
+      textLen: text.length,
+      textHead: text.slice(0, 1500),
+    })
     let parsed
     try {
       parsed = JSON.parse(text)
@@ -239,6 +363,19 @@ Deno.serve(async (req: Request) => {
         502
       )
     }
+    // [DEBUG ảnh 1] Object ĐÃ PARSE trả về client: cho thấy AI có đọc ra số giờ
+    // (entries/days với raw/start/end) hay trả rỗng, và phân loại doc_type/found.
+    console.log('[extract-schedule] parsed result', {
+      is_roster: parsed?.is_roster,
+      doc_type: parsed?.doc_type,
+      found: parsed?.found,
+      matched_code: parsed?.matched_code,
+      sheet_month: parsed?.sheet_month,
+      sheet_year: parsed?.sheet_year,
+      daysCount: Array.isArray(parsed?.days) ? parsed.days.length : undefined,
+      entriesCount: Array.isArray(parsed?.entries) ? parsed.entries.length : undefined,
+      sample: (parsed?.entries || parsed?.days || []).slice(0, 5),
+    })
     return json(parsed, 200)
   } catch (e) {
     return json({ error: `Lỗi xử lý: ${String((e as Error)?.message || e)}` }, 502)

@@ -1,14 +1,10 @@
 // MODEL: truy cập bảng `profiles` (hồ sơ người dùng) qua Supabase.
 import { supabase } from '../lib/supabase.js'
 
+// Lấy '*' cho BỀN: nếu DB chưa có cột mới (chưa chạy migration) thì chỉ thiếu cột
+// đó (dùng mặc định ở client) thay vì lỗi cả SELECT làm "mất" hồ sơ.
 export function fetchProfile(userId) {
-  return supabase
-    .from('profiles')
-    .select(
-      'payday, full_name, first_name, last_name, employee_code, phone, email, hourly_rate, night_pct, holiday_day_pct, holiday_night_pct, has_night_shift'
-    )
-    .eq('id', userId)
-    .maybeSingle()
+  return supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
 }
 
 // Dùng UPDATE (dòng profile đã được trigger tạo sẵn) — tránh lỗi RLS khi profiles
@@ -36,6 +32,10 @@ export function updateEmployeeInfo(userId, info) {
       holiday_day_pct: info.holidayDayPct,
       holiday_night_pct: info.holidayNightPct,
       has_night_shift: info.hasNightShift,
+      night_start: info.nightStart,
+      night_end: info.nightEnd,
+      period_start_day: info.periodStartDay,
+      period_end_day: info.periodEndDay,
     })
     .eq('id', userId)
 }

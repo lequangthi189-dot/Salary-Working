@@ -65,21 +65,25 @@ function FlagAU() {
   )
 }
 
-const FLAGS = { vi: FlagVN, en: FlagGB, us: FlagUS, au: FlagAU }
+// Export để các nơi khác (vd menu Ngôn ngữ trong NavBar) tái dùng đúng bộ cờ.
+export const FLAGS = { vi: FlagVN, en: FlagGB, us: FlagUS, au: FlagAU }
 const NAMES = {
   vi: 'Tiếng Việt',
   en: 'English (UK)',
   us: 'English (US)',
   au: 'English (AU)',
 }
-const ORDER = ['vi', 'en', 'us', 'au']
+const ORDER = ['vi', 'en']
 
 // Dropdown chọn ngôn ngữ: VI (₫) · English-UK (£) · English-US ($).
 // up=true → menu mở LÊN trên (dùng ở đáy sidebar).
-export default function LangToggle({ className = '', up = false }) {
+export default function LangToggle({ className = '', up = false, onPick }) {
   const { lang, setLang } = useI18n()
   const [open, setOpen] = useState(false)
   const Cur = FLAGS[lang] || FlagGB
+  // Khi đã đăng nhập, cha truyền onPick để lưu ngôn ngữ vào hồ sơ; nếu không thì
+  // chỉ đổi ngôn ngữ tại chỗ (vẫn lưu localStorage trong setLang).
+  const pick = onPick || setLang
 
   return (
     <div className={`lang-wrap ${className}`.trim()}>
@@ -105,7 +109,7 @@ export default function LangToggle({ className = '', up = false }) {
                   type="button"
                   className={lang === code ? 'active' : ''}
                   onClick={() => {
-                    setLang(code)
+                    pick(code)
                     setOpen(false)
                   }}
                 >

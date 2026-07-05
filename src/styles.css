@@ -17,6 +17,18 @@
   --skeleton-sheen: rgba(255, 255, 255, 0.09);
 }
 
+/* ===== CỠ CHỮ (data-font trên <html>, đặt ở src/lib/appearance.js) =====
+   Đổi font-size GỐC → mọi kích thước dùng rem co giãn theo (nhỏ / vừa / lớn). */
+html[data-font='sm'] {
+  font-size: 87.5%;
+}
+html[data-font='md'] {
+  font-size: 100%;
+}
+html[data-font='lg'] {
+  font-size: 112.5%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -24,6 +36,22 @@
 /* Giữ chỗ thanh cuộn để khi khoá cuộn (mở popup) layout không bị xê dịch ngang. */
 html {
   scrollbar-gutter: stable;
+  /* BACKSTOP nền: html mang nền theo theme để vùng canvas (ngoài body) KHÔNG lòi
+     màn trắng mặc định. Cần ở glass-mobile: nền gradient nằm trên body với
+     background-attachment:fixed nên không phủ hết dải đáy của dynamic-viewport →
+     lộ canvas trắng. Có nền html cùng tông → mất mảng trắng. */
+  background: var(--bg);
+}
+
+/* ===== Thanh cuộn ẨN HẲN (CÁCH 2: không thấy gì nhưng VẪN cuộn được) =====
+   Áp cho mọi vùng cuộn (trang + .chat-list + .modal-overlay/.modal-card +
+   .import-table-wrap + .tt-wrap…). Chỉ ẩn hình thức — KHÔNG tắt cuộn. */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/old Edge */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chrome/Edge/Safari */
 }
 
 body {
@@ -31,6 +59,9 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
+  /* Phòng hờ chặn tràn ngang (gốc đã sửa ở .ui-check/position:relative + loại
+     .ui-check__input khỏi rule input{width:100%}); không dùng để giấu lỗi. */
+  overflow-x: hidden;
 }
 
 /* Khi có bất kỳ popup/sidebar nào mở → khoá cuộn nền, không tác động layout chính. */
@@ -50,6 +81,7 @@ input {
 
 .center {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   /* safe: khi nội dung cao hơn màn hình thì căn từ trên, không cắt mất đầu form */
   place-items: safe center;
@@ -142,6 +174,8 @@ button[type='submit']:disabled {
 }
 .forgot-link {
   color: var(--danger);
+  align-self: flex-start; /* canh TRÁI trong form (flex column) */
+  text-align: left;
 }
 
 .msg {
@@ -159,7 +193,15 @@ button[type='submit']:disabled {
 .app {
   max-width: 980px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
+  /* Chừa đáy đủ rộng để dock (fixed) không đè lên thẻ/danh sách ca cuối cùng. */
+  padding: 1.5rem 1rem 7rem;
+}
+/* Mobile: dock cao hơn (có nhãn cố định dưới icon) → nới đáy thêm để cuộn tới cuối
+   vẫn thấy hết thẻ ca, dock không che. Cộng safe-area của máy có home-indicator. */
+@media (max-width: 560px) {
+  .app {
+    padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+  }
 }
 
 /* Bố cục chính: một cột nội dung (form + bảng công), căn giữa qua .app */
@@ -308,6 +350,22 @@ button[type='submit']:disabled {
   flex-direction: column;
   height: min(70vh, 560px);
 }
+/* Cửa sổ chat NỔI, CỐ ĐỊNH ở góc dưới bên phải (khớp vị trí nút nổi). */
+.chat-float {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  width: min(88vw, 320px);
+  height: min(62vh, 460px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+}
 .chat-list {
   flex: 1;
   min-height: 0;
@@ -338,9 +396,172 @@ button[type='submit']:disabled {
   color: #fff;
   border-bottom-right-radius: 4px;
 }
+/* Message chứa bảng công: trải rộng hết khung chat */
+.chat-msg.chat-table {
+  max-width: 100%;
+  width: 100%;
+  align-self: stretch;
+}
+.chat-ts-title {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+/* Thẻ xác nhận (vd việc ngoài) trước khi ghi DB */
+.chat-confirm-line {
+  margin-bottom: 0.45rem;
+  overflow-wrap: anywhere;
+}
+.chat-confirm-list {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+.chat-confirm-list li {
+  margin: 0.1rem 0;
+}
+/* Nút lựa chọn giờ ca ngày trong chat */
+.chat-choice-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+.chat-choice-btns button {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chat-choice-btns button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .chat-typing {
   color: var(--muted);
   letter-spacing: 0.15em;
+}
+/* Thanh tiêu đề chat: nút Chức năng + nút đóng */
+.chat-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.chat-menu-btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chat-menu-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Tiêu đề nhóm trong menu chức năng */
+.chat-menu-group {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* DROPDOWN nhóm nút trong menu chức năng (accordion, mặc định đóng) */
+.chat-dd {
+  margin-top: 0.5rem;
+}
+.chat-dd-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.chat-dd-head:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Mũi tên ▼ xoay 180° khi mở */
+.chat-dd-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.25s ease;
+}
+.chat-dd.is-open .chat-dd-arrow {
+  transform: rotate(180deg);
+}
+/* Panel xổ/thu mượt bằng max-height */
+.chat-dd-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.28s ease;
+}
+.chat-dd.is-open .chat-dd-panel {
+  max-height: 420px; /* đủ chứa danh sách dài nhất (7 mục) */
+}
+.chat-dd-items {
+  margin-top: 0.4rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-dd-panel,
+  .chat-dd-arrow {
+    transition: none;
+  }
+}
+/* Ảnh đính kèm trong chat: preview + 3 nút (Tạo lịch / Đối chiếu / Hủy) */
+.chat-attach {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.chat-attach-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.chat-attach-hint {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+/* Nút đính kèm 📎 trong thanh nhập */
+.chat-attach-btn {
+  flex: 0 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+.chat-attach-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.chat-attach-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 .chat-input {
   display: flex;
@@ -378,26 +599,69 @@ button[type='submit']:disabled {
 .payday-edit,
 .field-view,
 .field-edit {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem;
+  /* Chiếm trọn cột dd, ổn định ở cả chế độ xem lẫn sửa (cùng khung flex). */
+  width: 100%;
 }
-.payday-view .link,
-.payday-edit .link,
-.field-view .link,
-.field-edit .link {
-  margin-top: 0;
+/* Nhóm hành động Lưu + Hủy: LUÔN nằm cùng một hàng, không co, không tách lẻ.
+   Là MỘT flex-item của .field-edit → khi cột hẹp cả cụm wrap xuống cùng nhau,
+   không bao giờ để "Hủy" rớt riêng. */
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
-/* Ô input khi chỉnh inline trong hồ sơ: gọn, không tràn cột */
-.field-edit input {
-  width: 9rem;
-  max-width: 100%;
+/* Nút hành động trong dòng: nền theo BIẾN theme → có nền nút ở MỌI theme
+   (dark/glass/neumorph) mà không cần override riêng từng theme. */
+.row-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.row-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.row-btn:disabled {
+  opacity: 0.6;
+}
+/* Bố cục 2 cột CỐ ĐỊNH (nhãn | nội dung), KHÔNG đổi khung giữa xem/sửa nên không
+   nhảy layout. Ô nhập co/giãn theo chỗ trống trong cột phải, nằm CÙNG HÀNG với nút.
+   flex-basis:0 để bỏ qua kích thước nội tại size=20 của input (vốn ~200px khiến nút
+   bị đẩy xuống dòng). Popup Hồ sơ/Việc làm dùng .modal-card.wide (480px) để cột phải
+   đủ rộng cho ô đọc hết giá trị mà nút vẫn cùng hàng. */
+.field-edit input,
+.field-edit select {
+  /* width cố định (không giãn đầy cột) → ô số liệu gọn; co được khi cột hẹp.
+     Dùng width thay max-width vì .modal-card input{max-width:100%} ghi đè max-width. */
+  flex: 0 1 auto;
+  width: 7rem; /* ô số/giờ/select: gọn, vẫn đủ đọc */
+  min-width: 0;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
   color: var(--text);
+}
+/* Ô chữ (Họ và tên, Mã NV, SĐT…) thường dài → rộng hơn để đọc đủ, vẫn cùng hàng nút. */
+.field-edit input[type='text'],
+.field-edit input:not([type]) {
+  width: 9rem;
+}
+/* Thông báo lỗi (nếu có) xuống dòng riêng, chiếm trọn bề ngang. */
+.payday-edit .msg,
+.field-edit .msg {
+  flex-basis: 100%;
+  margin: 0;
 }
 .field-view {
   justify-content: space-between;
@@ -468,7 +732,42 @@ button[type='submit']:disabled {
 .header-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem;
+}
+
+/* Mobile: cụm 3 nút (theme / ngôn ngữ / avatar) XUỐNG HÀNG RIÊNG dưới logo, căn
+   trái thẳng với logo. Desktop giữ nguyên (cùng hàng, đẩy phải qua space-between).
+   Có đủ chỗ nên chữ tên theme ("Sleek Dark"…) hiện lại — xem ThemeToggle.css. */
+@media (max-width: 560px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+}
+/* Nút avatar Trợ lý lương, kế bên dropdown Công cụ */
+.chat-avatar-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.chat-avatar-btn:hover {
+  filter: brightness(1.1);
+}
+.chat-avatar-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 /* Nút "Nhập lịch tuần" ở header: thấp bằng logo (26px) */
 .header-import {
@@ -480,20 +779,85 @@ button[type='submit']:disabled {
   align-items: center;
 }
 
-/* ---- Ô tick "Ngày lễ" + form thông tin nhân viên ---- */
-.holiday-check,
-.edit-holiday {
+/* ---- Checkbox dùng chung (component Checkbox.jsx) ----
+   Kiểu "premium": ô vuông bo góc; chưa tick → viền mảnh nền trong; đã tick → nền
+   accent + dấu check trắng. Màu theo biến theme nên nổi rõ trên cả 3 theme. */
+.ui-check {
   display: inline-flex;
+  flex-direction: row; /* ghi đè label{flex-direction:column} toàn cục */
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   font-size: 0.85rem;
   color: var(--text);
   cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Containing block cho .ui-check__input (position:absolute). Thiếu cái này → ô
+     input ẩn lấy viewport làm gốc, gặp rule "input width:100%" thành rộng cả màn
+     hình → tràn ngang cả trang. Có relative → 100% = bề rộng label nhỏ này. */
+  position: relative;
 }
-.holiday-check input,
-.edit-holiday input {
-  width: auto;
+/* Ẩn input gốc nhưng vẫn click/Tab/Space được (giữ accessibility).
+   Reset cả border/padding/nền mà rule label input toàn cục áp lên. */
+.ui-check__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+}
+/* Ô vuông tự vẽ — viền & nền nhạt theo độ tương phản chữ/nền nên hiện rõ trên cả 3
+   theme (kể cả neumorph nền sáng); khi tick mới đổ nền accent. */
+.ui-check__box {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  border: 1.5px solid color-mix(in srgb, var(--text) 32%, transparent);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: #fff;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.ui-check__tick {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+/* Đã tick: nền accent + viền accent + hiện dấu check */
+.ui-check__input:checked + .ui-check__box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ui-check__input:checked + .ui-check__box .ui-check__tick {
+  opacity: 1;
+  transform: scale(1);
+}
+/* Hover nhẹ + focus bàn phím rõ ràng (giữ accessibility) */
+.ui-check:hover .ui-check__box {
+  border-color: var(--accent);
+}
+.ui-check__input:focus-visible + .ui-check__box {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.ui-check__input:disabled + .ui-check__box {
+  opacity: 0.45;
+}
+.ui-check:has(.ui-check__input:disabled) {
+  cursor: default;
 }
 .emp-card {
   text-align: left;
@@ -666,6 +1030,19 @@ button[type='submit']:disabled {
   justify-content: flex-end;
   margin-bottom: 0.5rem;
 }
+/* Hàng trên cùng form đăng nhập: nút Hủy (trái) + đổi ngôn ngữ (phải). */
+.auth-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.auth-top .auth-lang {
+  margin-left: auto; /* luôn đẩy nút ngôn ngữ sang phải, kể cả khi không có Hủy */
+  margin-bottom: 0;
+}
+.auth-cancel {
+  margin-top: 0; /* .link mặc định margin-top:1rem → bỏ để nằm sát đầu form */
+}
 
 /* ---- Header trái: nút mở menu + tiêu đề ---- */
 .header-left {
@@ -717,6 +1094,11 @@ button[type='submit']:disabled {
   gap: 0.25rem;
   min-width: 180px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+/* căn phải cho dropdown ở header bên phải, tránh tràn mép màn hình */
+.dropdown-menu.right {
+  left: auto;
+  right: 0;
 }
 .dropdown-menu button {
   text-align: left;
@@ -780,16 +1162,27 @@ button[type='submit']:disabled {
 }
 /* Trong sidebar: xếp các kỳ theo chiều dọc (1 cột) + bố cục gọn */
 .salary-embedded .period-stat-grid {
-  grid-template-columns: 1fr;
+  /* Lưới 2 cột lấp khoảng trống bên phải; thẻ cùng hàng cao bằng nhau (stretch). */
+  grid-template-columns: repeat(2, 1fr);
+  align-items: stretch;
   gap: 0.5rem;
-  justify-items: start; /* card co vừa nội dung, không kéo full chiều ngang */
+}
+/* "Tất cả các kỳ" chiếm nguyên 1 hàng (full 2 cột) ở trên cùng cho nổi */
+.salary-embedded .period-stat-card.all {
+  grid-column: 1 / -1;
+}
+/* Mobile: thu về 1 cột cho khỏi chật */
+@media (max-width: 480px) {
+  .salary-embedded .period-stat-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .salary-embedded .scope-hint {
   margin: 0 0 0.5rem;
   font-size: 0.78rem;
 }
 .salary-embedded .period-stat-card {
-  padding: 0.6rem 0.75rem;
+  padding: 0.45rem 0.7rem;
   border-radius: 10px;
   background: var(--panel-2);
 }
@@ -868,11 +1261,20 @@ button[type='submit']:disabled {
   padding: 1.5rem;
   width: 100%;
   max-width: 360px;
-  /* Nội dung cao (ảnh + bảng 7 ngày) không tràn ra ngoài màn hình → cho cuộn dọc */
+  /* Nội dung cao (ảnh + bảng 7 ngày) không tràn ra ngoài màn hình → cho cuộn dọc.
+     Dùng dvh để khớp vùng nhìn thấy thật trên mobile (trừ thanh URL), fallback vh. */
   max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   overflow-y: auto;
 }
-@media (max-width: 380px) {
+/* Ô input/select trong modal KHÔNG được rộng quá khung (native date/time hay ép
+   bề rộng tối thiểu → tràn/bể layout trên mobile). */
+.modal-card input,
+.modal-card select {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 480px) {
   .modal-card {
     padding: 1rem;
   }
@@ -926,6 +1328,56 @@ button[type='submit']:disabled {
 }
 .reconcile-table td.rec-extra {
   color: #c084fc;
+}
+/* Ô "Theo ảnh" cho SỬA TAY: input gọn trong ô, đơn vị "h" cạnh bên. Lưới an toàn
+   khi AI đọc nhầm/sót — gõ đè để đối chiếu vẫn chạy. */
+.reconcile-table td.rec-img-cell {
+  white-space: nowrap;
+}
+.reconcile-table .rec-img-edit {
+  width: 3.4rem;
+  text-align: right;
+  background: var(--input-bg, rgba(255, 255, 255, 0.06));
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.15rem 0.3rem;
+  font: inherit;
+}
+.reconcile-table .rec-img-edit:focus {
+  outline: none;
+  border-color: var(--accent, #60a5fa);
+}
+.reconcile-table .rec-img-unit {
+  margin-left: 0.2rem;
+  opacity: 0.7;
+}
+/* Đối chiếu NHIỀU TUẦN: nhiều ảnh preview xếp hàng ngang, cuộn nếu tràn */
+.import-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.import-preview-row .import-preview {
+  max-width: 160px;
+  height: auto;
+}
+/* Mỗi tuần là một nhóm có tiêu đề + tổng kết riêng */
+.reconcile-group {
+  margin-top: 0.75rem;
+}
+.reconcile-group-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.95rem;
+}
+.reconcile-group-sub {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 /* "Có cập nhật mới" */
@@ -1019,6 +1471,10 @@ button[type='submit']:disabled {
 .account-btn.full {
   width: 100%;
 }
+/* Nút "Thông tin việc làm": full width + cách đều khối phía dưới cho cân layout. */
+.jobinfo-btn {
+  margin-bottom: 1rem;
+}
 .change-pw {
   display: flex;
   flex-direction: column;
@@ -1098,22 +1554,20 @@ button[type='submit']:disabled {
 .shift-form .fields.check-row .holiday-check {
   padding-bottom: 0.6rem;
 }
-.shift-form .fields.scheduled {
-  grid-template-columns: 1fr 1fr;
-}
 /* Cho ô input co lại được trong lưới → không tràn/bể layout trên điện thoại */
 .shift-form .fields label {
   min-width: 0;
 }
-.shift-form .fields input {
+/* Rule này dành cho input THƯỜNG (ngày/giờ) — KHÔNG áp cho checkbox ẩn của
+   component Checkbox (.ui-check__input), nếu không nó bị ép width:100% → tràn. */
+.shift-form .fields input:not(.ui-check__input) {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
 }
-/* Màn rất hẹp: xếp check-in/out & scheduled thành 1 cột cho dễ bấm */
+/* Màn rất hẹp: xếp check-in/out thành 1 cột cho dễ bấm */
 @media (max-width: 420px) {
-  .shift-form .fields.check-row,
-  .shift-form .fields.scheduled {
+  .shift-form .fields.check-row {
     grid-template-columns: 1fr;
   }
 }
@@ -1134,6 +1588,54 @@ button[type='submit']:disabled {
 }
 
 /* Khối Thống kê & Lương: style nằm ở src/components/MonthStats.css (.stats-panel). */
+
+/* ---- Tùy biến giao diện trong popup Tài khoản (cỡ chữ) ---- */
+.appearance-section {
+  margin: 0.5rem 0 1rem;
+  padding: 0.9rem 1rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.appearance-title {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+.appearance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.appearance-label {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+/* Nhóm nút phân đoạn (segmented control) */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.seg-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.seg-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
 
 /* ---- Modal nhập lịch tuần từ ảnh ---- */
 .import-fields {
@@ -1190,7 +1692,13 @@ button[type='submit']:disabled {
 .import-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.6rem;
   margin: 0.6rem 0;
+}
+.import-progress {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
 }
 .import-table {
   width: 100%;
@@ -1218,6 +1726,35 @@ button[type='submit']:disabled {
   border-radius: 6px;
   padding: 0.25rem 0.35rem;
   color: var(--text);
+}
+
+/* ===== Đối chiếu OCR: đánh dấu ô khớp/lệch giữa AI và OCR ===== */
+/* Khớp → xanh nhẹ (đáng tin). Lệch → viền vàng + nền vàng nhạt (cần soát tay). */
+.import-table td.cell-match {
+  box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.35);
+  border-radius: 6px;
+}
+.import-table td.cell-mismatch {
+  box-shadow: inset 0 0 0 2px rgba(234, 179, 8, 0.75);
+  background: rgba(234, 179, 8, 0.12);
+  border-radius: 6px;
+}
+/* Cảnh báo ô lệch: dấu ⚠ nhỏ góc trên phải để nhận ra ngay cả khi mù màu. */
+.import-table td.cell-mismatch {
+  position: relative;
+}
+.import-table td.cell-mismatch::after {
+  content: '⚠';
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: #b45309;
+}
+.ocr-note {
+  opacity: 0.85;
+  font-size: 0.9rem;
 }
 
 /* ===== Tiền bồi thường ===== */
@@ -1754,6 +2291,33 @@ input.t-out {
   color: #ff3b3b;
   font-weight: 700;
 }
+/* Ca dự kiến (tương lai, chưa chấm công) — amber, phân biệt với cảnh báo đỏ */
+.shift-card.planned {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.12);
+}
+.planned-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--checkin);
+  background: rgba(255, 159, 67, 0.18);
+  border: 1px solid var(--checkin);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+/* Ca đã qua ngày mà chưa chấm công — cảnh báo đỏ rõ */
+.overdue-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--danger);
+  border-radius: 999px;
+  white-space: nowrap;
+}
 .edit-fields {
   display: flex;
   flex-wrap: wrap;
@@ -1902,15 +2466,17 @@ input.t-out {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.75rem;
 }
+/* Thẻ xếp DỌC: tên kỳ → số liệu → "Mất do trễ", tất cả căn trái. */
 .period-stat-card {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: flex-start;
+  gap: 0.1rem;
   text-align: left;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
   color: var(--text);
   transition: border-color 0.15s ease, transform 0.1s ease;
 }
@@ -1924,30 +2490,39 @@ input.t-out {
   border-color: var(--green);
 }
 .period-stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 .period-stat-main {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--green);
 }
+/* Dòng tham khảo (không trừ tiền) → nhỏ nhưng đỏ SÁNG cho nổi */
 .period-stat-lost {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 400;
   color: var(--danger);
+  opacity: 1;
 }
 
 /* Biểu đồ tròn (donut) — lưới 2×2 gọn trong popup, không cần cuộn */
 .stats-donuts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* số biểu đồ lẻ vẫn căn giữa cho đẹp */
+  gap: 0.6rem 1rem;
 }
 .donut-block {
+  flex: 0 1 150px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+.pp-no-chart {
+  text-align: center;
+  margin: 1rem 0;
 }
 /* Donut đơn lẻ (vd Tổng giờ khi không có ca đêm): trải 2 cột + căn giữa */
 .donut-span {
@@ -1959,7 +2534,7 @@ input.t-out {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.2rem;
 }
 .donut {
   max-width: 100%;
@@ -1967,7 +2542,7 @@ input.t-out {
 }
 .donut-center-val {
   fill: var(--text);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 .donut-center-label {
@@ -2000,9 +2575,9 @@ input.t-out {
 .chart-legend {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  margin-top: 0.45rem;
-  font-size: 0.72rem;
+  gap: 0.12rem;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
   color: var(--muted);
 }
 .legend-item {
@@ -2016,6 +2591,35 @@ input.t-out {
   border-radius: 3px;
   display: inline-block;
   flex: 0 0 auto;
+}
+/* Mobile: thu nhỏ donut + chú thích để popup biểu đồ KHÔNG phải cuộn dọc */
+@media (max-width: 560px) {
+  .stats-donuts {
+    gap: 0.35rem 0.55rem;
+  }
+  .donut-block {
+    flex-basis: 116px;
+  }
+  .donut {
+    width: 74px;
+    height: 74px;
+  }
+  .donut-title {
+    font-size: 0.68rem;
+    margin-bottom: 0.1rem;
+  }
+  .chart-legend {
+    font-size: 0.6rem;
+    gap: 0.06rem;
+    margin-top: 0.15rem;
+  }
+  .legend-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+  }
+  .detail-sheet-btn {
+    margin-top: 0.35rem;
+  }
 }
 
 @media (max-width: 560px) {
@@ -2044,4 +2648,556 @@ input.t-out {
     grid-area: actions;
     justify-self: end;
   }
+}
+
+/* ---- Bảng công dạng lưới (như Excel), chỉ xem, trong popup tra cứu kỳ ---- */
+.tt-wrap {
+  margin-top: 0.5rem;
+  overflow-x: auto; /* màn cực hẹp thì cuộn ngang, không bẻ hàng cho vỡ layout */
+}
+.tt-weeks {
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+.tt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+.tt-table th,
+.tt-table td {
+  border: 1px solid var(--border);
+  padding: 0.18rem 0.3rem;
+  text-align: center;
+  white-space: nowrap; /* mỗi ô 1 dòng → hàng ngày không bị bể */
+}
+.tt-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  color: var(--text);
+  font-weight: 600;
+}
+.tt-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+.tt-table .tt-pay {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tt-table td.lost {
+  color: var(--danger);
+}
+.tt-table .tt-sched {
+  color: var(--muted);
+}
+.tt-table tr.tt-planned td {
+  font-style: italic;
+}
+.tt-table tfoot td {
+  background: var(--panel-2);
+  font-weight: 700;
+}
+
+/* Nút mở popup Bảng công chi tiết trong popup kỳ lương */
+.detail-sheet-btn {
+  margin-top: 0.5rem;
+}
+
+/* ---- Popup Nhập tay lịch dự kiến: lưới co giãn, KHÔNG cuộn ngang ---- */
+.msched-list {
+  margin-top: 0.5rem;
+}
+.msched-head,
+.msched-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) 1.5rem;
+  gap: 0.4rem;
+  align-items: center;
+}
+.msched-head {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+.msched-row {
+  margin-bottom: 0.4rem;
+}
+.msched-row input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.msched-del {
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ---- Thu nhập việc ngoài (extra income) ---- */
+.extra-summary {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.8rem;
+}
+.extra-summary-period {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.extra-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.2rem 0;
+}
+.extra-summary-row.total {
+  border-top: 1px solid var(--border);
+  margin-top: 0.3rem;
+  padding-top: 0.4rem;
+  font-size: 1.05rem;
+}
+.extra-summary-row.total strong {
+  color: var(--green);
+}
+.extra-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.extra-add input,
+.extra-edit input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+  min-width: 0;
+  box-sizing: border-box;
+}
+/* Ô co giãn + xuống dòng khi hẹp → không vỡ layout */
+.extra-add input[type='date'],
+.extra-edit input[type='date'] {
+  flex: 1 1 8.5rem;
+}
+.extra-add input[type='text'],
+.extra-edit input[type='text'] {
+  flex: 1 1 7rem;
+}
+.extra-add input[type='date'],
+.extra-edit input[type='date'] {
+  color-scheme: dark;
+}
+.extra-add-btn {
+  flex: 0 0 auto;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.extra-add-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.extra-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+/* Card = 2 CỤM: trái (thông tin) ↔ phải (ngày + nút), đẩy xa nhau bằng
+   space-between. Màn hẹp: cụm phải rớt xuống dòng dưới cụm trái (flex-wrap). */
+.extra-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+}
+/* CỤM TRÁI: checkbox + thông tin. Co được (min-width:0) nhưng KHÔNG tràn sang phải. */
+.extra-item-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Thông tin khoản xếp DỌC: số tiền → badge → mô tả. align-items:flex-start để badge
+   (pill) co theo nội dung, không kéo giãn cả dòng. */
+.extra-item-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.extra-amt {
+  font-weight: 700;
+}
+/* CỤM PHẢI: ngày + các nút, xếp NGANG, dồn hết về phải. Khi xuống dòng vẫn bám phải. */
+.extra-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.extra-desc {
+  color: var(--muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.extra-date {
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.extra-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+.extra-actions .edit,
+.extra-actions .delete {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.1rem 0.3rem;
+}
+.extra-actions .delete:hover {
+  color: var(--danger);
+}
+.extra-actions .edit:hover {
+  color: var(--accent);
+}
+/* Khoản việc ngoài DỰ KIẾN (ngày tương lai) — amber, chưa tính thực nhận */
+.extra-item.planned {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.1);
+}
+.extra-summary-row.planned-line strong {
+  color: var(--checkin);
+}
+/* Khoản CHƯA NHẬN (treo) — amber, chưa cộng vào tổng kỳ */
+.extra-item.pending {
+  border-color: var(--checkin);
+  background: rgba(255, 159, 67, 0.1);
+}
+/* Badge trạng thái nhận */
+.recv-badge {
+  padding: 0.05rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--checkin);
+  background: rgba(255, 159, 67, 0.18);
+  border: 1px solid var(--checkin);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.recv-badge.received {
+  color: var(--ok, #16a34a);
+  background: rgba(22, 163, 74, 0.15);
+  border-color: var(--ok, #16a34a);
+}
+/* Nút đổi trạng thái nhận. Trạng thái CHƯA NHẬN = nút XANH ĐẶC nổi bật (gọi hành
+   động "Đã nhận"); trạng thái ĐÃ NHẬN = nút viền mờ "Bỏ nhận". */
+.recv-toggle {
+  background: var(--ok, #16a34a);
+  border: 1px solid var(--ok, #16a34a);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.recv-toggle:hover {
+  filter: brightness(1.08);
+}
+/* Đã nhận → nút phụ "Bỏ nhận": viền mờ, không tô đặc */
+.recv-toggle.on {
+  background: none;
+  border-color: var(--border);
+  color: var(--muted);
+  font-weight: 600;
+}
+.recv-toggle.on:hover {
+  filter: none;
+  border-color: var(--checkin);
+  color: var(--checkin);
+}
+.recv-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* Checkbox chọn hàng loạt (dùng component Checkbox — chỉ cần neo layout) */
+.extra-check {
+  flex: 0 0 auto;
+}
+.extra-item.selected {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: -1px;
+}
+.recv-on {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ok, #16a34a);
+  white-space: nowrap;
+}
+/* Thanh hành động hàng loạt */
+.extra-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+  padding: 0.45rem 0.6rem;
+  background: var(--panel-2);
+  border: 1px solid var(--accent, #3b82f6);
+  border-radius: 8px;
+}
+.extra-bulk-count {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.extra-bulk-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+.extra-bulk-mark {
+  background: var(--ok, #16a34a);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.extra-bulk-mark:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.extra-bulk-clear {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.extra-bulk-clear:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.extra-item.editing {
+  flex-direction: column;
+  align-items: stretch;
+}
+.extra-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.extra-edit-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+}
+
+/* Hai ô ngày kỳ lương trong form thông tin nhân viên */
+.emp-period {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.emp-period label {
+  min-width: 0;
+}
+.planned-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+@media (max-width: 420px) {
+  .emp-period {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===================== Avatar upload (Tài khoản) =====================
+   Premium upload UI: preview tròn + vòng % chạy quanh khi upload, thẻ file, nút
+   Chọn ảnh/Hủy, ghi chú định dạng. Dùng biến theme nên hợp cả dark/glass/neumorph. */
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+.avatar-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.avatar-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+.avatar-circle.busy .avatar-img {
+  filter: brightness(0.62);
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-initials {
+  font-weight: 700;
+  font-size: 1.7rem;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+/* Vòng tiến độ: SVG phủ khít avatar, xoay -90° để cung bắt đầu từ đỉnh. */
+.avatar-ring {
+  position: absolute;
+  inset: 0;
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.avatar-ring-track {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 5;
+}
+.avatar-ring-bar {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s ease;
+}
+/* Indeterminate (SDK không đo được %): quay tròn 1 cung, KHÔNG đếm số giả. */
+.avatar-ring-bar.spin {
+  transition: none;
+  transform-origin: 60px 60px;
+  animation: avatarSpin 0.9s linear infinite;
+}
+@keyframes avatarSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.avatar-pct {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 1px 7px;
+  line-height: 1.4;
+}
+.avatar-side {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.avatar-filecard {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.avatar-filename {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.avatar-filemeta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.avatar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.row-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.avatar-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* Avatar nhỏ ở header (góc phải) — bấm mở Tài khoản. Fallback chữ cái đầu. */
+.header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.header-avatar:hover {
+  border-color: var(--accent);
+}
+.header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.header-avatar .avatar-initials {
+  font-size: 0.78rem;
 }

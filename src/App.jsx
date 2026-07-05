@@ -8,23 +8,41 @@ import Timesheet from './components/Timesheet.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import PayPeriodPage from './components/PayPeriodPage.jsx'
 import CompensationModal from './components/CompensationModal.jsx'
+import ExtraIncomeModal from './components/ExtraIncomeModal.jsx'
 import SalaryChat from './components/SalaryChat.jsx'
+import FloatingChatButton from './components/FloatingChatButton.jsx'
 import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import WelcomeGuide from './components/WelcomeGuide.jsx'
-import LangToggle from './components/LangToggle.jsx'
+import NavBar from './components/NavBar.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
+import LangCycle from './components/LangCycle.jsx'
+import ToolsSheet from './components/ToolsSheet.jsx'
 import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
 import WhatsNewModal from './components/WhatsNewModal.jsx'
+import Loader from './components/Loader.jsx'
 import ReconcileModal from './components/ReconcileModal.jsx'
 import { APP_VERSION, entriesSince } from './lib/changelog.js'
 import { useI18n } from './lib/i18n.jsx'
+import { firstNameOf } from './lib/name.js'
 import { useCurrency } from './lib/currency.jsx'
 import { useShifts } from './controllers/useShifts.js'
 import { usePayrolls } from './controllers/usePayrolls.js'
 import { useDeductions } from './controllers/useDeductions.js'
+import { useExtraIncome } from './controllers/useExtraIncome.js'
 import { useProfile } from './controllers/useProfile.js'
 import { periodStats } from './lib/shiftMath.js'
+import {
+  getDayRate,
+  getNightRate,
+  getHolidayDayRate,
+  getHolidayNightRate,
+  getNightStartMin,
+  getNightEndMin,
+} from './lib/rates.js'
+import { THEMES, getTheme, setTheme } from './lib/theme.js'
+import { FONT_SCALES, getFontScale, setFontScale } from './lib/appearance.js'
 import {
   pendingPeriodKey,
   visibleBoardShifts,
@@ -34,13 +52,15 @@ import {
 import {
   payPeriodKeyOf,
   payPeriodRange,
+  payPeriodLabel,
   paymentWindow,
   localTodayStr,
   sumDeductions,
 } from './lib/payPeriod.js'
+import { sumReceivedExtraIncome } from './lib/extraIncome.js'
 
 export default function App() {
-  const { t } = useI18n()
+  const { t, lang, setLang } = useI18n()
   const { updatedAt: fxUpdatedAt } = useCurrency()
   const { session, loading, signOut, recovery, endRecovery, switchAccount } =
     useAuth()
@@ -49,11 +69,14 @@ export default function App() {
   const [showImport, setShowImport] = useState(false)
   const [showReconcile, setShowReconcile] = useState(false)
   const [showDeductions, setShowDeductions] = useState(false)
+  const [showExtraIncome, setShowExtraIncome] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [showTitleMenu, setShowTitleMenu] = useState(false)
+  const [showPayPeriod, setShowPayPeriod] = useState(false) // popup Kỳ lương
+  const [showToolsSheet, setShowToolsSheet] = useState(false) // bottom sheet Công cụ
+  const [theme, setThemeSt] = useState(getTheme()) // phong cách hiện tại (cho ThemeToggle)
+  const [fontScale, setFontScaleSt] = useState(getFontScale()) // cỡ chữ
   // Đã bỏ qua nhắc nhận lương trong phiên này (reset khi reload → hỏi lại).
   const [reminderDismissed, setReminderDismissed] = useState(false)
 
@@ -90,17 +113,6 @@ export default function App() {
     setWhatsNew(null)
   }
 
-  // Mở một mục từ sidebar rồi đóng sidebar lại.
-  function openFromSidebar(setter) {
-    setShowSidebar(false)
-    setter(true)
-  }
-
-  // Mở một mục từ dropdown tiêu đề rồi đóng dropdown lại.
-  function openFromTitle(setter) {
-    setShowTitleMenu(false)
-    setter(true)
-  }
 
   // Controllers (custom hooks): mỗi hook giữ state + thao tác của một loại dữ liệu.
   const {
@@ -126,6 +138,14 @@ export default function App() {
     deleteDeduction,
   } = useDeductions(session, setLoadError)
   const {
+    extraIncome,
+    addExtraIncome,
+    updateExtraIncome,
+    deleteExtraIncome,
+    setReceived,
+    setReceivedMany,
+  } = useExtraIncome(session, setLoadError)
+  const {
     profile,
     loading: profileLoading,
     profileError,
@@ -138,6 +158,56 @@ export default function App() {
     skipPayday,
   } = useProfile(session)
 
+  // Khi hồ sơ nạp xong (đăng nhập), áp dụng ngôn ngữ đã lưu theo tài khoản. Nhờ
+  // vậy đăng nhập lại (kể cả máy khác) giữ đúng ngôn ngữ người dùng đã chọn.
+  useEffect(() => {
+    const saved = profile?.lang
+    if (saved && ['vi', 'en', 'us', 'au'].includes(saved) && saved !== lang) {
+      setLang(saved)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.lang])
+
+  // Đổi ngôn ngữ khi đã đăng nhập: đổi tại chỗ + lưu vào hồ sơ (để lần sau giữ).
+  function changeLang(code) {
+    setLang(code)
+    if (profile) saveProfileFields({ lang: code })
+  }
+
+  // Khi hồ sơ nạp xong, áp dụng phong cách đã lưu theo tài khoản (giữ qua các máy).
+  useEffect(() => {
+    const saved = profile?.theme
+    if (saved && THEMES.includes(saved) && saved !== theme) {
+      setTheme(saved)
+      setThemeSt(saved)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.theme])
+
+  // Đổi phong cách: áp tại chỗ (setTheme lưu localStorage) + lưu theo tài khoản.
+  function changeTheme(key) {
+    setTheme(key)
+    setThemeSt(key)
+    if (profile) saveProfileFields({ theme: key })
+  }
+
+  // Khi hồ sơ nạp xong, áp cỡ chữ đã lưu theo tài khoản (giữ qua các máy).
+  useEffect(() => {
+    const f = profile?.font_scale
+    if (f && FONT_SCALES.includes(f) && f !== fontScale) {
+      setFontScale(f)
+      setFontScaleSt(f)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.font_scale])
+
+  // Đổi cỡ chữ: áp tại chỗ + lưu theo tài khoản.
+  function changeFontScale(f) {
+    setFontScale(f)
+    setFontScaleSt(f)
+    if (profile) saveProfileFields({ font_scale: f })
+  }
+
   // Đánh dấu kỳ đang chờ nhận = đã nhận (ngày nhận = hôm nay).
   async function receiveSalary() {
     if (!pendingKey) return
@@ -145,7 +215,7 @@ export default function App() {
     setReminderDismissed(true)
   }
 
-  if (loading) return <div className="center">Loading…</div>
+  if (loading) return <Loader fullscreen label={t('common.loading')} />
   if (recovery)
     return (
       <div className="center">
@@ -195,17 +265,63 @@ export default function App() {
   )
   const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
   const currentDeductionTotal = sumDeductions(currentDeductions)
-  // Số liệu cho Trợ lý lương: lương kỳ này + TB mỗi ca theo TOÀN BỘ lịch sử.
+  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
+  const hasNightShift = profile?.has_night_shift !== false
+  // Số liệu cho Trợ lý lương: lương kỳ này + ĐƠN GIÁ 1 GIỜ ngày/đêm (để tính số GIỜ
+  // cần làm theo lương 1 giờ) + TB mỗi ca (cho câu hỏi chung).
   const allStats = periodStats(shifts)
   const allShiftCount = allStats.dayShiftCount + allStats.nightShiftCount
+  // Thu nhập việc ngoài ĐÃ NHẬN tính vào kỳ hiện tại (theo received_at = ngày bấm
+  // nhận). Khoản chưa nhận (treo) KHÔNG cộng vào tổng.
+  const currentExtraIncome = sumReceivedExtraIncome(
+    extraIncome.filter(
+      (x) => x.received && payPeriodKeyOf(x.received_at) === currentKey
+    )
+  )
+  // Đổi phút-trong-ngày → "HH:MM" để mô tả cửa sổ đêm cho AI.
+  const minToHHMM = (m) =>
+    `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
   const chatSnapshot = {
+    // --- Giữ NGUYÊN các trường cũ (parseProjection / buildEstimate dùng) ---
     currentPay: monthStats.pay - currentDeductionTotal,
+    dayRate: getDayRate(),
+    nightRate: getNightRate(),
+    hasNightShift,
     avgPerShift: allShiftCount ? allStats.pay / allShiftCount : 0,
     avgHoursPerShift: allShiftCount ? allStats.hours / allShiftCount : 0,
     shiftCount: allShiftCount,
+    // --- KHỐI DỮ LIỆU GIÀU cho Edge Function trả lời sự thật (đã tính sẵn ở App) ---
+    // Số liệu kỳ ĐANG XEM (currentKey). Mọi con số là kết quả periodStats — KHÔNG
+    // để AI tính lại.
+    period: {
+      label: payPeriodLabel(currentKey),
+      grossPay: Math.round(monthStats.pay), // lương ca (trước khoản trừ)
+      idealPay: Math.round(monthStats.idealPay), // lương dự kiến nếu đi đúng giờ
+      lostPay: Math.round(monthStats.lostPay), // tiền PHẠT do đi trễ/về sớm
+      deductionTotal: Math.round(currentDeductionTotal), // bồi thường/khấu trừ
+      extraIncome: Math.round(currentExtraIncome), // việc ngoài đã nhận
+      netPay: Math.round(monthStats.pay - currentDeductionTotal), // thực nhận lương ca
+      totalIncome: Math.round(
+        monthStats.pay - currentDeductionTotal + currentExtraIncome
+      ),
+      totalHours: monthStats.hours,
+      dayHours: monthStats.dayHours,
+      nightHours: monthStats.nightHours,
+      lostHours: monthStats.lostHours, // giờ bị mất do trễ
+      dayShiftCount: monthStats.dayShiftCount,
+      nightShiftCount: monthStats.nightShiftCount,
+      workDays: monthStats.workDays,
+    },
+    // Cấu hình lương của người dùng (từ hồ sơ profiles).
+    config: {
+      holidayDayRate: getHolidayDayRate(),
+      holidayNightRate: getHolidayNightRate(),
+      nightStart: minToHHMM(getNightStartMin()),
+      nightEnd: minToHHMM(getNightEndMin()),
+      periodStartDay: profile?.period_start_day ?? 26,
+      periodEndDay: profile?.period_end_day ?? 25,
+    },
   }
-  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
-  const hasNightShift = profile?.has_night_shift !== false
   const schedByDate = buildSchedByDate(shifts)
   const salaryDue = isSalaryDue(pendingKey, profile?.payday, paymentWindow)
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt
@@ -217,114 +333,84 @@ export default function App() {
   const timesheetLoading = shiftsLoading || payrollsLoading
 
   const fullName =
-    profile?.full_name || session.user.user_metadata?.full_name || ''
+    profile?.full_name ||
+    [profile?.last_name, profile?.first_name].filter(Boolean).join(' ') ||
+    session.user.user_metadata?.full_name ||
+    ''
   const employeeCode =
     profile?.employee_code || session.user.user_metadata?.employee_code || ''
+  // Tên GỌI cho bong bóng chào (tiếng Việt: chữ CUỐI). Rỗng → câu chào chung.
+  const chatFirstName = firstNameOf(fullName)
+
+  // Mục điều hướng cho NavBar pill: 3 mục từ sidebar cũ (Kỳ lương / Tài khoản /
+  // Hướng dẫn) + Công cụ. Phong cách & Ngôn ngữ đã chuyển ra thanh gạt
+  // ThemeToggle/LangCycle ở header (cạnh chatbot).
+  // 4 công cụ (trước nằm trong dropdown "Công cụ") → mở bottom sheet, mỗi ô gọi
+  // đúng hàm/mở đúng modal như cũ.
+  const toolItems = [
+    { key: 'import', icon: 'calendarPlus', label: t('nav.importWeek'), onClick: () => setShowImport(true) },
+    { key: 'reconcile', icon: 'clipboardCheck', label: t('reconcile.title'), onClick: () => setShowReconcile(true) },
+    { key: 'deductions', icon: 'coin', label: t('nav.deductions'), onClick: () => setShowDeductions(true) },
+    { key: 'extra', icon: 'briefcase', label: t('nav.extraIncome'), onClick: () => setShowExtraIncome(true) },
+  ]
+  // Chữ cái đầu của tên (fallback avatar khi chưa có ảnh) — dùng ở header + dock.
+  const accountName = profile?.full_name || session?.user?.email || '?'
+  const accountInitials = accountName
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+  // Tài khoản mở bằng avatar ở header (không còn mục trong dock).
+  const navItems = [
+    { key: 'payPeriod', icon: 'payPeriod', label: t('nav.payPeriod') },
+    { key: 'tools', icon: 'tools', label: t('nav.tools') },
+    { key: 'guide', icon: 'guide', label: t('nav.guide') },
+  ]
+  // App không dùng router → "route" = panel/modal đang mở. Suy ra mục active theo
+  // KEY (không phụ thuộc chỉ số cứng); -1 = không mở gì (giữ vị trí indicator).
+  const activeKey = showPayPeriod
+    ? 'payPeriod'
+    : showToolsSheet
+      ? 'tools'
+      : showWelcome
+        ? 'guide'
+        : null
+  const activeNav = activeKey ? navItems.findIndex((it) => it.key === activeKey) : -1
+  // Item thường mở modal/sheet tương ứng.
+  function onNavSelect(i) {
+    const key = navItems[i]?.key
+    if (key === 'payPeriod') setShowPayPeriod(true)
+    else if (key === 'tools') setShowToolsSheet(true)
+    else if (key === 'guide') setShowWelcome(true)
+  }
 
   return (
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <button
-            type="button"
-            className="menu-toggle"
-            onClick={() => setShowSidebar(true)}
-            aria-label={t('nav.openMenu')}
-          >
-            <img className="app-logo" src="/logo.svg" alt="Salary Working logo" />
-          </button>
-          <div className="title-menu">
-            <button
-              type="button"
-              className="title-btn"
-              onClick={() => setShowTitleMenu((o) => !o)}
-              aria-expanded={showTitleMenu}
-              aria-haspopup="true"
-            >
-              <h1>Salary Working</h1>
-              <span className="title-caret">▾</span>
-            </button>
-            {showTitleMenu && (
-              <>
-                <div
-                  className="dropdown-overlay"
-                  onClick={() => setShowTitleMenu(false)}
-                />
-                <div className="dropdown-menu" role="menu">
-                  <button
-                    type="button"
-                    onClick={() => openFromTitle(setShowDeductions)}
-                  >
-                    {t('nav.deductions')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openFromTitle(setShowChat)}
-                  >
-                    {t('chat.title')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <img className="app-logo" src="/logo.svg" alt="Salary Working logo" />
+          <h1 className="app-title">Salary Working</h1>
         </div>
         <div className="header-actions">
+          <ThemeToggle theme={theme} onChange={changeTheme} />
+          <LangCycle onChange={changeLang} />
           <button
             type="button"
-            className="account-btn header-import"
-            onClick={() => setShowImport(true)}
+            className="header-avatar"
+            onClick={() => setShowProfile(true)}
+            title={t('nav.account')}
+            aria-label={t('nav.account')}
           >
-            {t('nav.importWeek')}
-          </button>
-          <button
-            type="button"
-            className="account-btn header-import"
-            onClick={() => setShowReconcile(true)}
-          >
-            {t('reconcile.title')}
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" />
+            ) : (
+              <span className="avatar-initials">{accountInitials}</span>
+            )}
           </button>
         </div>
       </header>
-
-      {showSidebar && (
-        <div className="sidebar-overlay" onClick={() => setShowSidebar(false)}>
-          <aside className="sidebar" onClick={(e) => e.stopPropagation()}>
-            <div className="sidebar-head">
-              <span className="sidebar-title">{t('nav.payPeriod')}</span>
-              <button
-                type="button"
-                className="sidebar-close"
-                onClick={() => setShowSidebar(false)}
-                aria-label={t('nav.closeMenu')}
-              >
-                ×
-              </button>
-            </div>
-            <div className="sidebar-scroll">
-              <PayPeriodPage
-                shifts={shifts}
-                payrolls={payrolls}
-                deductions={deductions}
-                payday={profile?.payday}
-                onMarkReceived={markReceived}
-                onUnmark={unmarkReceived}
-                onAddDeduction={addDeduction}
-                onDeleteDeduction={deleteDeduction}
-                hasNightShift={hasNightShift}
-              />
-            </div>
-            <div className="sidebar-footer">
-              <button type="button" onClick={() => openFromSidebar(setShowProfile)}>
-                {t('nav.account')}
-              </button>
-              <button type="button" onClick={() => openFromSidebar(setShowWelcome)}>
-                {t('nav.guide')}
-              </button>
-              <LangToggle up />
-            </div>
-          </aside>
-        </div>
-      )}
 
       <main className="main-col">
         {/* Khối chính: Nhập ca (trái 40%) + Thống kê (phải 60%); 1 cột trên mobile */}
@@ -356,6 +442,47 @@ export default function App() {
         />
       </main>
 
+      <NavBar items={navItems} active={activeNav} onSelect={onNavSelect} />
+
+      {showToolsSheet && (
+        <ToolsSheet tools={toolItems} onClose={() => setShowToolsSheet(false)} />
+      )}
+
+      {showPayPeriod && (
+        <div className="modal-overlay" onClick={() => setShowPayPeriod(false)}>
+          <div
+            className="modal-card wide"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-head">
+              <h2>{t('nav.payPeriod')}</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setShowPayPeriod(false)}
+                aria-label={t('common.close')}
+              >
+                ×
+              </button>
+            </div>
+            <PayPeriodPage
+              shifts={shifts}
+              payrolls={payrolls}
+              deductions={deductions}
+              extraIncome={extraIncome}
+              payday={profile?.payday}
+              onMarkReceived={markReceived}
+              onUnmark={unmarkReceived}
+              onAddDeduction={addDeduction}
+              onDeleteDeduction={deleteDeduction}
+              hasNightShift={hasNightShift}
+            />
+          </div>
+        </div>
+      )}
+
       {showDeductions && (
         <CompensationModal
           periodKey={currentKey}
@@ -367,9 +494,81 @@ export default function App() {
         />
       )}
 
-      {showChat && (
-        <SalaryChat snapshot={chatSnapshot} onClose={() => setShowChat(false)} />
+      {showExtraIncome && (
+        <ExtraIncomeModal
+          periodKey={currentKey}
+          shiftPay={monthStats.pay}
+          extraIncome={extraIncome}
+          onAdd={addExtraIncome}
+          onUpdate={updateExtraIncome}
+          onDelete={deleteExtraIncome}
+          onSetReceived={setReceived}
+          onSetReceivedMany={setReceivedMany}
+          onClose={() => setShowExtraIncome(false)}
+        />
       )}
+
+      {/* Nút NỔI kéo-thả mở trợ lý lương; ẩn khi khung chat đang mở. Vị trí lưu
+          theo TÀI KHOẢN (profiles.chat_fab_pos) để đồng bộ nhiều thiết bị. */}
+      {!showChat && (
+        <FloatingChatButton
+          onOpen={() => setShowChat(true)}
+          initialPos={profile?.chat_fab_pos || null}
+          onPersist={(p) => saveProfileFields({ chat_fab_pos: p })}
+          label={t('chat.title')}
+          greetMessage={
+            chatFirstName
+              ? t('chat.greetBubbleName', { name: chatFirstName })
+              : t('chat.greetBubble')
+          }
+          greetCloseLabel={t('common.close')}
+        />
+      )}
+
+      {/* Luôn mount để GIỮ tin nhắn khi đóng/mở; chỉ reset khi reload trang. */}
+      <SalaryChat
+        open={showChat}
+        snapshot={chatSnapshot}
+        shifts={shifts}
+        deductions={deductions}
+        extraIncome={extraIncome}
+        employeeCode={employeeCode}
+        fullName={fullName}
+        phone={profile?.phone || ''}
+        onImportSchedule={importWeekShifts}
+        onAddDeduction={addDeduction}
+        onAddExtraIncome={addExtraIncome}
+        onAddShift={addShift}
+        onOpenImport={() => {
+          setShowChat(false)
+          setShowImport(true)
+        }}
+        onOpenReconcile={() => {
+          setShowChat(false)
+          setShowReconcile(true)
+        }}
+        onOpenDeductions={() => {
+          setShowChat(false)
+          setShowDeductions(true)
+        }}
+        onOpenExtraIncome={() => {
+          setShowChat(false)
+          setShowExtraIncome(true)
+        }}
+        onOpenPayPeriod={() => {
+          setShowChat(false)
+          setShowPayPeriod(true)
+        }}
+        onOpenProfile={() => {
+          setShowChat(false)
+          setShowProfile(true)
+        }}
+        onOpenGuide={() => {
+          setShowChat(false)
+          setShowWelcome(true)
+        }}
+        onClose={() => setShowChat(false)}
+      />
 
       {showImport && (
         <ScheduleImportModal
@@ -399,6 +598,8 @@ export default function App() {
           error={profileError}
           payday={profile?.payday}
           employeeCode={employeeCode}
+          fontScale={fontScale}
+          onChangeFontScale={changeFontScale}
           onSavePayday={savePayday}
           onSaveField={saveProfileFields}
           onClose={() => setShowProfile(false)}

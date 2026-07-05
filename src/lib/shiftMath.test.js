@@ -1,11 +1,18 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   computeShift,
   computeEffective,
   periodStats,
   durationHours,
 } from './shiftMath.js'
-import { DAY_RATE, NIGHT_RATE } from './rates.js'
+import {
+  DAY_RATE,
+  NIGHT_RATE,
+  DEFAULT_NIGHT_PCT,
+  setRates,
+  getHolidayDayRate,
+  getHolidayNightRate,
+} from './rates.js'
 
 describe('computeShift', () => {
   it('pure day shift 09:00–17:00', () => {
@@ -192,5 +199,103 @@ describe('periodStats', () => {
     expect(s.workDays).toBe(0)
     expect(s.avgHoursPerDay).toBe(0)
     expect(s.pay).toBe(0)
+  })
+})
+
+// Lương ngày lễ: phụ cấp lễ là BỘI SỐ trên đơn giá. Lễ ca ngày = lương ngày × 300%,
+// lễ ca đêm = lương ca đêm (đã gồm phụ cấp đêm) × 390% — theo cấu hình hồ sơ.
+describe('lương lễ (holiday pay)', () => {
+  const HOLIDAY_DAY_RATE = DAY_RATE * 3 // 25500 × 300% = 76500
+  const HOLIDAY_NIGHT_RATE = Math.round(NIGHT_RATE * 3.9) // 33150 × 390% = 129285
+
+  // Đặt phụ cấp lễ 300%/390% cho khối test này; trả lại mặc định sau mỗi test để
+  // không ảnh hưởng các test dựa trên đơn giá thường (holiday mặc định 100% = ×1).
+  beforeEach(() => {
+    setRates({
+      dayRate: DAY_RATE,
+      nightPct: DEFAULT_NIGHT_PCT,
+      holidayDayPct: 300,
+      holidayNightPct: 390,
+      hasNightShift: true,
+    })
+  })
+  afterEach(() => {
+    setRates({
+      dayRate: DAY_RATE,
+      nightPct: DEFAULT_NIGHT_PCT,
+      holidayDayPct: 100,
+      holidayNightPct: 100,
+      hasNightShift: true,
+    })
+  })
+
+  it('đơn giá lễ = đơn giá thường × bội số phụ cấp lễ', () => {
+    expect(getHolidayDayRate()).toBe(HOLIDAY_DAY_RATE) // 76500
+    expect(getHolidayNightRate()).toBe(HOLIDAY_NIGHT_RATE) // 129285
+  })
+
+  it('computeShift ca ngày lễ 09:00–17:00 dùng đơn giá lễ ngày', () => {
+    const r = computeShift('09:00', '17:00', true)
+    expect(r.dayHours).toBe(8)
+    expect(r.nightHours).toBe(0)
+    expect(r.pay).toBe(8 * HOLIDAY_DAY_RATE) // 612000
+  })
+
+  it('computeShift ca đêm lễ 22:00–06:00 dùng đơn giá lễ đêm', () => {
+    const r = computeShift('22:00', '06:00', true)
+    expect(r.nightHours).toBe(8)
+    expect(r.pay).toBe(8 * HOLIDAY_NIGHT_RATE) // 1034280
+  })
+
+  it('computeShift ca lễ hỗn hợp 16:00–02:00 tách ngày/đêm theo đơn giá lễ', () => {
+    const r = computeShift('16:00', '02:00', true)
+    expect(r.dayHours).toBe(6) // 16:00–22:00
+    expect(r.nightHours).toBe(4) // 22:00–02:00
+    expect(r.pay).toBe(6 * HOLIDAY_DAY_RATE + 4 * HOLIDAY_NIGHT_RATE) // 976140
+  })
+
+  it('isHoliday=false vẫn dùng đơn giá thường dù phụ cấp lễ đã cấu hình', () => {
+    const r = computeShift('09:00', '17:00', false)
+    expect(r.pay).toBe(8 * DAY_RATE) // 204000, không nhân bội số lễ
+  })
+
+  it('computeEffective ca lễ có lịch: lương VÀ giờ mất đều theo đơn giá lễ', () => {
+    // Lịch 08:00–16:00 (8h ngày), check-in trễ 09:00 → trả 7h, mất 1h — đều giá lễ.
+    const r = computeEffective('08:00', '16:00', '09:00', '16:00', true)
+    expect(r.decimalHours).toBe(7)
+    expect(r.pay).toBe(7 * HOLIDAY_DAY_RATE)
+    expect(r.lostPay).toBe(1 * HOLIDAY_DAY_RATE)
+  })
+
+  it('periodStats: ca có is_holiday tính tổng lương theo đơn giá lễ', () => {
+    const s = periodStats([
+      { work_date: '2025-05-01', start_time: '09:00', end_time: '17:00', is_holiday: true },
+    ])
+    expect(s.dayHours).toBe(8)
+    expect(s.pay).toBe(8 * HOLIDAY_DAY_RATE) // tổng lương dùng giá lễ
+  })
+})
+
+// Cửa sổ đêm theo từng người (nightStart/nightEnd). Mặc định 22:00–06:00; có thể
+// đổi qua hồ sơ và việc tách giờ ngày/đêm phải theo cửa sổ mới.
+describe('cửa sổ đêm tuỳ chỉnh (nightStart/nightEnd)', () => {
+  afterEach(() => {
+    // Trả lại cửa sổ mặc định 22:00–06:00 cho các test khác.
+    setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: '22:00', nightEnd: '06:00' })
+  })
+
+  it('cửa sổ 21:00–05:00: ca 20:00–06:00 → 1h ngày + 9h đêm', () => {
+    setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: '21:00', nightEnd: '05:00' })
+    const r = computeShift('20:00', '06:00')
+    expect(r.dayHours).toBe(2) // 20:00–21:00 và 05:00–06:00
+    expect(r.nightHours).toBe(8) // 21:00–05:00
+    expect(r.pay).toBe(2 * DAY_RATE + 8 * NIGHT_RATE)
+  })
+
+  it('cửa sổ trong ngày 00:00–06:00 (start < end): ca 22:00–06:00 → 2h ngày + 6h đêm', () => {
+    setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: '00:00', nightEnd: '06:00' })
+    const r = computeShift('22:00', '06:00')
+    expect(r.dayHours).toBe(2) // 22:00–00:00 không còn là đêm
+    expect(r.nightHours).toBe(6) // 00:00–06:00
   })
 })
