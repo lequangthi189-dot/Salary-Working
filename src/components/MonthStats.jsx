@@ -1,8 +1,47 @@
 import StatCard from './StatCard.jsx'
+import { Skeleton, SkeletonText } from './Skeleton.jsx'
 import { formatHours, formatMoney } from '../lib/shiftMath.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { getRate } from '../lib/currency.jsx'
 import './MonthStats.css'
+
+// Skeleton KHỚP HÌNH thẻ lương + các thẻ thống kê: ô lương lớn (tiêu đề + số),
+// hàng ô giờ, hàng ô số ca. Số ô đúng theo cửa hàng có/không ca đêm.
+function MonthStatsSkeleton({ hasNightShift = true }) {
+  const { t } = useI18n()
+  const hourCards = hasNightShift ? 4 : 3
+  const shiftCards = hasNightShift ? 2 : 1
+  return (
+    <section
+      className="stats-panel"
+      role="status"
+      aria-busy="true"
+      aria-label={t('common.loading')}
+    >
+      <div className="salary-hero salary-hero--skeleton">
+        <Skeleton className="sk-hero-label" width="8rem" height="0.8rem" />
+        <Skeleton className="sk-hero-value" width="11rem" height="2.2rem" />
+        <Skeleton className="sk-hero-sub" width="14rem" height="0.8rem" />
+      </div>
+      <div className={`stat-row stat-row--${hourCards}`}>
+        {Array.from({ length: hourCards }, (_, i) => (
+          <div key={i} className="info-card info-card--skeleton">
+            <SkeletonText width="70%" />
+            <SkeletonText width="50%" />
+          </div>
+        ))}
+      </div>
+      <div className={`stat-row stat-row--${shiftCards}`}>
+        {Array.from({ length: shiftCards }, (_, i) => (
+          <div key={i} className="info-card info-card--skeleton">
+            <SkeletonText width="60%" />
+            <SkeletonText width="40%" />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 // KHỐI THỐNG KÊ & LƯƠNG. Presentational — nhận `stats` (đã tính ở App) qua props.
 // Bố cục: ô lương lớn (trên) + hàng 3 ô + hàng 2 ô. Toàn bộ bọc trong .stats-panel.
@@ -12,8 +51,12 @@ export default function MonthStats({
   deductionTotal = 0,
   fxUpdatedAt,
   hasNightShift = true,
+  loading = false,
 }) {
   const { t, lang } = useI18n()
+  // Đang tải lần đầu → skeleton đúng hình; xong → dữ liệu thật (lỗi tải được App
+  // hiện ở dòng thông báo riêng, và loading về false nên không kẹt skeleton).
+  if (loading) return <MonthStatsSkeleton hasNightShift={hasNightShift} />
   // Dòng tỉ giá chỉ hiện khi đang quy đổi sang ngoại tệ (en/us/au).
   const FX = {
     en: { locale: 'en-GB', cur: 'GBP', sym: '£' },
