@@ -24,6 +24,7 @@ export default function ScheduleImportModal({
   phone = '',
   onImport,
   onClose,
+  onSuccess,
 }) {
   const { t } = useI18n()
   const [file, setFile] = useState(null)
@@ -189,13 +190,14 @@ export default function ScheduleImportModal({
       setError(t('import.errSome', { errs: errors.join('\n') }))
       return
     }
-    // BÁO TÓM TẮT (đừng im lặng): tạo bao nhiêu ca mới, bỏ qua bao nhiêu ca đã có.
-    // Cả tuần đã có hết (không ca nào mới) → báo rõ là KHÔNG phải lỗi.
-    if (created === 0) {
-      setInfo(t('import.allExist'))
-    } else {
-      setInfo(t('import.importSummary', { created, skipped }))
-    }
+    // Tạo ca xong (không lỗi) → tự đóng modal, và gửi tóm tắt cho parent hiện flash
+    // (tạo mấy ca mới / bỏ qua mấy ca đã có). onSuccess thiếu → chỉ đóng.
+    const summary =
+      created === 0
+        ? t('import.allExist')
+        : t('import.importSummary', { created, skipped })
+    if (onSuccess) onSuccess(summary)
+    else onClose()
   }
 
   return (
