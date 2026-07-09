@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ShiftCard from './ShiftCard.jsx'
+import { Skeleton, SkeletonText } from './Skeleton.jsx'
 import {
   formatHours,
   formatMoney,
@@ -31,14 +32,53 @@ function shiftKind(s) {
   return night > 0 ? 'night' : 'day'
 }
 
+// Skeleton bảng công: vài thẻ ngày, mỗi thẻ có dòng tiêu đề (ngày + giờ + tiền)
+// và 1-2 thẻ ca giả — đủ gợi ý danh sách đang tải, khớp hình .date-group/.shift-card.
+function TimesheetSkeleton() {
+  const { t: tr } = useI18n()
+  const groups = [2, 1, 2] // số thẻ ca giả trong mỗi ngày
+  return (
+    <div
+      className="timesheet"
+      role="status"
+      aria-busy="true"
+      aria-label={tr('common.loading')}
+    >
+      {groups.map((rows, gi) => (
+        <section key={gi} className="date-group">
+          <header className="date-header">
+            <Skeleton className="date-label" width="7rem" height="0.9rem" />
+            <Skeleton className="muted" width="9rem" height="0.8rem" />
+            <Skeleton className="pay" width="5rem" height="0.9rem" />
+          </header>
+          <div className="shift-list">
+            {Array.from({ length: rows }, (_, i) => (
+              <div key={i} className="shift-card shift-card--skeleton">
+                <SkeletonText width="80%" />
+                <SkeletonText width="70%" />
+                <Skeleton width="4rem" height="1rem" />
+                <Skeleton width="2rem" height="1rem" />
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+}
+
 export default function Timesheet({
   shifts,
   onDelete,
   onUpdate,
   hasNightShift = true,
+  loading = false,
 }) {
   const { t: tr } = useI18n()
   const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
+
+  // Đang tải lần đầu → skeleton; xong mà rỗng → "chưa có ca"; lỗi được App hiện riêng.
+  if (loading) return <TimesheetSkeleton />
 
   if (shifts.length === 0) {
     return <p className="empty">{tr('timesheet.empty')}</p>

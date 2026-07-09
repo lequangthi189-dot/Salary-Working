@@ -106,6 +106,15 @@
   overflow-wrap: anywhere;
 }
 
+/* ---- Skeleton lúc chờ tải: dùng lại khung thẻ, viền trung tính (bỏ xanh lá) ---- */
+.stats-panel .salary-hero--skeleton {
+  border-color: var(--border, #2d333b);
+  gap: 0.5rem;
+}
+.stats-panel .info-card--skeleton {
+  gap: 0.5rem;
+}
+
 /* Màu nhãn theo tone */
 .stats-panel .tone-orange {
   color: #f0883e;

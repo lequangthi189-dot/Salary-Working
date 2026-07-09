@@ -1,10 +1,40 @@
 import { useState } from 'react'
 import ChangePasswordModal from './ChangePasswordModal.jsx'
+import { Skeleton, SkeletonText, SkeletonCircle } from './Skeleton.jsx'
 import AvatarUpload from './AvatarUpload.jsx'
 import TimeInput from './TimeInput.jsx'
 import { formatMoney } from '../lib/shiftMath.js'
 import { listAccounts, removeAccount } from '../lib/accounts.js'
 import { useI18n } from '../lib/i18n.jsx'
+
+// Skeleton trang Tài khoản: avatar tròn + tên, rồi các dòng thông tin (nhãn + giá trị).
+function ProfileSkeleton() {
+  const { t } = useI18n()
+  return (
+    <div
+      className="profile-skeleton"
+      role="status"
+      aria-busy="true"
+      aria-label={t('common.loading')}
+    >
+      <div className="profile-skeleton__head">
+        <SkeletonCircle size={64} />
+        <div className="profile-skeleton__id">
+          <SkeletonText width="9rem" />
+          <SkeletonText width="6rem" />
+        </div>
+      </div>
+      <div className="profile-skeleton__list">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="profile-skeleton__row">
+            <Skeleton width="4.5rem" height="0.85rem" />
+            <SkeletonText width={i % 2 ? '55%' : '75%'} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 // Một dòng thông tin có thể chỉnh tại chỗ (Chỉnh → input → Lưu/Hủy).
 function EditableRow({ label, display, initial, type = 'text', onSave }) {
@@ -317,6 +347,8 @@ function AppearanceSection({ fontScale, onChangeFontScale }) {
 export default function ProfileModal({
   user,
   profile,
+  loading = false,
+  error,
   payday,
   onSavePayday,
   onSaveField,
@@ -350,6 +382,33 @@ export default function ProfileModal({
 
   const [showChangePw, setShowChangePw] = useState(false)
   const [showJobInfo, setShowJobInfo] = useState(false)
+
+  // Đang tải hồ sơ lần đầu → skeleton; lỗi tải → thông báo (không kẹt skeleton).
+  if (loading || error) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div
+          className="modal-card"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal-head">
+            <h2>{t('profile.title')}</h2>
+            <button
+              type="button"
+              className="modal-close"
+              onClick={onClose}
+              aria-label={t('common.close')}
+            >
+              ×
+            </button>
+          </div>
+          {loading ? <ProfileSkeleton /> : <p className="msg error">{error}</p>}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>

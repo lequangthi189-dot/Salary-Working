@@ -126,6 +126,7 @@ export default function App() {
   // Controllers (custom hooks): mỗi hook giữ state + thao tác của một loại dữ liệu.
   const {
     shifts,
+    loading: shiftsLoading,
     loadError,
     setLoadError,
     addShift,
@@ -133,11 +134,18 @@ export default function App() {
     deleteShift,
     importWeekShifts,
   } = useShifts(session)
-  const { payrolls, markReceived, unmarkReceived } = usePayrolls(session, setLoadError)
-  const { deductions, addDeduction, deleteDeduction } = useDeductions(
-    session,
-    setLoadError
-  )
+  const {
+    payrolls,
+    loading: payrollsLoading,
+    markReceived,
+    unmarkReceived,
+  } = usePayrolls(session, setLoadError)
+  const {
+    deductions,
+    loading: deductionsLoading,
+    addDeduction,
+    deleteDeduction,
+  } = useDeductions(session, setLoadError)
   const {
     extraIncome,
     addExtraIncome,
@@ -148,6 +156,8 @@ export default function App() {
   } = useExtraIncome(session, setLoadError)
   const {
     profile,
+    loading: profileLoading,
+    profileError,
     profileComplete,
     savePayday,
     saveEmployeeInfo,
@@ -325,6 +335,12 @@ export default function App() {
   const salaryDue = isSalaryDue(pendingKey, profile?.payday, paymentWindow)
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt
 
+  // Skeleton chỉ hiện ở lần tải ĐẦU. Gộp các nguồn ảnh hưởng từng khu để tránh
+  // hiện số tạm rồi nhảy: thẻ lương/thống kê chờ cả ca + hồ sơ (đơn giá) + khoản trừ;
+  // danh sách ca chờ ca + kỳ lương (lọc ca đã ẩn theo kỳ đã nhận).
+  const statsLoading = shiftsLoading || profileLoading || deductionsLoading
+  const timesheetLoading = shiftsLoading || payrollsLoading
+
   const fullName =
     profile?.full_name ||
     [profile?.last_name, profile?.first_name].filter(Boolean).join(' ') ||
@@ -422,6 +438,7 @@ export default function App() {
             deductionTotal={currentDeductionTotal}
             fxUpdatedAt={fxUpdatedAt}
             hasNightShift={hasNightShift}
+            loading={statsLoading}
           />
         </div>
         {flash && <p className="msg info">{flash}</p>}
@@ -431,6 +448,7 @@ export default function App() {
           onDelete={deleteShift}
           onUpdate={updateShift}
           hasNightShift={hasNightShift}
+          loading={timesheetLoading}
         />
       </main>
 
@@ -590,6 +608,8 @@ export default function App() {
         <ProfileModal
           user={session.user}
           profile={profile}
+          loading={profileLoading}
+          error={profileError}
           payday={profile?.payday}
           employeeCode={employeeCode}
           fontScale={fontScale}

@@ -1,18 +1,31 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import * as payrollsModel from '../models/payrollsModel.js'
 
 // CONTROLLER: state + thao tác cho kỳ lương đã nhận (payrolls).
 export function usePayrolls(session, onError) {
   const [payrolls, setPayrolls] = useState([])
+  // Xem chú thích `loading` ở useShifts: chỉ true tới khi tải đầu tiên xong.
+  const [loading, setLoading] = useState(true)
+  const loadedFor = useRef(null)
 
   const reload = useCallback(async () => {
     const { data } = await payrollsModel.fetchPayrolls()
     setPayrolls(data ?? [])
+    setLoading(false)
   }, [])
 
   useEffect(() => {
-    if (session) reload()
-    else setPayrolls([])
+    if (!session) {
+      setPayrolls([])
+      loadedFor.current = null
+      setLoading(false)
+      return
+    }
+    if (loadedFor.current !== session.user.id) {
+      loadedFor.current = session.user.id
+      setLoading(true)
+    }
+    reload()
   }, [session, reload])
 
   async function markReceived(periodKey, receivedOn) {
@@ -31,5 +44,5 @@ export function usePayrolls(session, onError) {
     await reload()
   }
 
-  return { payrolls, markReceived, unmarkReceived }
+  return { payrolls, loading, reload, markReceived, unmarkReceived }
 }

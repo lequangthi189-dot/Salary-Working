@@ -23,6 +23,9 @@
   --border: #1a2d40;
   --checkin: #ff9f43;
   --checkout: #5b9ec6;
+  /* Skeleton: khối xám sáng hơn nền navy một bậc để thấy rõ, sheen trắng dịu. */
+  --skeleton-base: #1b3145;
+  --skeleton-sheen: rgba(255, 255, 255, 0.06);
 }
 
 /* Phẳng tối giản: thẻ thống kê & ô lương dùng nền/viền mảnh theo palette (bỏ màu
@@ -122,6 +125,9 @@
   --checkin: #ffc36b;
   --checkout: #8fd0ff;
   --surface-blur: blur(18px) saturate(150%);
+  /* Skeleton kính: khối trắng BÁN TRONG SUỐT cho hợp nền gradient, sheen sáng hơn. */
+  --skeleton-base: rgba(255, 255, 255, 0.16);
+  --skeleton-sheen: rgba(255, 255, 255, 0.4);
 }
 
 /* Nền: các "đốm" màu blur mềm trên nền xanh đậm → trong trẻo, nhiều màu, airy.
@@ -518,6 +524,9 @@
   --nm-shadow-raised: 8px 8px 18px #b6bdc8, -8px -8px 18px #ffffff;
   /* Gradient bề mặt lồi (convex): sáng trên, tối nhẹ dưới. */
   --nm-convex: linear-gradient(145deg, #f0f4fa, #cdd3dd);
+  /* Skeleton nền sáng: khối xám-xanh dịu (tối hơn nền một bậc) + sheen trắng. */
+  --skeleton-base: #cfd6e0;
+  --skeleton-sheen: rgba(255, 255, 255, 0.7);
 }
 
 [data-theme='neumorph']

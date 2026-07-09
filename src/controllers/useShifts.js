@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import * as shiftsModel from '../models/shiftsModel.js'
 import {
   periodClosedError,
@@ -11,6 +11,10 @@ import {
 export function useShifts(session) {
   const [shifts, setShifts] = useState([])
   const [loadError, setLoadError] = useState(null)
+  // `loading` = true chỉ tới khi lần tải ĐẦU TIÊN xong (dùng để hiện skeleton).
+  // Các lần reload sau (thêm/sửa ca) chạy nền, không bật lại skeleton.
+  const [loading, setLoading] = useState(true)
+  const loadedFor = useRef(null)
 
   const reload = useCallback(async () => {
     const { data, error } = await shiftsModel.fetchShifts()
@@ -19,11 +23,23 @@ export function useShifts(session) {
       setLoadError(null)
       setShifts(data ?? [])
     }
+    setLoading(false) // xong (kể cả lỗi) → thoát skeleton
   }, [])
 
   useEffect(() => {
-    if (session) reload()
-    else setShifts([])
+    if (!session) {
+      setShifts([])
+      loadedFor.current = null
+      setLoading(false)
+      return
+    }
+    // Chỉ bật skeleton khi ĐỔI người dùng (đăng nhập/chuyển tài khoản), không phải
+    // mỗi lần session đổi tham chiếu (vd token tự làm mới) → tránh chớp vô nghĩa.
+    if (loadedFor.current !== session.user.id) {
+      loadedFor.current = session.user.id
+      setLoading(true)
+    }
+    reload()
   }, [session, reload])
 
   async function addShift(shift) {
@@ -107,6 +123,7 @@ export function useShifts(session) {
 
   return {
     shifts,
+    loading,
     loadError,
     setLoadError,
     addShift,
