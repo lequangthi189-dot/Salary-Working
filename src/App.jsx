@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from './auth/AuthProvider.jsx'
 import LoginForm from './auth/LoginForm.jsx'
 import ResetPasswordForm from './auth/ResetPasswordForm.jsx'
@@ -67,6 +67,15 @@ export default function App() {
   const [addingAccount, setAddingAccount] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  // Thông báo thành công TẠM THỜI (vd tạo ca cả tuần) — tự ẩn sau vài giây.
+  const [flash, setFlash] = useState(null)
+  const flashTimer = useRef(null)
+  function showFlash(msg) {
+    if (flashTimer.current) clearTimeout(flashTimer.current)
+    setFlash(msg)
+    flashTimer.current = setTimeout(() => setFlash(null), 5000)
+  }
+  useEffect(() => () => clearTimeout(flashTimer.current), [])
   const [showReconcile, setShowReconcile] = useState(false)
   const [showDeductions, setShowDeductions] = useState(false)
   const [showExtraIncome, setShowExtraIncome] = useState(false)
@@ -415,6 +424,7 @@ export default function App() {
             hasNightShift={hasNightShift}
           />
         </div>
+        {flash && <p className="msg info">{flash}</p>}
         {loadError && <p className="msg error">{loadError}</p>}
         <Timesheet
           shifts={visibleShifts}
@@ -559,6 +569,10 @@ export default function App() {
           phone={profile?.phone || ''}
           onImport={importWeekShifts}
           onClose={() => setShowImport(false)}
+          onSuccess={(msg) => {
+            setShowImport(false)
+            showFlash(msg)
+          }}
         />
       )}
 
