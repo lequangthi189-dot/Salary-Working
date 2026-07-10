@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import ShiftCard from './ShiftCard.jsx'
 import { Skeleton, SkeletonText } from './Skeleton.jsx'
 import {
@@ -77,23 +77,42 @@ export default function Timesheet({
   const { t: tr } = useI18n()
   const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
 
+  // Nhóm theo ngày, memoize theo [shifts, filter] để không lọc/nhóm lại khi render
+  // vì lý do khác. Là hook nên phải đứng TRƯỚC các return sớm bên dưới.
+  const groups = useMemo(() => {
+    // Ngày đã có chấm công thật (có check-in). Với những ngày đó, ẩn thẻ ca chỉ-là-
+    // lịch-dự-kiến (có Sched nhưng chưa check-in) — đã chấm công thì không cần hiện nữa.
+    const actualDates = new Set(
+      shifts.filter((s) => s.start_time).map((s) => s.work_date)
+    )
+    const visibleShifts = shifts
+      .filter(
+        (s) =>
+          !(s.scheduled_start && !s.start_time && actualDates.has(s.work_date))
+      )
+      .filter((s) => filter === 'all' || shiftKind(s) === filter)
+
+    // Group by work_date, preserving the incoming (date-desc) order.
+    const groups = []
+    const byDate = new Map()
+    for (const s of visibleShifts) {
+      if (!byDate.has(s.work_date)) {
+        const g = { date: s.work_date, items: [] }
+        byDate.set(s.work_date, g)
+        groups.push(g)
+      }
+      byDate.get(s.work_date).items.push(s)
+    }
+    return groups
+    // hasNightShift trong deps vì shiftKind phân loại theo cửa sổ đêm (foldNight).
+  }, [shifts, filter, hasNightShift])
+
   // Đang tải lần đầu → skeleton; xong mà rỗng → "chưa có ca"; lỗi được App hiện riêng.
   if (loading) return <TimesheetSkeleton />
 
   if (shifts.length === 0) {
     return <p className="empty">{tr('timesheet.empty')}</p>
   }
-
-  // Ngày đã có chấm công thật (có check-in). Với những ngày đó, ẩn thẻ ca chỉ-là-
-  // lịch-dự-kiến (có Sched nhưng chưa check-in) — đã chấm công thì không cần hiện nữa.
-  const actualDates = new Set(
-    shifts.filter((s) => s.start_time).map((s) => s.work_date)
-  )
-  const visibleShifts = shifts
-    .filter(
-      (s) => !(s.scheduled_start && !s.start_time && actualDates.has(s.work_date))
-    )
-    .filter((s) => filter === 'all' || shiftKind(s) === filter)
 
   const filterBar = (
     <div className="shift-filter">
@@ -109,18 +128,6 @@ export default function Timesheet({
       ))}
     </div>
   )
-
-  // Group by work_date, preserving the incoming (date-desc) order.
-  const groups = []
-  const byDate = new Map()
-  for (const s of visibleShifts) {
-    if (!byDate.has(s.work_date)) {
-      const g = { date: s.work_date, items: [] }
-      byDate.set(s.work_date, g)
-      groups.push(g)
-    }
-    byDate.get(s.work_date).items.push(s)
-  }
 
   return (
     <div className="timesheet">

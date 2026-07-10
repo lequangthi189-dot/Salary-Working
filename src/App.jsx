@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth } from './auth/AuthProvider.jsx'
 import LoginForm from './auth/LoginForm.jsx'
 import ResetPasswordForm from './auth/ResetPasswordForm.jsx'
@@ -224,6 +224,89 @@ export default function App() {
     setReminderDismissed(true)
   }
 
+  // ---- Dữ liệu suy ra ĐẮT: memoize để không tính lại mỗi render. Là hooks nên
+  // phải đặt TRƯỚC các return sớm bên dưới (rule of hooks). ----
+  const currentKey = payPeriodKeyOf(localTodayStr())
+  // `profile` trong deps vì đơn giá (rates.js) nạp từ hồ sơ qua setRates().
+  const monthStats = useMemo(
+    () =>
+      periodStats(
+        shifts.filter((s) => payPeriodKeyOf(s.work_date) === currentKey)
+      ),
+    [shifts, currentKey, profile]
+  )
+  const allStats = useMemo(() => periodStats(shifts), [shifts, profile])
+  const schedByDate = useMemo(() => buildSchedByDate(shifts), [shifts])
+  const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
+  const currentDeductionTotal = sumDeductions(currentDeductions)
+  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
+  const hasNightShift = profile?.has_night_shift !== false
+  // Thu nhập việc ngoài ĐÃ NHẬN tính vào kỳ hiện tại (theo received_at = ngày bấm
+  // nhận). Khoản chưa nhận (treo) KHÔNG cộng vào tổng.
+  const currentExtraIncome = sumReceivedExtraIncome(
+    extraIncome.filter(
+      (x) => x.received && payPeriodKeyOf(x.received_at) === currentKey
+    )
+  )
+  // Số liệu cho Trợ lý lương: lương kỳ này + ĐƠN GIÁ 1 GIỜ ngày/đêm (để tính số GIỜ
+  // cần làm theo lương 1 giờ) + TB mỗi ca (cho câu hỏi chung). Memoize để prop vào
+  // SalaryChat (luôn mounted) ổn định giữa các render.
+  const chatSnapshot = useMemo(() => {
+    const allShiftCount = allStats.dayShiftCount + allStats.nightShiftCount
+    // Đổi phút-trong-ngày → "HH:MM" để mô tả cửa sổ đêm cho AI.
+    const minToHHMM = (m) =>
+      `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+    return {
+      // --- Giữ NGUYÊN các trường cũ (parseProjection / buildEstimate dùng) ---
+      currentPay: monthStats.pay - currentDeductionTotal,
+      dayRate: getDayRate(),
+      nightRate: getNightRate(),
+      hasNightShift,
+      avgPerShift: allShiftCount ? allStats.pay / allShiftCount : 0,
+      avgHoursPerShift: allShiftCount ? allStats.hours / allShiftCount : 0,
+      shiftCount: allShiftCount,
+      // --- KHỐI DỮ LIỆU GIÀU cho Edge Function trả lời sự thật (đã tính sẵn ở App) ---
+      // Số liệu kỳ ĐANG XEM (currentKey). Mọi con số là kết quả periodStats — KHÔNG
+      // để AI tính lại.
+      period: {
+        label: payPeriodLabel(currentKey),
+        grossPay: Math.round(monthStats.pay), // lương ca (trước khoản trừ)
+        idealPay: Math.round(monthStats.idealPay), // lương dự kiến nếu đi đúng giờ
+        lostPay: Math.round(monthStats.lostPay), // tiền PHẠT do đi trễ/về sớm
+        deductionTotal: Math.round(currentDeductionTotal), // bồi thường/khấu trừ
+        extraIncome: Math.round(currentExtraIncome), // việc ngoài đã nhận
+        netPay: Math.round(monthStats.pay - currentDeductionTotal), // thực nhận lương ca
+        totalIncome: Math.round(
+          monthStats.pay - currentDeductionTotal + currentExtraIncome
+        ),
+        totalHours: monthStats.hours,
+        dayHours: monthStats.dayHours,
+        nightHours: monthStats.nightHours,
+        lostHours: monthStats.lostHours, // giờ bị mất do trễ
+        dayShiftCount: monthStats.dayShiftCount,
+        nightShiftCount: monthStats.nightShiftCount,
+        workDays: monthStats.workDays,
+      },
+      // Cấu hình lương của người dùng (từ hồ sơ profiles).
+      config: {
+        holidayDayRate: getHolidayDayRate(),
+        holidayNightRate: getHolidayNightRate(),
+        nightStart: minToHHMM(getNightStartMin()),
+        nightEnd: minToHHMM(getNightEndMin()),
+        periodStartDay: profile?.period_start_day ?? 26,
+        periodEndDay: profile?.period_end_day ?? 25,
+      },
+    }
+  }, [
+    monthStats,
+    allStats,
+    currentDeductionTotal,
+    currentExtraIncome,
+    currentKey,
+    hasNightShift,
+    profile,
+  ])
+
   if (loading) return <Loader fullscreen label={t('common.loading')} />
   if (recovery)
     return (
@@ -263,75 +346,11 @@ export default function App() {
       </div>
     )
 
-  // ---- Dữ liệu suy ra cho View (ráp từ nhiều controller) ----
+  // ---- Dữ liệu suy ra cho View (ráp từ nhiều controller; phần đắt đã memoize ở trên) ----
   const pendingKey = pendingPeriodKey(shifts, payrolls)
   const visibleShifts = visibleBoardShifts(shifts, payrolls)
-  const currentKey = payPeriodKeyOf(localTodayStr())
   // Ngày sớm nhất được phép nhập công = đầu kỳ hiện tại (26 của tháng trước).
   const minWorkDate = payPeriodRange(currentKey).start
-  const monthStats = periodStats(
-    shifts.filter((s) => payPeriodKeyOf(s.work_date) === currentKey)
-  )
-  const currentDeductions = deductions.filter((d) => d.period_key === currentKey)
-  const currentDeductionTotal = sumDeductions(currentDeductions)
-  // Cửa hàng có ca đêm không (mặc định có nếu hồ sơ chưa đặt).
-  const hasNightShift = profile?.has_night_shift !== false
-  // Số liệu cho Trợ lý lương: lương kỳ này + ĐƠN GIÁ 1 GIỜ ngày/đêm (để tính số GIỜ
-  // cần làm theo lương 1 giờ) + TB mỗi ca (cho câu hỏi chung).
-  const allStats = periodStats(shifts)
-  const allShiftCount = allStats.dayShiftCount + allStats.nightShiftCount
-  // Thu nhập việc ngoài ĐÃ NHẬN tính vào kỳ hiện tại (theo received_at = ngày bấm
-  // nhận). Khoản chưa nhận (treo) KHÔNG cộng vào tổng.
-  const currentExtraIncome = sumReceivedExtraIncome(
-    extraIncome.filter(
-      (x) => x.received && payPeriodKeyOf(x.received_at) === currentKey
-    )
-  )
-  // Đổi phút-trong-ngày → "HH:MM" để mô tả cửa sổ đêm cho AI.
-  const minToHHMM = (m) =>
-    `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
-  const chatSnapshot = {
-    // --- Giữ NGUYÊN các trường cũ (parseProjection / buildEstimate dùng) ---
-    currentPay: monthStats.pay - currentDeductionTotal,
-    dayRate: getDayRate(),
-    nightRate: getNightRate(),
-    hasNightShift,
-    avgPerShift: allShiftCount ? allStats.pay / allShiftCount : 0,
-    avgHoursPerShift: allShiftCount ? allStats.hours / allShiftCount : 0,
-    shiftCount: allShiftCount,
-    // --- KHỐI DỮ LIỆU GIÀU cho Edge Function trả lời sự thật (đã tính sẵn ở App) ---
-    // Số liệu kỳ ĐANG XEM (currentKey). Mọi con số là kết quả periodStats — KHÔNG
-    // để AI tính lại.
-    period: {
-      label: payPeriodLabel(currentKey),
-      grossPay: Math.round(monthStats.pay), // lương ca (trước khoản trừ)
-      idealPay: Math.round(monthStats.idealPay), // lương dự kiến nếu đi đúng giờ
-      lostPay: Math.round(monthStats.lostPay), // tiền PHẠT do đi trễ/về sớm
-      deductionTotal: Math.round(currentDeductionTotal), // bồi thường/khấu trừ
-      extraIncome: Math.round(currentExtraIncome), // việc ngoài đã nhận
-      netPay: Math.round(monthStats.pay - currentDeductionTotal), // thực nhận lương ca
-      totalIncome: Math.round(
-        monthStats.pay - currentDeductionTotal + currentExtraIncome
-      ),
-      totalHours: monthStats.hours,
-      dayHours: monthStats.dayHours,
-      nightHours: monthStats.nightHours,
-      lostHours: monthStats.lostHours, // giờ bị mất do trễ
-      dayShiftCount: monthStats.dayShiftCount,
-      nightShiftCount: monthStats.nightShiftCount,
-      workDays: monthStats.workDays,
-    },
-    // Cấu hình lương của người dùng (từ hồ sơ profiles).
-    config: {
-      holidayDayRate: getHolidayDayRate(),
-      holidayNightRate: getHolidayNightRate(),
-      nightStart: minToHHMM(getNightStartMin()),
-      nightEnd: minToHHMM(getNightEndMin()),
-      periodStartDay: profile?.period_start_day ?? 26,
-      periodEndDay: profile?.period_end_day ?? 25,
-    },
-  }
-  const schedByDate = buildSchedByDate(shifts)
   const salaryDue = isSalaryDue(pendingKey, profile?.payday, paymentWindow)
   const showReminder = salaryDue && !reminderDismissed && !showPaydayPrompt
 
