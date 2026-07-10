@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useI18n } from '../lib/i18n.jsx'
 import {
   readImage,
@@ -170,14 +170,19 @@ export default function ScheduleImportModal({
     if (status === 'mismatch') return t('ocr.cellMismatch', { value })
     return undefined
   }
-  // Số Ô có ca (không nghỉ) mà AI–OCR LỆCH → hiện banner cảnh báo trên bảng.
-  const ocrWarnCount =
-    rows && ocr.tokens
-      ? rows.reduce(
-          (n, r) => n + (crosscheckRecord(r, ocr.tokens).overall === 'warn' ? 1 : 0),
-          0
-        )
-      : 0
+  // Số Ô có ca (không nghỉ) mà AI–OCR LỆCH → hiện banner cảnh báo trên bảng. Memo theo
+  // [rows, ocr.tokens]: chỉ tính lại khi user sửa dòng hoặc OCR vừa xong, không chạy
+  // regex đối chiếu ở mọi render (đồng hồ, hover…).
+  const ocrWarnCount = useMemo(
+    () =>
+      rows && ocr.tokens
+        ? rows.reduce(
+            (n, r) => n + (crosscheckRecord(r, ocr.tokens).overall === 'warn' ? 1 : 0),
+            0
+          )
+        : 0,
+    [rows, ocr.tokens]
+  )
 
   async function createShifts() {
     const picked = pickImportRows(rows)
