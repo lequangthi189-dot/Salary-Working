@@ -532,7 +532,13 @@ export default function SalaryChat({
     ;(async () => {
       const { data, error } = await fetchRecentMessages(MAX_HISTORY_LOAD)
       if (!alive || error || !data || data.length === 0) return
-      setMessages(data.map((m) => ({ role: m.role, text: m.content })))
+      // Fetch có thể về TRỄ sau khi user đã kịp nhắn → chỉ thay khi màn hình vẫn
+      // là đúng một tin mở đầu (greetingOnly), tránh đè mất tin vừa gõ.
+      setMessages((m) =>
+        m.length === 1 && m[0].greetingOnly
+          ? data.map((x) => ({ role: x.role, text: x.content }))
+          : m
+      )
     })()
     return () => {
       alive = false
@@ -1441,7 +1447,8 @@ export default function SalaryChat({
           history, // Mức 1: ngữ cảnh hội thoại (≤ N tin gần nhất)
         },
       })
-      if (error || data?.error) throw new Error(data?.error || error.message)
+      if (error || data?.error)
+        throw new Error(data?.error || error?.message || 'salary-chat failed')
 
       // AI phân loại ý định GHI NHẬN → xử lý ở client (validate + thẻ xác nhận).
       const act = data.action
@@ -1474,8 +1481,11 @@ export default function SalaryChat({
         text = `${text}\n\n${buildEstimate(target)}`.trim()
       }
       bot(text)
-    } catch {
-      setMessages((m) => [...m, { role: 'bot', text: t('chat.error') }])
+    } catch (e) {
+      // Server đã trả thông điệp thân thiện (tiếng Việt) → hiện kèm để user phân
+      // biệt lỗi quota/mạng/parse thay vì chỉ một câu lỗi chung.
+      const detail = e?.message && e.message !== 'salary-chat failed' ? `\n(${e.message})` : ''
+      setMessages((m) => [...m, { role: 'bot', text: t('chat.error') + detail }])
     } finally {
       setBusy(false)
     }

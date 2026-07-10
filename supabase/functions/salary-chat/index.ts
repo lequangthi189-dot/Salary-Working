@@ -87,6 +87,21 @@ QUY TẮC: "ca" KHÔNG có amount; "viec_ngoai" KHÔNG có giờ. Nếu intent="
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+
+  // Xác thực người dùng qua JWT (chỉ user đã đăng nhập mới gọi được). Gọi GoTrue
+  // REST /auth/v1/user thay vì SDK npm:@supabase/supabase-js để hàm là Deno THUẦN
+  // → deploy KHÔNG cần Docker bundling (giống extract-schedule).
+  const authHeader = req.headers.get('Authorization') || ''
+  const userResp = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/user`, {
+    headers: {
+      Authorization: authHeader,
+      apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+    },
+  })
+  const user = userResp.ok ? await userResp.json() : null
+  if (!user?.id) return json({ error: 'Unauthorized' }, 401)
+
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) return json({ error: 'Server chưa cấu hình GEMINI_API_KEY' }, 500)
 
@@ -204,7 +219,7 @@ Deno.serve(async (req: Request) => {
       responseMimeType: 'application/json',
       responseSchema: SCHEMA,
       temperature: 0.3,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 2048,
       thinkingConfig: { thinkingBudget: 0 },
     },
   })
@@ -243,12 +258,24 @@ Deno.serve(async (req: Request) => {
 
   try {
     const data = await resp.json()
+    const cand = data?.candidates?.[0]
     const text =
-      data?.candidates?.[0]?.content?.parts
+      cand?.content?.parts
         ?.map((p: { text?: string }) => p.text || '')
         .join('') || ''
-    const parsed = JSON.parse(text)
-    return json(parsed, 200)
+    try {
+      const parsed = JSON.parse(text)
+      return json(parsed, 200)
+    } catch {
+      // JSON bị cắt (thường do finishReason=MAX_TOKENS) → báo rõ + gợi ý thử lại.
+      if (cand?.finishReason === 'MAX_TOKENS') {
+        return json(
+          { error: 'Câu trả lời quá dài nên bị cắt. Hãy hỏi ngắn gọn hơn.' },
+          502
+        )
+      }
+      return json({ error: 'AI trả về không hợp lệ, thử lại.' }, 502)
+    }
   } catch {
     return json({ error: 'AI trả về không hợp lệ, thử lại.' }, 502)
   }
