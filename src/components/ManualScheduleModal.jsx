@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
 import TimeInput from './TimeInput.jsx'
+import ConfirmModal from './ConfirmModal.jsx'
 
 // Một dòng trống: ngày (mặc định hôm nay) + giờ lịch dự kiến vào/ra.
 function blankRow() {
@@ -10,12 +11,19 @@ function blankRow() {
 
 // Popup nhập LỊCH DỰ KIẾN bằng tay (không cần ảnh). Mở từ "Nhập tay" trong modal
 // Nhập lịch tuần. Bắt đầu với đúng 1 dòng; "+" để thêm dòng; "Tạo ca" để lưu.
-export default function ManualScheduleModal({ onImport, onClose, onDone }) {
+// Thành công → gọi onSuccess(tóm tắt) để parent đóng cả stack modal + hiện flash.
+export default function ManualScheduleModal({ onImport, onClose, onSuccess }) {
   const { t } = useI18n()
   const [rows, setRows] = useState([blankRow()])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
+  const [confirmState, setConfirmState] = useState(null) // { message, resolve }
+
+  // Hỏi xác nhận bằng popup cảnh báo riêng (thay window.confirm).
+  function askConfirm(message) {
+    return new Promise((resolve) => setConfirmState({ message, resolve }))
+  }
 
   function updateRow(i, patch) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
@@ -28,23 +36,62 @@ export default function ManualScheduleModal({ onImport, onClose, onDone }) {
   }
 
   async function create() {
-    const picked = rows.filter((r) => r.date && r.start && r.end)
-    if (picked.length === 0) return setError(t('import.errNoShift'))
-    setSaving(true)
     setError(null)
     setInfo(null)
+    // Dòng trống hoàn toàn (chưa đụng tới) thì bỏ qua; dòng ĐIỀN DỞ (thiếu 1-2
+    // trường) thì BÁO RÕ số dòng thay vì âm thầm bỏ — tránh mất ca mà không biết.
+    const filled = (r) => r.date && r.start && r.end
+    const empty = (r) => !r.start && !r.end
+    const incomplete = rows
+      .map((r, i) => (!filled(r) && !empty(r) ? i + 1 : null))
+      .filter((x) => x !== null)
+    if (incomplete.length)
+      return setError(
+        t('import.errRowIncomplete', { rows: incomplete.join(', ') })
+      )
+    const picked = rows.filter(filled)
+    if (picked.length === 0) return setError(t('import.errNoShift'))
+    // Giờ vào = giờ ra nghĩa là ca 24h (quy ước qua nửa đêm) → hỏi xác nhận.
+    // KHÔNG chặn end < start: ca qua đêm là hợp lệ.
+    const equalRows = rows
+      .map((r, i) => (filled(r) && r.start === r.end ? i + 1 : null))
+      .filter((x) => x !== null)
+    if (equalRows.length) {
+      const ok = await askConfirm(
+        t('import.warnEqualTimes', { rows: equalRows.join(', ') })
+      )
+      if (!ok) return
+    }
+    // Ngày trùng trong chính lượt nhập → cảnh báo (dễ là gõ nhầm).
+    const dupDates = [
+      ...new Set(
+        picked
+          .map((r) => r.date)
+          .filter((d, i, arr) => arr.indexOf(d) !== i)
+      ),
+    ]
+    if (dupDates.length) {
+      const ok = await askConfirm(
+        t('import.warnDupDates', { dates: dupDates.join(', ') })
+      )
+      if (!ok) return
+    }
+    setSaving(true)
     const { created, skipped, errors } = await onImport(picked)
     setSaving(false)
     if (errors && errors.length) {
       setError(t('import.errSome', { errs: errors.join('\n') }))
       return
     }
-    // Báo tóm tắt: tạo bao nhiêu ca mới, bỏ qua bao nhiêu ca đã có (chống trùng).
-    setInfo(
+    // Tóm tắt: tạo bao nhiêu ca mới, bỏ qua bao nhiêu ca đã có (chống trùng).
+    const summary =
       created === 0
         ? t('import.allExist')
         : t('import.importSummary', { created, skipped })
-    )
+    // Thành công → đóng cả stack modal + flash ở trang chính (giống luồng AI);
+    // thiếu onSuccess → giữ thông báo tại chỗ như cũ.
+    if (onSuccess) onSuccess(summary)
+    else setInfo(summary)
   }
 
   return (
@@ -134,6 +181,16 @@ export default function ManualScheduleModal({ onImport, onClose, onDone }) {
           </button>
         </div>
       </div>
+
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onResult={(ok) => {
+            confirmState.resolve(ok)
+            setConfirmState(null)
+          }}
+        />
+      )}
     </div>
   )
 }
