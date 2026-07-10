@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   localTodayStr,
   payPeriodKeyOf,
@@ -92,13 +92,14 @@ export default function ReconcileModal({
     await Promise.all(
       items.map(async ({ id, dataUrl }) => {
         const t0 = Date.now()
-        console.log('[reconcile] OCR start', { id })
+        if (import.meta.env.DEV) console.log('[reconcile] OCR start', { id })
         const tokens = await ocrTokens(dataUrl) // đã có timeout nội bộ → luôn kết thúc
         const ms = Date.now() - t0
         if (!tokens) {
           failed = true
-          console.log('[reconcile] OCR skip (timeout/lỗi/rỗng)', { id, ms })
-        } else {
+          if (import.meta.env.DEV)
+            console.log('[reconcile] OCR skip (timeout/lỗi/rỗng)', { id, ms })
+        } else if (import.meta.env.DEV) {
           console.log('[reconcile] OCR done', {
             id,
             ms,
@@ -209,6 +210,13 @@ export default function ReconcileModal({
     )
   }
 
+  // Thu hồi các blob URL cũ khi đổi bộ ảnh / đóng modal — tránh rò object URL
+  // (giữ ảnh trong bộ nhớ tới khi reload trang) mỗi lần chọn ảnh mới.
+  useEffect(() => {
+    if (!previewUrls.length) return
+    return () => previewUrls.forEach((u) => URL.revokeObjectURL(u))
+  }, [previewUrls])
+
   function pickFile(e) {
     const list = Array.from(e.target.files || [])
     if (!list.length) return
@@ -236,7 +244,9 @@ export default function ReconcileModal({
     })
     // [DEBUG ảnh 1] Object THÔ AI trả về cho ảnh này — soi xem AI đọc ra số giờ
     // (entries/days có raw/start/end) hay trả rỗng, doc_type/found ra sao.
-    console.log('[reconcile] raw AI object', JSON.parse(JSON.stringify(data)))
+    // CHỈ ở dev — không log dữ liệu bảng công của người dùng ra console production.
+    if (import.meta.env.DEV)
+      console.log('[reconcile] raw AI object', JSON.parse(JSON.stringify(data)))
     return data
   }
 

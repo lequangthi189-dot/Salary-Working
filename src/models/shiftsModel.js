@@ -14,6 +14,14 @@ export function insertShift(shift, userId) {
   return supabase.from('shifts').insert({ ...shift, user_id: userId })
 }
 
+// Chèn NHIỀU ca trong MỘT request (nhập lịch tuần) thay vì lặp từng dòng.
+export function insertShifts(shiftList, userId) {
+  return supabase
+    .from('shifts')
+    .insert(shiftList.map((s) => ({ ...s, user_id: userId })))
+    .select()
+}
+
 export function updateShift(id, fields) {
   return supabase.from('shifts').update(fields).eq('id', id)
 }

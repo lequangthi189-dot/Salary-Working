@@ -360,6 +360,12 @@ export const translations = {
     "import.infoRead":
       'Read schedule for code "{code}". Review/edit then press Create.',
     "import.errNoShift": "No shift to create.",
+    "import.errRowIncomplete":
+      "Row {rows} is missing the date or a time — fill it in or delete the row.",
+    "import.warnEqualTimes":
+      "Row {rows}: start equals end, so the shift counts as 24 hours. Continue?",
+    "import.warnDupDates":
+      "Duplicate dates in the list: {dates}. Continue?",
     "import.errSome": "Some shifts could not be created:\n{errs}",
     "import.importSummary":
       "Created {created} new shift(s), skipped {skipped} already existing.",
@@ -929,6 +935,11 @@ export const translations = {
     "import.infoRead":
       'Đã đọc lịch cho mã "{code}". Kiểm tra/sửa rồi bấm Tạo ca.',
     "import.errNoShift": "Không có ca nào để tạo.",
+    "import.errRowIncomplete":
+      "Dòng {rows} còn thiếu ngày hoặc giờ — hãy điền đủ hoặc xoá dòng.",
+    "import.warnEqualTimes":
+      "Dòng {rows}: giờ vào bằng giờ ra nên ca sẽ tính 24 giờ. Tiếp tục?",
+    "import.warnDupDates": "Ngày bị trùng trong danh sách: {dates}. Tiếp tục?",
     "import.errSome": "Một số ca không tạo được:\n{errs}",
     "import.importSummary": "Đã tạo {created} ca mới, bỏ qua {skipped} ca đã có.",
     "import.allExist": "Tất cả ca đã tồn tại, không tạo thêm.",

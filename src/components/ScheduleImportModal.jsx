@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useI18n } from '../lib/i18n.jsx'
 import {
   readImage,
@@ -55,6 +55,13 @@ export default function ScheduleImportModal({
     return new Promise((resolve) => setConfirmState({ message, resolve }))
   }
 
+  // Thu hồi blob URL cũ khi đổi ảnh / đóng modal — không thu hồi thì mỗi lần chọn
+  // ảnh lại rò một object URL (giữ cả ảnh trong bộ nhớ tới khi reload trang).
+  useEffect(() => {
+    if (!previewUrl) return
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [previewUrl])
+
   function pickFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
@@ -104,8 +111,10 @@ export default function ScheduleImportModal({
       stopTrickle()
       setProgress({ pct: 75, label: t('import.stageProcessing'), indeterminate: false })
       // [DEBUG ảnh 1] Object THÔ AI trả về — soi xem AI đọc ra giờ (days có
-      // start/end/raw) hay rỗng, doc_type/found ra sao.
-      console.log('[import] raw AI object', JSON.parse(JSON.stringify(data)))
+      // start/end/raw) hay rỗng, doc_type/found ra sao. CHỈ ở dev — không log
+      // dữ liệu lịch của người dùng ra console bản production.
+      if (import.meta.env.DEV)
+        console.log('[import] raw AI object', JSON.parse(JSON.stringify(data)))
       if (data?.is_roster === false) {
         setError(t('import.errNotRoster'))
         setRows(null)
@@ -362,7 +371,7 @@ export default function ScheduleImportModal({
         <ManualScheduleModal
           onImport={onImport}
           onClose={() => setShowManual(false)}
-          onDone={onClose}
+          onSuccess={onSuccess}
         />
       )}
     </div>

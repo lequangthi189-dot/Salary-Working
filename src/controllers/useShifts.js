@@ -79,6 +79,10 @@ export function useShifts(session) {
     return null
   }
 
+  // LƯU Ý bất đối xứng CÓ CHỦ ĐÍCH: add/update/import gọi reload() (re-select từ DB)
+  // để mảng `shifts` — nguồn của overlapError/partitionImportShifts — luôn là sự
+  // thật từ server (kèm id/default do DB sinh). delete thì kết quả cục bộ đã xác
+  // định (bỏ đúng 1 id) nên chỉ patch local, không cần re-fetch.
   async function deleteShift(id) {
     const { error } = await shiftsModel.deleteShift(id)
     if (error) setLoadError(error.message)
@@ -111,11 +115,16 @@ export function useShifts(session) {
     // BỎ QUA ca trùng/chồng giờ với ca đã có (và giữa các dòng trong CHÍNH lượt nhập
     // này — `shifts` chỉ reload ở cuối). Dùng đúng overlapError; chỉ tạo ca CHƯA CÓ.
     const { toCreate, skipped } = partitionImportShifts(candidates, shifts)
+    // MỘT request batch thay vì lặp từng dòng (tránh N round-trip). Batch là
+    // all-or-nothing — chấp nhận được vì partitionImportShifts đã lọc trùng/kỳ chốt.
     let created = 0
-    for (const shift of toCreate) {
-      const { error } = await shiftsModel.insertShift(shift, session.user.id)
-      if (error) errors.push(`${shift.work_date}: ${error.message}`)
-      else created++
+    if (toCreate.length) {
+      const { data, error } = await shiftsModel.insertShifts(
+        toCreate,
+        session.user.id
+      )
+      if (error) errors.push(error.message)
+      else created = data?.length ?? toCreate.length
     }
     await reload()
     return { created, skipped: skipped.length, errors }
