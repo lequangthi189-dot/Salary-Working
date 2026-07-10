@@ -299,3 +299,68 @@ describe('cửa sổ đêm tuỳ chỉnh (nightStart/nightEnd)', () => {
     expect(r.nightHours).toBe(6) // 00:00–06:00
   })
 })
+
+// PROPERTY TEST: công thức đóng (nightMinutesBefore/splitRange) phải cho kết quả
+// GIỐNG HỆT cách đếm từng phút cũ, với mọi cửa sổ đêm và mọi khoảng ca. Oracle
+// dưới đây là chính logic isNightMinute trước khi tối ưu.
+describe('tách ngày/đêm: công thức đóng ≡ đếm từng phút (oracle)', () => {
+  afterEach(() => {
+    setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: '22:00', nightEnd: '06:00' })
+  })
+
+  const MPD = 1440
+  const hhmm = (m) => {
+    const x = ((m % MPD) + MPD) % MPD
+    return `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}`
+  }
+  // Oracle: đếm từng phút bằng logic isNightMinute cũ.
+  const bruteNight = (lo, hi, S, E) => {
+    let night = 0
+    for (let t = lo; t < hi; t++) {
+      const m = ((t % MPD) + MPD) % MPD
+      if (S === E) continue
+      if (S < E ? m >= S && m < E : m >= S || m < E) night++
+    }
+    return night
+  }
+
+  const windows = [
+    { S: 22 * 60, E: 6 * 60 }, // mặc định, vắt nửa đêm
+    { S: 6 * 60, E: 22 * 60 }, // cửa sổ trong ngày (đảo)
+    { S: 8 * 60, E: 8 * 60 }, // rỗng → không có giờ đêm
+    { S: 23 * 60, E: 1 * 60 }, // vắt nửa đêm hẹp
+    { S: 1 * 60, E: 5 * 60 }, // trong ngày, sát nửa đêm
+  ]
+
+  const check = (lo, dur, S, E) => {
+    const r = computeShift(hhmm(lo), hhmm(lo + dur))
+    const night = bruteNight(lo, lo + dur, S, E)
+    expect(Math.round(r.nightHours * 60)).toBe(night)
+    expect(Math.round(r.dayHours * 60)).toBe(dur - night)
+    expect(Math.round(r.decimalHours * 60)).toBe(dur)
+  }
+
+  it('lưới biên: quanh mốc cửa sổ, nửa đêm, 0/1440', () => {
+    for (const { S, E } of windows) {
+      setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: hhmm(S), nightEnd: hhmm(E) })
+      const marks = [0, 1, S - 1, S, S + 1, E - 1, E, E + 1, 720, 1439].map(
+        (m) => ((m % MPD) + MPD) % MPD
+      )
+      const durs = [1, 30, 359, 360, 361, 720, 1439, 1440]
+      for (const lo of marks) for (const dur of durs) check(lo, dur, S, E)
+    }
+  })
+
+  it('random 300 case (seeded, tái lập được)', () => {
+    // LCG đơn giản để test quyết định (deterministic).
+    let seed = 123456789
+    const rnd = (n) => {
+      seed = (seed * 1103515245 + 12345) % 2147483648
+      return seed % n
+    }
+    for (const { S, E } of windows) {
+      setRates({ dayRate: DAY_RATE, nightPct: DEFAULT_NIGHT_PCT, nightStart: hhmm(S), nightEnd: hhmm(E) })
+      for (let i = 0; i < 60; i++) check(rnd(MPD), 1 + rnd(MPD), S, E)
+    }
+  })
+})

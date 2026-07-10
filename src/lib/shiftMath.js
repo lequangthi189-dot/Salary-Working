@@ -25,16 +25,22 @@ export function parseTime(hhmm) {
   return h * 60 + m
 }
 
-// Is the minute-of-day (0..1439) inside the night window? Cửa sổ đêm lấy từ hồ sơ
-// (mặc định 22:00–06:00); có thể vắt qua nửa đêm (start > end) hoặc nằm gọn trong
-// ngày (start < end).
-function isNightMinute(minuteOfDay) {
-  const m = ((minuteOfDay % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY
-  const start = getNightStartMin()
-  const end = getNightEndMin()
-  if (start === end) return false // cửa sổ rỗng → không có giờ đêm
-  if (start < end) return m >= start && m < end
-  return m >= start || m < end // vắt qua nửa đêm (vd 22:00–06:00)
+// Số phút ĐÊM trong [0, x) với MỌI số nguyên x (kể cả âm — Math.floor xử lý;
+// alignNear có thể đẩy mốc xuống dưới 0 hoặc vượt 1440). Cửa sổ đêm lấy từ hồ sơ
+// (mặc định 22:00–06:00); có thể vắt qua nửa đêm (start > end), nằm gọn trong
+// ngày (start < end), hoặc rỗng (start === end → không có giờ đêm).
+function nightMinutesBefore(x) {
+  const S = getNightStartMin()
+  const E = getNightEndMin()
+  if (S === E) return 0
+  const perDay = S < E ? E - S : MINUTES_PER_DAY - S + E
+  const d = Math.floor(x / MINUTES_PER_DAY)
+  const r = x - d * MINUTES_PER_DAY // 0..1439
+  const g =
+    S < E
+      ? Math.min(Math.max(r, S), E) - S // cửa sổ trong ngày [S,E)
+      : Math.min(r, E) + Math.max(0, r - S) // vắt nửa đêm: [0,E) ∪ [S,1440)
+  return d * perDay + g
 }
 
 /**
@@ -47,13 +53,7 @@ export function computeShift(startTime, endTime, isHoliday = false) {
   let end = parseTime(endTime)
   if (end <= start) end += MINUTES_PER_DAY
 
-  let nightMin = 0
-  let dayMin = 0
-  for (let t = start; t < end; t++) {
-    if (isNightMinute(t)) nightMin++
-    else dayMin++
-  }
-  ;({ dayMin, nightMin } = foldNight(dayMin, nightMin))
+  const { dayMin, nightMin } = splitRange(start, end)
 
   const totalMin = end - start
   const decimalHours = totalMin / 60
@@ -90,15 +90,12 @@ function foldNight(dayMin, nightMin) {
   return { dayMin, nightMin }
 }
 
-// Day/night minute split over the half-open range [lo, hi).
+// Day/night minute split over the half-open range [lo, hi). O(1) nhờ hàm prefix
+// nightMinutesBefore (không lặp từng phút).
 function splitRange(lo, hi) {
-  let dayMin = 0
-  let nightMin = 0
-  for (let t = lo; t < hi; t++) {
-    if (isNightMinute(t)) nightMin++
-    else dayMin++
-  }
-  return foldNight(dayMin, nightMin)
+  if (hi <= lo) return foldNight(0, 0)
+  const nightMin = nightMinutesBefore(hi) - nightMinutesBefore(lo)
+  return foldNight(hi - lo - nightMin, nightMin)
 }
 
 function toPart({ dayMin, nightMin }) {

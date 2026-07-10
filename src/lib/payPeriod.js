@@ -92,8 +92,8 @@ export function paymentWindow(key) {
   }
 }
 
-// "26/04"
-function dmShort(dateStr) {
+// "26/04" — dùng chung cho nhãn kỳ lương và các bảng hiển thị ngày dd/mm.
+export function dmShort(dateStr) {
   const { m, d } = parts(dateStr)
   return `${pad2(d)}/${pad2(m)}`
 }

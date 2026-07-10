@@ -42,14 +42,15 @@ export default function ShiftForm({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
-  // Đồng hồ real-time: mỗi giây bơm giờ hiện tại vào ô CHƯA bị chạm. setState với
-  // chuỗi y hệt → React bỏ qua render nên không tốn gì khi phút chưa đổi.
+  // Đồng hồ real-time: mỗi giây bơm giờ hiện tại vào ô CHƯA bị chạm. Dùng dạng
+  // functional + so sánh trước để KHÔNG schedule update khi phút chưa đổi (giá trị
+  // "HH:MM" chỉ đổi mỗi phút, interval chạy mỗi giây).
   useEffect(() => {
     if (startTouched && endTouched) return
     const id = setInterval(() => {
       const now = nowHHMM()
-      if (!startTouched) setStartTime(now)
-      if (!endTouched) setEndTime(now)
+      if (!startTouched) setStartTime((v) => (v === now ? v : now))
+      if (!endTouched) setEndTime((v) => (v === now ? v : now))
     }, 1000)
     return () => clearInterval(id)
   }, [startTouched, endTouched])

@@ -4,16 +4,13 @@ import {
   formatHours,
   formatMoney,
   formatLost,
+  hhmm,
 } from '../lib/shiftMath.js'
 import TimeInput from './TimeInput.jsx'
 import Checkbox from './Checkbox.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
 import { localTodayStr } from '../lib/payPeriod.js'
 import { useI18n } from '../lib/i18n.jsx'
-
-function hhmm(v) {
-  return v ? String(v).slice(0, 5) : '' // "HH:MM:SS" -> "HH:MM"
-}
 
 export default function ShiftCard({ shift, onDelete, onUpdate }) {
   const { t } = useI18n()
