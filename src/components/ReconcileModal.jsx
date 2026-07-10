@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   localTodayStr,
   payPeriodKeyOf,
@@ -121,7 +121,9 @@ export default function ReconcileModal({
 
   // Map ngày -> TỔNG giờ THỰC TẾ trong bảng công (gộp mọi ca, kẹp lịch dự kiến). Dùng
   // hàm chung actualHoursByDate để lối vào chatbot đối chiếu y hệt modal này.
-  const actualByDate = actualHoursByDate(shifts)
+  // Memoize theo [shifts]: gõ vào ô "Theo ảnh" (imgEdits) KHÔNG được kéo theo việc
+  // duyệt lại toàn bộ ca + computeEffective cho mỗi ca ở mỗi lần render.
+  const actualByDate = useMemo(() => actualHoursByDate(shifts), [shifts])
 
   // Tạo dòng đối chiếu cho một tập ngày: gộp giờ ảnh / thực tế theo ngày. Bảng đối
   // chiếu chỉ so 2 nguồn đáng tin là "Thực tế" và "Theo ảnh"; lịch dự kiến KHÔNG
@@ -425,21 +427,34 @@ export default function ReconcileModal({
   function visibleOf(rows) {
     return rows.filter((r) => effImgHours(r) || r.actualHours)
   }
-  // Chuẩn bị dữ liệu render: từng nhóm + tổng kết, cộng tổng kết toàn bộ.
-  // cc tính Ở ĐÂY (render) từ record AI của dòng + tokens OCR của nhóm (g.tokens có
-  // thể chưa về → cc=null → chưa tô màu). Tách hẳn khỏi lúc build/đọc Gemini.
-  const view = groups
-    ? groups.map((g) => {
-        const rows = g.rows.map((r) => ({ ...r, cc: rowCc(r.recs, g.tokens) }))
-        const visible = visibleOf(rows)
-        return {
-          ...g,
-          rows,
-          visible,
-          match: visible.filter((r) => effStatus(r) === 'match').length,
-        }
-      })
-    : []
+  // Cờ đối chiếu OCR (cc) cho từng dòng của từng nhóm. cc CHỈ phụ thuộc record AI +
+  // tokens OCR của nhóm — KHÔNG phụ thuộc số người dùng sửa tay. Tách riêng + memo theo
+  // [groups] (groups đổi tham chiếu khi OCR vá tokens) để gõ vào ô "Theo ảnh" không kích
+  // hoạt lại toàn bộ regex crosscheckRecord trên mọi dòng của mọi nhóm.
+  const ccByGroup = useMemo(
+    () => (groups ? groups.map((g) => g.rows.map((r) => rowCc(r.recs, g.tokens))) : []),
+    [groups]
+  )
+
+  // Chuẩn bị dữ liệu render: từng nhóm + tổng kết. Phần phụ thuộc số sửa tay (visible/
+  // match qua effStatus) chỉ chạy lại khi [groups, imgEdits] đổi; cờ cc lấy sẵn từ
+  // ccByGroup nên gõ ô "Theo ảnh" không kéo theo regex đối chiếu.
+  const view = useMemo(
+    () =>
+      groups
+        ? groups.map((g, gi) => {
+            const rows = g.rows.map((r, ri) => ({ ...r, cc: ccByGroup[gi][ri] }))
+            const visible = visibleOf(rows)
+            return {
+              ...g,
+              rows,
+              visible,
+              match: visible.filter((r) => effStatus(r) === 'match').length,
+            }
+          })
+        : [],
+    [groups, ccByGroup, imgEdits]
+  )
   const showGroupTitles = view.length > 1
   const grandTotal = view.reduce((acc, g) => acc + g.visible.length, 0)
   const grandMatch = view.reduce((acc, g) => acc + g.match, 0)
