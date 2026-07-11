@@ -45,7 +45,7 @@ export default function ScheduleImportModal({
   // LỚP ĐỐI CHIẾU OCR (Tesseract) — chạy SONG SONG với Gemini, CHỈ để kiểm tra.
   // status: 'idle'|'running'|'done'|'failed'. tokens = từ điển giờ/số giờ OCR đọc ra
   // (null khi chưa xong/không đọc được → bỏ qua đối chiếu, KHÔNG chặn luồng Gemini).
-  const [ocr, setOcr] = useState({ status: 'idle', tokens: null, pct: 0 })
+  const [ocr, setOcr] = useState({ status: 'idle', tokens: null })
   const [showManual, setShowManual] = useState(false) // popup nhập tay
   const [saving, setSaving] = useState(false)
   const [confirmState, setConfirmState] = useState(null) // { message, resolve }
@@ -70,7 +70,7 @@ export default function ScheduleImportModal({
     setRows(null)
     setError(null)
     setInfo(null)
-    setOcr({ status: 'idle', tokens: null, pct: 0 }) // ảnh mới → bỏ đối chiếu cũ
+    setOcr({ status: 'idle', tokens: null }) // ảnh mới → bỏ đối chiếu cũ
   }
 
   async function readSchedule() {
@@ -89,14 +89,12 @@ export default function ScheduleImportModal({
       // để không làm chậm hiển thị kết quả Gemini. OCR fail/rỗng → tokens=null → chỉ
       // bỏ qua đối chiếu (báo nhẹ "chưa đối chiếu được"), tuyệt đối không chặn luồng.
       const dataUrl = `data:${mediaType};base64,${base64}`
-      setOcr({ status: 'running', tokens: null, pct: 0 })
-      ocrTokens(dataUrl, (p) =>
-        setOcr((o) => (o.status === 'running' ? { ...o, pct: p } : o))
-      )
-        .then((tokens) =>
-          setOcr({ status: tokens ? 'done' : 'failed', tokens, pct: 1 })
-        )
-        .catch(() => setOcr({ status: 'failed', tokens: null, pct: 1 }))
+      setOcr({ status: 'running', tokens: null })
+      // KHÔNG truyền callback tiến độ: % OCR không hiển thị ở đâu, mà mỗi tick logger
+      // của Tesseract lại setState → cả trăm re-render vô ích trong lúc chờ/hiện bảng.
+      ocrTokens(dataUrl)
+        .then((tokens) => setOcr({ status: tokens ? 'done' : 'failed', tokens }))
+        .catch(() => setOcr({ status: 'failed', tokens: null }))
       // 2) Gọi Gemini — hộp đen, không có % thật → % bò chậm 25→~90% (ước lượng).
       startTrickle(25, 90, t('import.stageAI'))
       const data = await extractSchedule({
@@ -170,19 +168,22 @@ export default function ScheduleImportModal({
     if (status === 'mismatch') return t('ocr.cellMismatch', { value })
     return undefined
   }
-  // Số Ô có ca (không nghỉ) mà AI–OCR LỆCH → hiện banner cảnh báo trên bảng. Memo theo
-  // [rows, ocr.tokens]: chỉ tính lại khi user sửa dòng hoặc OCR vừa xong, không chạy
-  // regex đối chiếu ở mọi render (đồng hồ, hover…).
-  const ocrWarnCount = useMemo(
+  // Cờ đối chiếu OCR cho TỪNG dòng — tính MỘT lần khi dòng/từ điển OCR đổi. User sửa
+  // giờ → rows đổi tham chiếu → tính lại, nên "sửa cho khớp là cảnh báo tự tắt" vẫn
+  // giữ nguyên; còn các render không liên quan (saving, confirm, thông báo…) không
+  // chạy lại regex nữa. Trước đây mỗi dòng bị đối chiếu 2 lần (banner đếm + render).
+  const ccRows = useMemo(
     () =>
       rows && ocr.tokens
-        ? rows.reduce(
-            (n, r) => n + (crosscheckRecord(r, ocr.tokens).overall === 'warn' ? 1 : 0),
-            0
-          )
-        : 0,
+        ? rows.map((r) => crosscheckRecord(r, ocr.tokens))
+        : null,
     [rows, ocr.tokens]
   )
+  // Số Ô có ca (không nghỉ) mà AI–OCR LỆCH → hiện banner cảnh báo trên bảng.
+  // (Ngày nghỉ crosscheck trả 'na', không bao giờ 'warn' → không cần lọc off.)
+  const ocrWarnCount = ccRows
+    ? ccRows.reduce((n, c) => n + (c.overall === 'warn' ? 1 : 0), 0)
+    : 0
 
   async function createShifts() {
     const picked = pickImportRows(rows)
@@ -314,9 +315,9 @@ export default function ScheduleImportModal({
               </thead>
               <tbody>
                 {rows.map((r, i) => {
-                  // Đối chiếu Ở RENDER: dùng giá trị dòng HIỆN TẠI (kể cả user vừa sửa)
-                  // so với từ điển OCR → sửa cho khớp là cảnh báo tự tắt.
-                  const cc = ocr.tokens ? crosscheckRecord(r, ocr.tokens) : null
+                  // Cờ đối chiếu tra từ memo ccRows (đã tính theo giá trị dòng HIỆN
+                  // TẠI, kể cả user vừa sửa) → sửa cho khớp là cảnh báo tự tắt.
+                  const cc = ccRows ? ccRows[i] : null
                   return (
                   <tr key={r.weekday} className={r.off ? 'off' : ''}>
                     <td>{t(`wd.${r.weekday}`)}</td>

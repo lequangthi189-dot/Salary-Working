@@ -37,8 +37,8 @@ export function mondayOfThisWeek() {
   return mondayOf(localTodayStr())
 }
 
-// Đọc File ảnh -> { base64, mediaType }.
-export function readImage(file) {
+// Đọc File ảnh NGUYÊN GỐC -> { base64, mediaType } (không qua canvas).
+function readRawImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {
@@ -49,6 +49,44 @@ export function readImage(file) {
       reject(new Error(translate(getLang(), 'import.errReadImage')))
     reader.readAsDataURL(file)
   })
+}
+
+// Ảnh chụp điện thoại 3–8MB gửi nguyên gốc làm chậm CẢ CHUỖI: base64 phình +33%
+// khi upload, Gemini đọc lâu hơn, Tesseract OCR chạy trên ảnh khổng lồ. Cạnh dài
+// ~2000px là đủ rõ chữ trên bảng công (ảnh 4032px thu một nửa, chữ ô ~40px vẫn
+// còn ~20px) mà nhẹ đi cả chục lần. Ảnh nhỏ (screenshot…) giữ nguyên, khỏi re-encode.
+const MAX_IMAGE_SIDE = 2000
+const SKIP_DOWNSCALE_BYTES = 700 * 1024
+const JPEG_QUALITY = 0.92
+
+// Đọc File ảnh -> { base64, mediaType }, THU NHỎ trước khi gửi nếu ảnh lớn.
+// Mọi nhánh lỗi (không decode được HEIC/GIF hỏng, nén xong to hơn gốc…) đều rơi
+// về gửi ảnh gốc như cũ — thu nhỏ chỉ là tối ưu, không bao giờ chặn luồng đọc.
+export async function readImage(file) {
+  if (file.size <= SKIP_DOWNSCALE_BYTES) return readRawImage(file)
+  try {
+    // imageOrientation: canvas re-encode làm MẤT EXIF, nên phải xoay ngay lúc
+    // decode kẻo ảnh chụp dọc bị nằm ngang mà không còn metadata để sửa.
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' })
+    try {
+      const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(bmp.width, bmp.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(bmp.width * scale))
+      canvas.height = Math.max(1, Math.round(bmp.height * scale))
+      const ctx = canvas.getContext('2d')
+      // Nền trắng: JPEG không có alpha — PNG trong suốt mà không lót sẽ hoá nền đen.
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height)
+      const base64 = canvas.toDataURL('image/jpeg', JPEG_QUALITY).split(',')[1]
+      if (!base64 || base64.length * 0.75 >= file.size) return readRawImage(file)
+      return { base64, mediaType: 'image/jpeg' }
+    } finally {
+      bmp.close()
+    }
+  } catch {
+    return readRawImage(file)
+  }
 }
 
 // Gọi Edge Function đọc 1 ảnh; unwrap thông điệp lỗi non-2xx nằm trong error.context
