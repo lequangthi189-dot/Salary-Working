@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { localTodayStr } from '../lib/payPeriod.js'
+import { addDays } from '../lib/scheduleExtract.js'
 import { useI18n } from '../lib/i18n.jsx'
 import TimeInput from './TimeInput.jsx'
 import ConfirmModal from './ConfirmModal.jsx'
@@ -29,7 +30,16 @@ export default function ManualScheduleModal({ onImport, onClose, onSuccess }) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
   }
   function addRow() {
-    setRows((prev) => [...prev, blankRow()])
+    // Dòng mới NỐI TIẾP ngày của dòng cuối (+1) — nhập lịch cả tuần khỏi phải sửa
+    // ngày từng dòng. Giờ vẫn ĐỂ TRỐNG, không tự chép từ dòng trước: tự điền giờ mà
+    // user quên sửa sẽ tạo ca sai âm thầm (dữ liệu lương, thà bắt gõ còn hơn đoán).
+    setRows((prev) => {
+      const last = prev[prev.length - 1]
+      const next = last?.date
+        ? { ...blankRow(), date: addDays(last.date, 1) }
+        : blankRow()
+      return [...prev, next]
+    })
   }
   function removeRow(i) {
     setRows((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev))

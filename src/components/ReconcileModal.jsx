@@ -137,8 +137,8 @@ export default function ReconcileModal({
       // để đối chiếu OCR Ở RENDER (khi tokens của nhóm về sau), KHÔNG tính lúc build →
       // Gemini hiện ngay, OCR gắn cờ bổ sung sau mà không chặn.
       const recs = recsByDate ? recsByDate.get(date) || [] : []
-      // Kết quả khớp KHÔNG chốt ở đây: tính ở render qua effStatus theo giờ ảnh HIỆU
-      // DỤNG (gồm cả số người dùng sửa tay).
+      // Kết quả khớp KHÔNG chốt ở đây: chốt ở memo `view` qua effStatus theo giờ ảnh
+      // HIỆU DỤNG (gồm cả số người dùng sửa tay).
       return { date, imgHours, actualHours, recs }
     })
   }
@@ -276,35 +276,51 @@ export default function ReconcileModal({
     try {
       if (scope === 'weeks') {
         // NHIỀU TUẦN: đọc hết ảnh; KHÔNG phụ thuộc thứ tự chọn file.
-        // Giai đoạn 1 — đọc hết ảnh. AI chỉ đọc SỐ NGÀY trần (day) + tháng ở tiêu đề
-        // (sheet_month/year) nếu có; KHÔNG suy ngày. Việc ghép số ngày → ngày đầy đủ
-        // do client làm (resolveWeek) dựa trên tháng-trong-ảnh hoặc ô "Tuần đầu".
-        const raw = []
-        let scheduleConfirmed = false
-        for (let i = 0; i < files.length; i++) {
-          // Mỗi ảnh là một KHOẢNG % thật [from, to]; trong lúc chờ Gemini đọc ảnh đó
-          // thì cho % bò chậm trong khoảng (ước lượng), không vượt mốc ảnh kế.
-          const from = Math.round((i / files.length) * 90) + 5
-          const to = Math.round(((i + 1) / files.length) * 90) + 5
-          const label = `${t('import.stageAI')} (${i + 1}/${files.length})`
-          const { base64, mediaType } = await readImage(files[i])
-          const dataUrl = `data:${mediaType};base64,${base64}`
-          startTrickle(from, to, label)
-          // CHỈ await GEMINI ở luồng chính. OCR KHÔNG chạy ở đây — để lại dataUrl và
-          // đối chiếu NỀN sau khi kết quả đã hiện (runReconcileOcr), tránh treo % nếu
-          // Tesseract kẹt. dataUrl đi kèm từng ảnh để OCR vá đúng nhóm.
-          const data = await extractOne(base64, mediaType, {})
-          stopTrickle()
-          // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
-          if (data?.doc_type === 'schedule' && !scheduleConfirmed) {
-            const ok = await askConfirm(t('reconcile.warnSchedule'))
-            if (!ok) {
-              setGroups(null)
-              return
-            }
-            scheduleConfirmed = true
+        // Giai đoạn 1 — đọc SONG SONG mọi ảnh (mỗi ảnh một request độc lập) thay vì
+        // nối đuôi: N ảnh tốn ~1 lượt chờ Gemini thay vì N lượt. AI chỉ đọc SỐ NGÀY
+        // trần (day) + tháng ở tiêu đề (sheet_month/year) nếu có; KHÔNG suy ngày.
+        // Việc ghép số ngày → ngày đầy đủ do client làm (resolveWeek).
+        // % thật = số ảnh ĐÃ XONG/tổng; giữa hai mốc % bò chậm như cũ. Trickle không
+        // bao giờ vượt mốc kế nên thanh % chỉ tiến, dù ảnh xong không theo thứ tự.
+        const total = files.length
+        const mark = (k) => 5 + Math.round((k / total) * 90)
+        const label = (k) =>
+          `${t('import.stageAI')} (${Math.min(k + 1, total)}/${total})`
+        let completed = 0
+        startTrickle(mark(0), mark(1), label(0))
+        const settled = await Promise.allSettled(
+          files.map(async (f) => {
+            const { base64, mediaType } = await readImage(f)
+            const dataUrl = `data:${mediaType};base64,${base64}`
+            // CHỈ await GEMINI ở luồng chính. OCR KHÔNG chạy ở đây — để lại dataUrl
+            // và đối chiếu NỀN sau khi kết quả đã hiện (runReconcileOcr), tránh treo
+            // % nếu Tesseract kẹt. dataUrl đi kèm từng ảnh để OCR vá đúng nhóm.
+            const data = await extractOne(base64, mediaType, {})
+            completed += 1
+            if (completed < total)
+              startTrickle(mark(completed), mark(completed + 1), label(completed))
+            return { data, issue: dataIssue(data), dataUrl }
+          })
+        )
+        stopTrickle()
+        // Một ảnh lỗi (quota/timeout…) KHÔNG giết cả lượt: ảnh đó thành nhóm-có-lỗi
+        // (render sẵn ở g.error), các ảnh đọc được vẫn đối chiếu bình thường.
+        const raw = settled.map((s) =>
+          s.status === 'fulfilled'
+            ? s.value
+            : {
+                data: null,
+                issue: String(s.reason?.message || s.reason),
+                dataUrl: null,
+              }
+        )
+        // Nhầm loại (ảnh lịch dự kiến) → hỏi xác nhận MỘT lần cho cả lượt.
+        if (raw.some(({ data }) => data?.doc_type === 'schedule')) {
+          const ok = await askConfirm(t('reconcile.warnSchedule'))
+          if (!ok) {
+            setGroups(null)
+            return
           }
-          raw.push({ data, issue: dataIssue(data), dataUrl })
         }
         // Giai đoạn 2 — gán tuần. TỰ SORT NGÀY: ảnh suy được ngày (resolveWeek) → lấy
         // tuần thật từ chính SỐ NGÀY trong ảnh, bất kể vị trí chọn. Ảnh KHÔNG có cả
@@ -444,12 +460,18 @@ export default function ReconcileModal({
       groups
         ? groups.map((g, gi) => {
             const rows = g.rows.map((r, ri) => ({ ...r, cc: ccByGroup[gi][ri] }))
-            const visible = visibleOf(rows)
+            // Chốt kết quả khớp MỘT lần ở đây (render chỉ đọc r.status, khỏi gọi
+            // effStatus lại từng dòng mỗi render); memo phụ thuộc imgEdits nên sửa
+            // tay vẫn cập nhật ngay.
+            const visible = visibleOf(rows).map((r) => ({
+              ...r,
+              status: effStatus(r),
+            }))
             return {
               ...g,
               rows,
               visible,
-              match: visible.filter((r) => effStatus(r) === 'match').length,
+              match: visible.filter((r) => r.status === 'match').length,
             }
           })
         : [],
@@ -654,7 +676,7 @@ export default function ReconcileModal({
                       </thead>
                       <tbody>
                         {g.visible.map((r) => {
-                          const status = effStatus(r)
+                          const status = r.status
                           return (
                           <tr key={r.date}>
                             <td>{dmShort(r.date)}</td>
