@@ -27,6 +27,33 @@ import ProgressButton from './ProgressButton.jsx'
 
 const isoRe = /^\d{4}-\d{2}-\d{2}$/
 
+// Tối đa số ảnh đọc GEMINI ĐỒNG THỜI ở chế độ "nhiều tuần". Đọc song song nhanh hơn
+// tuần tự nhiều, nhưng bắn TẤT CẢ cùng lúc (vd 8 ảnh) dễ đụng rate-limit 429 của
+// Gemini. 3 là điểm cân bằng: vẫn nhanh mà không burst.
+const MAX_RECONCILE_CONCURRENCY = 3
+
+// Chạy worker(item, i) cho mọi phần tử nhưng TỐI ĐA `limit` cái chạy đồng thời. Trả
+// mảng kết quả dạng Promise.allSettled ({status:'fulfilled',value}|{status:'rejected',
+// reason}) THEO ĐÚNG THỨ TỰ đầu vào (quan trọng: bên gọi dùng chỉ số ảnh làm id ổn
+// định). Không bao giờ throw — lỗi từng item gói vào 'rejected'.
+async function settleWithLimit(items, limit, worker) {
+  const results = new Array(items.length)
+  let next = 0
+  async function runner() {
+    while (next < items.length) {
+      const i = next++
+      try {
+        results[i] = { status: 'fulfilled', value: await worker(items[i], i) }
+      } catch (reason) {
+        results[i] = { status: 'rejected', reason }
+      }
+    }
+  }
+  const n = Math.min(Math.max(1, limit), items.length)
+  await Promise.all(Array.from({ length: n }, runner))
+  return results
+}
+
 // "05/06"
 function dmShort(date) {
   const [, m, d] = String(date).split('-')
@@ -276,20 +303,23 @@ export default function ReconcileModal({
     try {
       if (scope === 'weeks') {
         // NHIỀU TUẦN: đọc hết ảnh; KHÔNG phụ thuộc thứ tự chọn file.
-        // Giai đoạn 1 — đọc SONG SONG mọi ảnh (mỗi ảnh một request độc lập) thay vì
-        // nối đuôi: N ảnh tốn ~1 lượt chờ Gemini thay vì N lượt. AI chỉ đọc SỐ NGÀY
-        // trần (day) + tháng ở tiêu đề (sheet_month/year) nếu có; KHÔNG suy ngày.
-        // Việc ghép số ngày → ngày đầy đủ do client làm (resolveWeek).
-        // % thật = số ảnh ĐÃ XONG/tổng; giữa hai mốc % bò chậm như cũ. Trickle không
-        // bao giờ vượt mốc kế nên thanh % chỉ tiến, dù ảnh xong không theo thứ tự.
+        // Giai đoạn 1 — đọc song song (mỗi ảnh một request độc lập) nhưng GIỚI HẠN
+        // MAX_RECONCILE_CONCURRENCY ảnh chạy đồng thời để không burst rate-limit
+        // Gemini khi chọn nhiều ảnh. AI chỉ đọc SỐ NGÀY trần (day) + tháng ở tiêu đề
+        // (sheet_month/year) nếu có; KHÔNG suy ngày. Ghép số ngày → ngày đầy đủ do
+        // client làm (resolveWeek). % thật = số ảnh ĐÃ XONG/tổng; giữa hai mốc % bò
+        // chậm. Trickle không bao giờ vượt mốc kế nên thanh % chỉ tiến, dù ảnh xong
+        // không theo thứ tự.
         const total = files.length
         const mark = (k) => 5 + Math.round((k / total) * 90)
         const label = (k) =>
           `${t('import.stageAI')} (${Math.min(k + 1, total)}/${total})`
         let completed = 0
         startTrickle(mark(0), mark(1), label(0))
-        const settled = await Promise.allSettled(
-          files.map(async (f) => {
+        const settled = await settleWithLimit(
+          files,
+          MAX_RECONCILE_CONCURRENCY,
+          async (f) => {
             const { base64, mediaType } = await readImage(f)
             const dataUrl = `data:${mediaType};base64,${base64}`
             // CHỈ await GEMINI ở luồng chính. OCR KHÔNG chạy ở đây — để lại dataUrl
@@ -300,7 +330,7 @@ export default function ReconcileModal({
             if (completed < total)
               startTrickle(mark(completed), mark(completed + 1), label(completed))
             return { data, issue: dataIssue(data), dataUrl }
-          })
+          }
         )
         stopTrickle()
         // Một ảnh lỗi (quota/timeout…) KHÔNG giết cả lượt: ảnh đó thành nhóm-có-lỗi
