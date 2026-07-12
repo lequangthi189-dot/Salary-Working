@@ -117,8 +117,8 @@ export function pendingPeriodKey(shifts, payrolls) {
   )
 }
 
-// Ca hiển thị dưới board: chỉ bỏ ca thuộc kỳ ĐÃ NHẬN lương.
-// (Không còn ẩn theo tuần/hide_at nữa — ca nhập từ ảnh luôn hiển thị.)
+// Ca hiển thị dưới board: chỉ bỏ ca thuộc kỳ ĐÃ NHẬN lương; ca nhập từ ảnh
+// luôn hiển thị như ca thường.
 export function visibleBoardShifts(shifts, payrolls) {
   const receivedKeys = new Set((payrolls || []).map((p) => p.period_key))
   return shifts.filter(

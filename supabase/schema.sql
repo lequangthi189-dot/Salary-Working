@@ -15,10 +15,6 @@ create table if not exists public.shifts (
   end_time time not null,
   scheduled_start time,
   scheduled_end time,
-  -- Ca nhập từ ảnh lịch tuần: MỐC ẨN (12:00 trưa Thứ 2 tuần kế tiếp). Qua mốc này
-  -- ca được ẨN khỏi bảng công nhưng KHÔNG xoá — dữ liệu vẫn dùng để tổng hợp kỳ lương.
-  -- null = ca nhập tay, luôn hiển thị. Lưu ở DB để ẩn nhất quán trên mọi thiết bị.
-  hide_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -26,25 +22,6 @@ alter table public.shifts add column if not exists scheduled_start time;
 alter table public.shifts add column if not exists scheduled_end time;
 -- Ca rơi vào ngày lễ → tính theo đơn giá lễ (phụ cấp lễ trong hồ sơ).
 alter table public.shifts add column if not exists is_holiday boolean not null default false;
-
--- Đổi tên cột cũ auto_delete_at -> hide_at (mốc ẨN, không còn tự xoá). An toàn chạy
--- lại nhiều lần: chỉ rename khi cột cũ còn tồn tại và cột mới chưa có.
-do $$
-begin
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'shifts'
-      and column_name = 'auto_delete_at'
-  ) and not exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'shifts'
-      and column_name = 'hide_at'
-  ) then
-    alter table public.shifts rename column auto_delete_at to hide_at;
-  end if;
-end $$;
-
-alter table public.shifts add column if not exists hide_at timestamptz;
 
 -- Ca nhập từ lịch tuần chỉ có giờ DỰ KIẾN (scheduled_*); check-in/check-out để
 -- trống tới khi đi làm. Vì vậy start_time/end_time được phép null.
@@ -77,7 +54,6 @@ create policy "delete own shifts"
 -- ===================== profiles (tài khoản) =====================
 -- employee_code: mã nhân viên (9 chữ số) — bắt buộc khi đăng ký ở phía app.
 -- payday: ngày nhận lương (1–10).
--- email_confirmed / phone_confirmed: đồng bộ tự động từ auth.users (trigger dưới).
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
@@ -101,8 +77,6 @@ create table if not exists public.profiles (
   -- Mặc định 26 → 25 (kỳ vắt qua 2 tháng). Việc gom ca vào kỳ phụ thuộc ngày chốt.
   period_start_day smallint not null default 26,
   period_end_day smallint not null default 25,
-  email_confirmed boolean not null default false,
-  phone_confirmed boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -118,8 +92,6 @@ alter table public.profiles add column if not exists holiday_night_pct integer;
 alter table public.profiles add column if not exists has_night_shift boolean not null default true;
 alter table public.profiles add column if not exists night_start time not null default '22:00';
 alter table public.profiles add column if not exists night_end time not null default '06:00';
-alter table public.profiles add column if not exists email_confirmed boolean not null default false;
-alter table public.profiles add column if not exists phone_confirmed boolean not null default false;
 -- Ngôn ngữ ưa thích của người dùng (vi/en/us/au) — đăng nhập lại giữ đúng ngôn ngữ.
 alter table public.profiles add column if not exists lang text;
 -- Phong cách giao diện ưa thích (dark/glass/neumorph) — lưu theo tài khoản.
@@ -162,15 +134,13 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, employee_code, phone, email, email_confirmed, phone_confirmed)
+  insert into public.profiles (id, full_name, employee_code, phone, email)
   values (
     new.id,
     new.raw_user_meta_data ->> 'full_name',
     new.raw_user_meta_data ->> 'employee_code',
     coalesce(new.phone, new.raw_user_meta_data ->> 'phone'),
-    new.email,
-    new.email_confirmed_at is not null,
-    new.phone_confirmed_at is not null
+    new.email
   )
   on conflict (id) do update set
     -- GIỮ tên/điện thoại do app đã đặt (form thông tin NV) khi metadata auth không
@@ -178,9 +148,7 @@ begin
     full_name       = coalesce(excluded.full_name, public.profiles.full_name),
     employee_code   = coalesce(excluded.employee_code, public.profiles.employee_code),
     phone           = coalesce(excluded.phone, public.profiles.phone),
-    email           = excluded.email,
-    email_confirmed = excluded.email_confirmed,
-    phone_confirmed = excluded.phone_confirmed;
+    email           = excluded.email;
   return new;
 end;
 $$;
@@ -196,23 +164,19 @@ create trigger on_auth_user_updated
   for each row execute function public.sync_profile_from_auth();
 
 -- Nạp profiles cho user đã tồn tại từ trước (an toàn lặp lại):
-insert into public.profiles (id, full_name, employee_code, phone, email, email_confirmed, phone_confirmed)
+insert into public.profiles (id, full_name, employee_code, phone, email)
 select
   u.id,
   u.raw_user_meta_data ->> 'full_name',
   u.raw_user_meta_data ->> 'employee_code',
   coalesce(u.phone, u.raw_user_meta_data ->> 'phone'),
-  u.email,
-  u.email_confirmed_at is not null,
-  u.phone_confirmed_at is not null
+  u.email
 from auth.users u
 on conflict (id) do update set
   full_name       = coalesce(excluded.full_name, public.profiles.full_name),
   employee_code   = coalesce(excluded.employee_code, public.profiles.employee_code),
   phone           = coalesce(excluded.phone, public.profiles.phone),
-  email           = excluded.email,
-  email_confirmed = excluded.email_confirmed,
-  phone_confirmed = excluded.phone_confirmed;
+  email           = excluded.email;
 
 -- Backfill: dòng có họ/tên nhưng full_name trống (do trigger cũ ghi đè) → ghép lại
 -- "Họ Tên". An toàn lặp lại: chỉ đụng dòng full_name đang null/rỗng.
