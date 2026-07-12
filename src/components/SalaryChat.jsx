@@ -32,6 +32,32 @@ import {
   fetchRecentMessages,
   insertMessage,
 } from '../models/chatMessagesModel.js'
+import { useI18n } from '../lib/i18n.jsx'
+import TimesheetTable from './TimesheetTable.jsx'
+// Parser thuần + helper ngày (song ngữ VN/Anh) — tách ra lib để test được.
+import {
+  pad2,
+  mondayOf,
+  dmy,
+  daysBetween,
+  deaccent,
+  addDaysStr,
+  detectLang,
+  findTimes,
+  resolveDate,
+  parseTimesheetReq,
+  parseDayReq,
+  parseShiftIntent,
+  parseDeductionAdd,
+  parseDeductionQuery,
+  parseExtraIncomeQuery,
+  parseExtraIncomeAdd,
+  parseExtraIncomeBatch,
+  parsePlannedReq,
+  parseFeasibilityReq,
+  parseProjectionReq,
+  parseOpenTool,
+} from '../lib/chatParse.js'
 
 // Bộ nhớ chat: số tin NẠP LẠI khi mở (Mức 2 — lưu/hiển thị, KHÔNG bị cửa sổ trượt
 // đụng tới) và CỬA SỔ TRƯỢT số tin GỬI kèm mỗi request làm ngữ cảnh cho AI (Mức 1)
@@ -48,421 +74,6 @@ function buildGuide(t) {
     lines.push(`${i}. ${t(`welcome.step${i}.title`)}: ${t(`welcome.step${i}.desc`)}`)
   }
   return lines.join('\n')
-}
-
-// Bỏ dấu + đ→d + thường hoá, để khớp lệnh dù gõ có dấu hay không.
-function deaccent(s) {
-  return s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/gi, 'd')
-    .toLowerCase()
-}
-
-// Ký tự có dấu đặc trưng tiếng Việt (gồm ă â đ ê ô ơ ư và mọi nguyên âm có dấu).
-const VI_DIACRITIC =
-  /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i
-
-// Từ ĐẶC TRƯNG để đoán ngôn ngữ khi câu KHÔNG có dấu (đã bỏ dấu, thường hoá).
-// Chỉ chứa từ ít trùng giữa hai ngôn ngữ để hạn chế đoán sai.
-const VI_WORDS = new Set([
-  'toi', 'minh', 'thang', 'tuan', 'luong', 'lam', 'nhieu', 'ngay', 'dem', 'them',
-  'tao', 'thuong', 'boi', 'viec', 'ngoai', 'gio', 'khong', 'duoc', 'muon', 'hom',
-  'nay', 'mai', 'lich', 'kien', 'bang', 'cong', 'cua', 'voi', 'thu', 'chu', 'nhat',
-  'bao', 'cham', 'doi', 'chieu', 'nhap', 'huong', 'dan', 'ho', 'so', 'tru', 'kip',
-])
-const EN_WORDS = new Set([
-  'the', 'you', 'your', 'how', 'much', 'many', 'what', 'when', 'is', 'are', 'do',
-  'does', 'shift', 'shifts', 'month', 'week', 'need', 'make', 'salary', 'this',
-  'reach', 'work', 'working', 'hours', 'hour', 'add', 'want', 'today', 'tomorrow',
-  'schedule', 'pay', 'open', 'show', 'and', 'for', 'with', 'night', 'day', 'next',
-])
-
-// Đoán ngôn ngữ của câu: trả 'vi' | 'en' | null (null = trung tính/không chắc).
-// Có dấu tiếng Việt → 'vi'. Không dấu → đếm từ đặc trưng; hơn hẳn bên nào thì theo
-// bên đó, hoà/không có từ nào (vd chỉ số "200k", giờ "22h") → null để KHÔNG chặn.
-function detectLang(msg) {
-  if (VI_DIACRITIC.test(msg)) return 'vi'
-  const tokens = deaccent(msg).match(/[a-z]+/g) || []
-  if (!tokens.length) return null
-  let vi = 0
-  let en = 0
-  for (const w of tokens) {
-    if (VI_WORDS.has(w)) vi++
-    if (EN_WORDS.has(w)) en++
-  }
-  if (vi > en) return 'vi'
-  if (en > vi) return 'en'
-  return null
-}
-
-// Đọc số tiền VND từ chuỗi: "200k"/"200 nghìn"→200000, "2tr"/"2 triệu"→2000000,
-// "200000"→200000. Số trần (không đơn vị) phải ≥ 1000 mới coi là tiền (tránh nhầm ngày).
-function parseAmountVnd(s) {
-  const m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|lit|k)?/)
-  if (!m) return null
-  let n = Number(m[1].replace(/\./g, ''))
-  if (!Number.isFinite(n) || n <= 0) return null
-  const unit = m[2]
-  if (unit === 'trieu' || unit === 'tr') n *= 1000000
-  else if (unit === 'lit') n *= 100000 // "lít" = trăm nghìn (2 lít = 200.000)
-  else if (unit === 'nghin' || unit === 'ngan' || unit === 'k') n *= 1000
-  else if (n < 1000) return null
-  return Math.round(n)
-}
-import { useI18n } from '../lib/i18n.jsx'
-import TimesheetTable from './TimesheetTable.jsx'
-
-function pad2(n) {
-  return String(n).padStart(2, '0')
-}
-
-// Thứ 2 (đầu tuần) của tuần chứa ngày — giống TimesheetTable để đánh số tuần khớp.
-function mondayOf(dateStr) {
-  const [y, m, d] = String(dateStr).split('-').map(Number)
-  const dt = new Date(y, m - 1, d)
-  const dow = (dt.getDay() + 6) % 7
-  dt.setDate(dt.getDate() - dow)
-  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
-}
-
-// Cộng n ngày vào "YYYY-MM-DD" (theo lịch địa phương).
-function addDaysStr(dateStr, n) {
-  const [y, m, d] = String(dateStr).split('-').map(Number)
-  const dt = new Date(y, m - 1, d + n)
-  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
-}
-
-// "YYYY-MM-DD" -> "DD/MM/YYYY"
-function dmy(d) {
-  const [y, m, dd] = String(d).split('-')
-  return `${dd}/${m}/${y}`
-}
-
-// Nhận diện yêu cầu xem BẢNG CÔNG theo tháng (và tuần tuỳ chọn). Bỏ dấu để khớp
-// "bảng công tháng 3 tuần 2" dù gõ có dấu hay không. Trả {month, week, year} hoặc null.
-function parseTimesheetReq(msg) {
-  const norm = msg
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/gi, 'd')
-    .toLowerCase()
-  if (!/(bang cong|bang cham cong|timesheet)/.test(norm)) return null
-  const m = norm.match(/thang\s*(\d{1,2})/)
-  if (!m) return null
-  const month = Number(m[1])
-  if (month < 1 || month > 12) return null
-  const w = norm.match(/tuan\s*(\d{1,2})/)
-  const y = norm.match(/(20\d{2})/)
-  return { month, week: w ? Number(w[1]) : null, year: y ? Number(y[1]) : null }
-}
-
-// Nhận diện yêu cầu hỏi MỘT NGÀY cụ thể: "10/6", "10-6-2026", hoặc "ngày 10 tháng 6".
-// Trả "YYYY-MM-DD" hoặc null. (Mặc định năm hiện tại nếu không ghi.)
-function parseDayReq(msg, adjustPast = true) {
-  const norm = msg
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-  let m = norm.match(/\b(\d{1,2})\s*[/-]\s*(\d{1,2})(?:\s*[/-]\s*(\d{2,4}))?\b/)
-  if (!m) m = norm.match(/ngay\s*(\d{1,2})\s*thang\s*(\d{1,2})(?:\D*?(\d{4}))?/)
-  if (!m) return null
-  const day = Number(m[1])
-  const month = Number(m[2])
-  if (day < 1 || day > 31 || month < 1 || month > 12) return null
-  let year = m[3] ? Number(m[3]) : null
-  if (year && year < 100) year += 2000
-  if (!year) {
-    // Không ghi năm → mặc định năm nay. Với CÂU HỎI (adjustPast), nếu ngày suy ra
-    // ở TƯƠNG LAI thì hiểu là năm trước (lần gần nhất đã qua). Với THÊM CA thì giữ
-    // năm nay để ngày tương lai vẫn là tương lai (→ lịch dự kiến).
-    const now = new Date()
-    year = now.getFullYear()
-    if (adjustPast && new Date(year, month - 1, day) > now) year -= 1
-  }
-  return `${year}-${pad2(month)}-${pad2(day)}`
-}
-
-// Tìm tối đa 2 mốc giờ trong câu: "22:00", "22h", "22h30", "9h", "06:00".
-function findTimes(s) {
-  const re = /(\d{1,2})\s*(?::|h|gio)\s*(\d{2})?/g
-  const out = []
-  let m
-  while ((m = re.exec(s)) && out.length < 2) {
-    const hh = Number(m[1])
-    const mm = m[2] ? Number(m[2]) : 0
-    if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) out.push(`${pad2(hh)}:${pad2(mm)}`)
-  }
-  return out
-}
-
-// "thu 7"/"thu bay" → 6 (getDay Thứ 7), "chu nhat"/"cn" → 0. Null nếu không có.
-function matchWeekday(s) {
-  const map = { 2: 1, hai: 1, 3: 2, ba: 2, 4: 3, tu: 3, 5: 4, nam: 4, 6: 5, sau: 5, 7: 6, bay: 6 }
-  const m = s.match(/\bthu\s*(2|3|4|5|6|7|hai|ba|tu|nam|sau|bay)\b/)
-  if (m) return map[m[1]]
-  if (/\bchu nhat\b|\bcn\b/.test(s)) return 0
-  return null
-}
-
-// Suy ra NGÀY TUYỆT ĐỐI ("YYYY-MM-DD") từ câu, dựa trên HÔM NAY:
-//  - tương đối: hôm nay / mai / mốt (ngày kia)
-//  - thứ: "thứ 6", kèm "tuần này" / "tuần sau" (mặc định lần gần nhất sắp tới)
-//  - tuyệt đối: DD/MM, "ngày D tháng M"
-//  - ngày trần: "ngày 14" hoặc số ngày còn lại sau khi bỏ mốc giờ
-// Trả null nếu không xác định được ngày.
-function resolveDate(msg) {
-  const s = deaccent(msg)
-  const today = localTodayStr()
-  if (/hom nay/.test(s)) return today
-  if (/ngay mai|\bmai\b/.test(s)) return addDaysStr(today, 1)
-  if (/ngay mot|ngay kia/.test(s)) return addDaysStr(today, 2)
-  const wd = matchWeekday(s)
-  if (wd != null) {
-    const [ty, tm, td] = today.split('-').map(Number)
-    const todayDow = new Date(ty, tm - 1, td).getDay()
-    let add = (wd - todayDow + 7) % 7
-    if (/tuan sau|tuan toi/.test(s)) add += 7
-    return addDaysStr(today, add)
-  }
-  const abs = parseDayReq(msg, false)
-  if (abs) return abs
-  const bm = s.match(/\bngay\s*(\d{1,2})\b/)
-  if (bm && Number(bm[1]) >= 1 && Number(bm[1]) <= 31) {
-    const [ty, tm] = today.split('-')
-    return `${ty}-${tm}-${pad2(Number(bm[1]))}`
-  }
-  return null
-}
-
-// Ý ĐỊNH THÊM CA từ câu tự nhiên. CHỈ kích hoạt khi có ĐỘNG TỪ tạo/hẹn lịch gắn với
-// "ca/lịch/shift" (vd "thêm ca", "tạo ca đêm", "lên lịch", "đặt lịch", "xếp ca",
-// "book shift"), HOẶC ghi rõ đủ 2 mốc giờ (chấm một ca cụ thể). Việc chỉ NHẮC TỚI
-// loại ca ("đêm", "3 đêm") KHÔNG tự kích hoạt — tránh nuốt câu hỏi "làm thêm … bao
-// nhiêu". Không phải câu hỏi (?). Lưu ý: chạy TRƯỚC parsePlannedReq nên động từ phải
-// rõ là TẠO (không lấy "dự kiến/kế hoạch" trần làm trigger, vì "lịch dự kiến tuần
-// này" là câu XEM lịch). Trả { date, times[], type } — phần thiếu để null/[] rồi hỏi lại.
-function parseShiftIntent(msg) {
-  const s = deaccent(msg)
-  if (/\?|khong/.test(s)) return null
-  const night = /\bdem\b|ca dem|ban dem/.test(s)
-  const day = /ca ngay|ban ngay/.test(s)
-  // Động từ TẠO/HẸN LỊCH (mở rộng cách nói tự nhiên) + danh từ ca/lịch/shift.
-  const addVerb =
-    /(them|tao|dang ky|len lich|dat lich|lap lich|len ca|dang ca|xep (ca|lich)|add|book|schedule|set up|plan)/.test(s) &&
-    /(ca|lich|shift)/.test(s)
-  const times = findTimes(s)
-  if (!addVerb && times.length < 2) return null
-  const date = resolveDate(msg)
-  const type = night ? 'night' : day ? 'day' : null
-  return { date, times, type }
-}
-
-// Yêu cầu THÊM khoản trừ: cần từ khoá "trừ/bồi thường" + số tiền (≥1000 hoặc có
-// đơn vị) + lý do (sau "lý do"/"vì"/"do"). Ngày tuỳ chọn (mặc định hôm nay).
-function parseDeductionAdd(msg) {
-  const s = deaccent(msg)
-  if (!/(tru|boi thuong|khau tru)/.test(s)) return null
-  const amount = parseAmountVnd(s)
-  if (!amount) return null
-  const rm = s.match(/(?:ly do|vi|do)\s+(.+)/)
-  if (!rm) return null
-  let reason = rm[1].replace(/\s*ngay\s*\d.*$/, '').trim()
-  if (!reason) return null
-  const date = parseDayReq(msg) || localTodayStr()
-  return { amount, reason, date }
-}
-
-// Yêu cầu TRA CỨU khoản trừ của một kỳ (tháng). Không có tháng → kỳ hiện tại.
-function parseDeductionQuery(msg) {
-  const s = deaccent(msg)
-  if (!/(tru|boi thuong|khau tru)/.test(s)) return null
-  const m = s.match(/thang\s*(\d{1,2})/)
-  const y = s.match(/(20\d{2})/)
-  return { month: m ? Number(m[1]) : null, year: y ? Number(y[1]) : null }
-}
-
-// Yêu cầu TRA CỨU thu nhập việc ngoài của một kỳ (tháng). Keyword việc ngoài +
-// KHÔNG có số tiền để thêm (câu hỏi). Không tháng → kỳ hiện tại.
-function parseExtraIncomeQuery(msg) {
-  const s = deaccent(msg)
-  if (!/(thu nhap (viec )?ngoai|viec ngoai|luong ngoai)/.test(s)) return null
-  const m = s.match(/thang\s*(\d{1,2})/)
-  const y = s.match(/(20\d{2})/)
-  return { month: m ? Number(m[1]) : null, year: y ? Number(y[1]) : null }
-}
-
-// Yêu cầu THÊM thu nhập việc ngoài: keyword "thu nhập ngoài/việc ngoài" + số tiền.
-// Ngày tuỳ chọn (hiểu mai/thứ…); mặc định hôm nay. Mô tả lấy phần chữ còn lại.
-function parseExtraIncomeAdd(msg) {
-  const s = deaccent(msg)
-  if (!/(thu nhap (viec )?ngoai|viec ngoai|luong ngoai)/.test(s)) return null
-  const amount = parseAmountVnd(s)
-  if (!amount) return null
-  const date = resolveDate(msg) || localTodayStr()
-  const description = msg
-    .replace(/thu nhập việc ngoài|thu nhập ngoài|việc ngoài|lương ngoài/gi, ' ')
-    .replace(/\d[\d.,]*\s*(triệu|tr|nghìn|ngàn|k|đ|vnd)?/gi, ' ')
-    .replace(/ngày\s*\d{1,2}([/-]\d{1,2}([/-]\d{2,4})?)?/gi, ' ')
-    .replace(/\d{1,2}[/-]\d{1,2}([/-]\d{2,4})?/g, ' ')
-    .replace(/hôm nay|ngày mai|mai|mốt|thứ\s*\d|chủ nhật|tuần sau|tuần này/gi, ' ')
-    .replace(/(thêm|tạo|cho|với|mô tả|tôi|có)/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return { date, description, amount }
-}
-
-// Tìm SỐ TIỀN trong câu, BỎ QUA giờ ("14h"/"16:00"). Ưu tiên số có đơn vị tiền;
-// nếu không, số ≥ 4 chữ số (không phải giờ). Trả số nguyên VND hoặc null.
-function findMoney(s) {
-  let m = s.match(/(\d[\d.]*)\s*(trieu|tr|nghin|ngan|lit|k)\b/)
-  if (m) {
-    let n = Number(m[1].replace(/\./g, ''))
-    const u = m[2]
-    if (u === 'trieu' || u === 'tr') n *= 1000000
-    else if (u === 'lit') n *= 100000
-    else n *= 1000
-    return Math.round(n)
-  }
-  m = s.match(/(\d{4,})(?!\s*[:h])/) // số lớn không theo sau bởi : hoặc h
-  if (m) return Number(m[1])
-  return null
-}
-
-// Lấy TẤT CẢ ngày dạng DD/MM (hoặc DD/MM/YYYY) trong câu → mảng "YYYY-MM-DD" (năm
-// nay nếu thiếu năm; KHÔNG lùi năm vì đây là ngày lịch). Trùng → bỏ; sắp tăng dần.
-function extractDates(msg) {
-  const [cy] = localTodayStr().split('-')
-  const out = []
-  // 1) Dạng DD/MM hoặc DD/MM/YYYY (mỗi ngày ghi rõ tháng).
-  const re = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/g
-  let m
-  while ((m = re.exec(msg))) {
-    const d = Number(m[1])
-    const mo = Number(m[2])
-    if (d < 1 || d > 31 || mo < 1 || mo > 12) continue
-    let y = m[3] ? Number(m[3]) : Number(cy)
-    if (y < 100) y += 2000
-    out.push(`${y}-${pad2(mo)}-${pad2(d)}`)
-  }
-  // 2) Dạng "ngày 12, 19, 26 tháng 6": danh sách NGÀY dùng chung một tháng. Lấy
-  // các số nằm giữa "ngày … tháng M" làm ngày, năm nay nếu không ghi.
-  const norm = deaccent(msg)
-  const tm = norm.match(/ngay\s+([\d,.\s&va]+?)\s*thang\s*(\d{1,2})/)
-  if (tm) {
-    const mo = Number(tm[2])
-    if (mo >= 1 && mo <= 12) {
-      for (const ds of tm[1].match(/\d{1,2}/g) || []) {
-        const d = Number(ds)
-        if (d >= 1 && d <= 31) out.push(`${cy}-${pad2(mo)}-${pad2(d)}`)
-      }
-    }
-  }
-  return [...new Set(out)].sort()
-}
-
-// Nhập HÀNG LOẠT việc ngoài: NHIỀU ngày (>=2) + một số tiền (mỗi buổi). vd:
-// "các ngày 12/6, 19/6, 26/6 làm AC mỗi buổi 200k". Mỗi ngày = 1 khoản cùng tiền.
-function parseExtraIncomeBatch(msg) {
-  const s = deaccent(msg)
-  if (/\btru\b|boi thuong|khau tru/.test(s)) return null // đó là khoản trừ, không phải việc ngoài
-  const dates = extractDates(msg)
-  if (dates.length < 2) return null
-  const amount = findMoney(s)
-  if (!amount || amount <= 0) return null
-  const description = msg
-    .replace(/\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/g, ' ')
-    .replace(/\d{1,2}\s*[:h]\s*\d{0,2}/gi, ' ')
-    .replace(/\d[\d.]*\s*(triệu|tr|nghìn|ngàn|lít|k|đ|vnd)?/gi, ' ')
-    .replace(/các ngày|mỗi buổi|mỗi ngày|mỗi lần|mỗi|buổi|làm|các|ngày|từ|đến/gi, ' ')
-    .replace(/[-,]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return { dates, description, amount }
-}
-
-// Yêu cầu xem LỊCH DỰ KIẾN tuần này.
-function parsePlannedReq(msg) {
-  const s = deaccent(msg)
-  if (/lich du kien|lich tuan nay|tuan nay co lich|lich.*tuan nay/.test(s)) {
-    return { scope: 'week' }
-  }
-  return null
-}
-
-// Số ngày từ a→b (cùng "YYYY-MM-DD", theo lịch địa phương). b-a; âm nếu b trước a.
-function daysBetween(a, b) {
-  const [ay, am, ad] = String(a).split('-').map(Number)
-  const [by, bm, bd] = String(b).split('-').map(Number)
-  return Math.round(
-    (new Date(by, bm - 1, bd) - new Date(ay, am - 1, ad)) / 86400000
-  )
-}
-
-// XÉT TÍNH KHẢ THI của mục tiêu thu nhập: cần từ khoá khả thi/kịp/đạt được + số
-// tiền. Hạn chót tuỳ chọn: "trong N ngày" hoặc một ngày cụ thể; mặc định hết kỳ
-// hiện tại. Trả { target, withinDays, deadline } hoặc null.
-function parseFeasibilityReq(msg) {
-  const s = deaccent(msg)
-  if (!/(kha thi|co kip|kip khong|kip ko|dat duoc|co the dat|lieu co|co dat)/.test(s))
-    return null
-  let withinDays = null
-  const wd = s.match(/trong\s*(\d{1,3})\s*ngay/)
-  if (wd) withinDays = Number(wd[1])
-  const deadline = withinDays == null ? parseDayReq(msg, false) : null
-  // Bỏ phần "trong N ngày" và ngày hạn chót để không nhầm thành SỐ TIỀN.
-  const cleaned = s
-    .replace(/trong\s*\d{1,3}\s*ngay/g, ' ')
-    .replace(/\b\d{1,2}\s*[/-]\s*\d{1,2}(\s*[/-]\s*\d{2,4})?\b/g, ' ')
-  const target = parseAmountVnd(cleaned)
-  if (!target) return null
-  return { target, withinDays, deadline }
-}
-
-// Câu hỏi DỰ PHÓNG lương: "nếu làm thêm N ca [đêm/ngày] nữa thì (lương) tổng bao
-// nhiêu". Cần đồng thời: tín hiệu HỎI (bao nhiêu / tổng / ?) + tín hiệu THÊM
-// (thêm/nữa) + số lượng "N ca | N ca đêm | N đêm | N ca ngày | N ngày".
-// Trả { count, type } (type: 'night'|'day'|null) hoặc null.
-function parseProjectionReq(msg) {
-  const s = deaccent(msg)
-  if (!/(bao nhieu|tong|\?)/.test(s)) return null
-  if (!/(them|nua)/.test(s)) return null
-  const m = s.match(/(\d{1,3})\s*(ca dem|ca ngay|ca|dem|ngay)\b/)
-  if (!m) return null
-  const count = Number(m[1])
-  if (!count || count < 1 || count > 100) return null
-  // Loại ca: ưu tiên đơn vị đi kèm số ("3 đêm" → đêm); nếu chỉ "N ca" thì dò cả câu.
-  const unit = m[2]
-  const type = /dem/.test(unit)
-    ? 'night'
-    : /ngay/.test(unit)
-      ? 'day'
-      : /\bdem\b|ca dem|ban dem/.test(s)
-        ? 'night'
-        : /ca ngay|ban ngay/.test(s)
-          ? 'day'
-          : null
-  return { count, type }
-}
-
-// Nhận diện lệnh MỞ một công cụ/màn hình của web. Trả khoá công cụ hoặc null.
-// Các công cụ dễ trùng với thêm/tra cứu (bồi thường, việc ngoài, nhập lịch, đối
-// chiếu) chỉ mở khi có động từ "mở/xem/vào…" để không nuốt câu thêm/hỏi dữ liệu.
-function parseOpenTool(msg) {
-  const s = deaccent(msg)
-  // Nhập lịch / đối chiếu: giữ như cũ (không cần động từ "mở").
-  if (/nhap lich/.test(s)) return 'import'
-  if (/doi chieu/.test(s)) return 'reconcile'
-  // Còn lại CẦN động từ "mở/xem…" để không nuốt câu HỎI ("kỳ lương này bao nhiêu",
-  // "cách dùng …") hay câu THÊM/TRA CỨU (bồi thường, việc ngoài).
-  const open = /\b(mo|open|hien thi|hien|vao|toi|di toi)\b/.test(s)
-  if (!open) return null
-  if (/(ho so|tai khoan|profile|account)/.test(s)) return 'profile'
-  if (/(ky luong|chu ky luong|pay period)/.test(s)) return 'payPeriod'
-  if (/(huong dan|tro giup|\bhelp\b|\bguide\b)/.test(s)) return 'guide'
-  if (/(boi thuong|khoan tru|khau tru|den bu)/.test(s)) return 'deductions'
-  if (/(viec ngoai|thu nhap ngoai|luong ngoai|lam them)/.test(s)) return 'extra'
-  return null
 }
 
 // Trợ lý lương: AI hiểu câu hỏi + diễn đạt; phép TÍNH số ca cần làm do CODE tính
@@ -1320,7 +931,7 @@ export default function SalaryChat({
 
     // Đang chờ bổ sung thông tin còn thiếu (giờ vào/ra hoặc ngày).
     if (pending) {
-      if (/huy|cancel|thoi|bo qua/.test(norm)) {
+      if (/huy|cancel|thoi|bo qua|stop|never ?mind|nvm|forget it/.test(norm)) {
         setPending(null)
         bot(t('chat.cancelled'))
         return
@@ -1348,7 +959,11 @@ export default function SalaryChat({
     }
 
     // Mở MENU chức năng.
-    if (/\b(chuc nang|menu|cong cu|ban lam duoc gi|giup gi|lam duoc gi)\b/.test(norm)) {
+    if (
+      /\b(chuc nang|menu|cong cu|ban lam duoc gi|giup gi|lam duoc gi|what can you do|what can i do|help me|tools|features|commands)\b/.test(
+        norm
+      )
+    ) {
       pushMenu()
       return
     }
