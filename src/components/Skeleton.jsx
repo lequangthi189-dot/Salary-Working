@@ -53,13 +53,3 @@ export function SkeletonCircle({ size = 40, className = '' }) {
     />
   )
 }
-
-// Thẻ giữ chỗ (khung có viền/nền như thẻ thật). Đặt các SkeletonText bên trong
-// để gợi tiêu đề + số của thẻ sắp hiện.
-export function SkeletonCard({ className = '', height, children }) {
-  return (
-    <div className={`skeleton-card ${className}`.trim()} style={{ height }}>
-      {children}
-    </div>
-  )
-}
