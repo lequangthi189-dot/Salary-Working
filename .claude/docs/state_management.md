@@ -1,40 +1,68 @@
 # State Management
 
-Không dùng Redux/Zustand. State chỉ gồm React hooks cục bộ + một Context cho auth.
+Không dùng Redux/Zustand. State = React hooks cục bộ + vài Context (auth, i18n,
+currency). Dữ liệu nghiệp vụ gom trong các **controller hook** (`src/controllers/*`),
+KHÔNG còn nằm rải trong `App.jsx` như bản đầu.
 
-## Auth session — `src/auth/AuthProvider.jsx`
+## Context
 
-- `AuthContext` giữ `{ session, loading, signOut }`.
-- Khi mount: gọi `supabase.auth.getSession()` (đặt `loading=false` sau khi xong) và đăng ký `onAuthStateChange` để cập nhật `session` realtime. Hủy subscription khi unmount.
-- Truy cập qua hook `useAuth()`.
-- `App` dùng `loading`/`session` để gate: `loading` → màn "Loading…"; không có `session` → `LoginForm`; có → app chính.
+- **AuthProvider** (`src/auth/AuthProvider.jsx`) — `{ session, loading, signOut,
+  recovery, endRecovery, switchAccount }`. Mount: `getSession()` (đặt `loading=false`
+  khi xong) + `onAuthStateChange` (cập nhật session realtime, bắt `PASSWORD_RECOVERY`
+  → hiện `ResetPasswordForm`, ghi nhớ tài khoản để chuyển nhanh). Hook `useAuth()`.
+- **LanguageProvider** (`lib/i18n.jsx`) — `{ lang, setLang, t }`; đồng thời giữ
+  `currentLang` cấp module để hàm thuần (`payPeriodLabel`, `formatLost`, `formatMoney`)
+  dịch được. Mặc định `'en'`; lưu localStorage.
+- **CurrencyProvider** (`lib/currency.jsx`) — nạp tỉ giá qua Edge `fx-rate` (cache
+  24h + fallback), phát `updatedAt`.
 
-## Danh sách ca — `src/App.jsx`
+## Controller hooks (nguồn sự thật cho dữ liệu)
 
-State nguồn sự thật: `shifts` (mảng) + `loadError`.
+Mỗi hook: `useState` danh sách + `loading` (chỉ true tới khi tải ĐẦU xong, dùng cho
+skeleton; reload sau chạy nền), `loadedFor` (ref) để chỉ bật skeleton khi ĐỔI user.
 
-- `loadShifts()` (useCallback): `select('*')` sắp xếp `work_date` desc rồi `created_at` desc. Chạy lại mỗi khi `session` đổi.
-- `handleAdd(shift)`: insert kèm `user_id`, rồi `loadShifts()`. Trả về `null` nếu OK hoặc chuỗi lỗi.
-- `handleUpdate(id, fields)`: update theo `id`, rồi `loadShifts()`. Trả về `null`/lỗi.
-- `handleDelete(id)`: delete theo `id`; **optimistic** — lọc bỏ khỏi state ngay thay vì reload.
+- **useShifts(session)** → `{ shifts, loading, loadError, setLoadError, addShift,
+  updateShift, deleteShift, importWeekShifts }`.
+  - `addShift`: chặn kỳ đã chốt (`periodClosedError`) + chồng giờ (`overlapError`);
+    nếu ngày đã có ca LỊCH DỰ KIẾN (chưa check-in) thì "hiện thực hoá" chính ca đó
+    (ghi giờ thực) thay vì chèn ca thứ hai. Reload sau khi ghi.
+  - `importWeekShifts(rows)`: dựng ca dự kiến, `partitionImportShifts` bỏ ca trùng,
+    insert BATCH (1 request) → `{ created, skipped, errors }`.
+  - `deleteShift`: patch local (optimistic), không reload.
+- **useProfile(session)** → hồ sơ + `loading` + `savePayday`/`saveEmployeeInfo`/
+  `saveProfileFields` + `profileComplete` + nhắc đặt payday. `reload` **áp đơn giá**
+  (`setRates`) và **kỳ lương** (`setPayPeriod`) từ hồ sơ vào lib.
+- **usePayrolls / useDeductions / useExtraIncome** → CRUD tương ứng; nhận `onError`
+  (thường là `setLoadError` của App) để báo lỗi nền.
 
-Quy ước trả lỗi: các handler async trả `null` khi thành công, hoặc `string` thông điệp lỗi để component con hiển thị. Giữ nguyên quy ước này khi thêm thao tác mới.
+Quy ước lỗi: hàm async trả `null` khi OK, hoặc `string` thông điệp để component hiển
+thị. Sau add/update/import → **reload** từ server; sau delete → cập nhật local.
 
-## Form & card
+## App.jsx — gating & ráp view
 
-- `ShiftForm.jsx`: state cục bộ `workDate/startTime/endTime/busy/error`. Tính `preview = computeShift(...)` mỗi lần render để hiển thị giờ & lương trực tiếp. Mặc định ngày = hôm nay (`todayStr()` qua `toISOString().slice(0,10)`).
-- `ShiftCard.jsx`: tự quản chế độ `editing`. Khi sửa, giữ bản nháp `workDate/start/end`; `cancel()` khôi phục từ prop `shift`; `save()` gọi `onUpdate`. Hiển thị cờ `(+1d)` khi `end <= start` (qua nửa đêm).
-- `Timesheet.jsx`: stateless. Gom ca theo `work_date` (giữ thứ tự desc đầu vào), tính tổng từng nhóm và tổng lớn bằng `shiftTotals()` (cộng dồn `computeShift`).
+Thứ tự gate (return sớm): `loading` (auth) → `recovery` → `!session` (login) →
+`addingAccount` → gate hồ sơ chưa đủ (`profile && !profileComplete` →
+`EmployeeInfoForm`) → app chính. Dữ liệu suy ra đắt (`monthStats`, `allStats`,
+`schedByDate`, `chatSnapshot`) được `useMemo` (deps gồm `profile` vì đơn giá phụ
+thuộc hồ sơ). `flash` = thông báo tạm (tạo ca cả tuần…) tự ẩn sau 5s.
 
-## Kỳ lương & nhận lương — `src/App.jsx`
+## Kỳ lương & nhận lương
 
-- `profile` (gồm `payday`, `full_name`) và `payrolls` được load cùng `shifts` khi `session` đổi.
-- `pendingPeriodKey(shifts, payrolls)`: kỳ ĐÃ kết thúc (qua 25) gần nhất mà CHƯA có dòng `payrolls` → "kỳ đang chờ nhận".
-- Nút **"Đã nhận lương"** (cạnh "Add shift") gọi `receiveSalary()` → `markReceived(pendingKey, hôm nay)` (upsert `payrolls`). **Chỉ khi đã nhận** thì kỳ mới hiện trong thanh bên `PayPeriodPanel` (panel lọc theo `payrolls`).
-- **Nhắc nhận lương** (`SalaryReminderModal`): hiện khi đã đặt `payday`, có kỳ đang chờ, và hôm nay ≥ ngày `payday` của tháng trả lương. "Chưa nhận" chỉ tắt trong phiên (`reminderDismissed`, reset khi reload → hỏi lại lần đăng nhập sau); "Đã nhận" → `receiveSalary()`.
-- `savePayday` dùng **upsert** `profiles{ id, payday }` (lưu được kể cả khi dòng profile chưa tồn tại). `PaydayPrompt` hỏi lần đầu khi `payday` null (bỏ qua lưu cờ `localStorage`).
+- `pendingPeriodKey(shifts, payrolls)`: kỳ đã kết thúc gần nhất mà CHƯA có dòng
+  `payrolls` = "đang chờ nhận".
+- Nút **"Đã nhận lương"** → `markReceived(pendingKey, hôm nay)` (upsert `payrolls`).
+  Chỉ kỳ đã nhận mới hiện ở `PayPeriodPanel`.
+- **Nhắc nhận lương** (`SalaryReminderModal`): khi đã đặt `payday`, có kỳ chờ, và
+  hôm nay ≥ ngày nhận. "Chưa nhận" chỉ tắt trong phiên; "Đã nhận" → `receiveSalary()`.
+
+## Bộ nhớ chatbot (2 mức)
+
+- Mức 2 (lưu/hiển thị): `chat_messages` nạp `MAX_HISTORY_LOAD` tin gần nhất khi mở.
+- Mức 1 (ngữ cảnh gửi AI): cửa sổ trượt `MAX_HISTORY_SEND` tin; server còn chốt lại
+  bằng `WINDOW_TURNS`. Tin chỉ-UI (menu/bảng/thẻ xác nhận) không lưu.
 
 ## Nguyên tắc
 
-- Sau insert/update: **reload** từ server (đảm bảo đồng bộ thứ tự + dữ liệu chuẩn). Sau delete: cập nhật optimistic.
-- Không cache kết quả tính lương vào state; luôn tính từ thời gian thô khi render. Xem `pay_logic.md`.
+- Không cache kết quả tính lương vào state; luôn tính từ thời gian thô khi render
+  (xem `pay_logic.md`).
+- Skeleton chỉ ở lần tải ĐẦU; gộp các nguồn loading để tránh hiện số tạm rồi nhảy.
