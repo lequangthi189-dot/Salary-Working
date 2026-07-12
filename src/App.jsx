@@ -330,6 +330,12 @@ export default function App() {
       </div>
     )
 
+  // Hồ sơ CHƯA tải xong (profile khởi tạo null) → chờ Loader thay vì render app
+  // chính rồi mới nhảy về form thông tin NV. Không có bước này, user MỚI (hồ sơ
+  // chưa đủ) thấy màn hình chính lóe lên một nhịp trước khi bị đẩy sang gate dưới.
+  if (profileLoading)
+    return <Loader fullscreen label={t('common.loading')} />
+
   // Bắt buộc điền thông tin nhân viên (họ/tên, mã NV, lương) trước khi vào app.
   if (profile && !profileComplete)
     return (
