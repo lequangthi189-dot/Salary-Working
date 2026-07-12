@@ -137,7 +137,7 @@ async function getWorker(onProgress) {
 
 // Chạy OCR 1 ảnh (data URL "data:...;base64,..."). Trả TEXT thô.
 // Ném lỗi nếu OCR hỏng → BÊN GỌI phải bắt và BỎ QUA đối chiếu (không chặn luồng).
-export async function ocrImage(dataUrl, onProgress) {
+async function ocrImage(dataUrl, onProgress) {
   const worker = await getWorker(onProgress)
   const { data } = await worker.recognize(dataUrl)
   return data?.text || ''
