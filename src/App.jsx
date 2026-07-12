@@ -1,17 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { useAuth } from './auth/AuthProvider.jsx'
 import LoginForm from './auth/LoginForm.jsx'
 import ResetPasswordForm from './auth/ResetPasswordForm.jsx'
 import ShiftForm from './components/ShiftForm.jsx'
 import MonthStats from './components/MonthStats.jsx'
 import Timesheet from './components/Timesheet.jsx'
-import ProfileModal from './components/ProfileModal.jsx'
-import PayPeriodPage from './components/PayPeriodPage.jsx'
-import CompensationModal from './components/CompensationModal.jsx'
-import ExtraIncomeModal from './components/ExtraIncomeModal.jsx'
-import SalaryChat from './components/SalaryChat.jsx'
 import FloatingChatButton from './components/FloatingChatButton.jsx'
-import ScheduleImportModal from './components/ScheduleImportModal.jsx'
 import PaydayPrompt from './components/PaydayPrompt.jsx'
 import SalaryReminderModal from './components/SalaryReminderModal.jsx'
 import WelcomeGuide from './components/WelcomeGuide.jsx'
@@ -22,7 +16,18 @@ import ToolsSheet from './components/ToolsSheet.jsx'
 import EmployeeInfoForm from './components/EmployeeInfoForm.jsx'
 import WhatsNewModal from './components/WhatsNewModal.jsx'
 import Loader from './components/Loader.jsx'
-import ReconcileModal from './components/ReconcileModal.jsx'
+
+// Code-split các phần NẶNG chỉ mở theo nhu cầu (modal/chat) → tách khỏi bundle chính,
+// chỉ tải chunk khi lần đầu mở. tesseract.js (trong luồng đọc ảnh) đã lazy sẵn ở
+// ocrCrosscheck; các component này kéo theo scheduleExtract/OCR/donut nên tách ra
+// cắt được đáng kể tải ban đầu.
+const ProfileModal = lazy(() => import('./components/ProfileModal.jsx'))
+const PayPeriodPage = lazy(() => import('./components/PayPeriodPage.jsx'))
+const CompensationModal = lazy(() => import('./components/CompensationModal.jsx'))
+const ExtraIncomeModal = lazy(() => import('./components/ExtraIncomeModal.jsx'))
+const SalaryChat = lazy(() => import('./components/SalaryChat.jsx'))
+const ScheduleImportModal = lazy(() => import('./components/ScheduleImportModal.jsx'))
+const ReconcileModal = lazy(() => import('./components/ReconcileModal.jsx'))
 import { APP_VERSION, entriesSince } from './lib/changelog.js'
 import { useI18n } from './lib/i18n.jsx'
 import { firstNameOf } from './lib/name.js'
@@ -80,6 +85,14 @@ export default function App() {
   const [showDeductions, setShowDeductions] = useState(false)
   const [showExtraIncome, setShowExtraIncome] = useState(false)
   const [showChat, setShowChat] = useState(false)
+  // SalaryChat được code-split (lazy) + chỉ MOUNT sau lần MỞ đầu tiên: latch này
+  // bật true khi showChat lần đầu true rồi giữ nguyên → chunk chat (kéo theo
+  // scheduleExtract/OCR) chỉ tải khi user thật sự mở chat, và vẫn GIỮ tin nhắn qua
+  // các lần đóng/mở sau (component ở mãi sau khi đã mount). Trước đó không tải gì.
+  const [chatMounted, setChatMounted] = useState(false)
+  useEffect(() => {
+    if (showChat) setChatMounted(true)
+  }, [showChat])
   const [showWelcome, setShowWelcome] = useState(false)
   const [whatsNew, setWhatsNew] = useState(null) // mảng entries cần hiện, hoặc null
   const [showPayPeriod, setShowPayPeriod] = useState(false) // popup Kỳ lương
@@ -502,45 +515,51 @@ export default function App() {
                 ×
               </button>
             </div>
-            <PayPeriodPage
-              shifts={shifts}
-              payrolls={payrolls}
-              deductions={deductions}
-              extraIncome={extraIncome}
-              payday={profile?.payday}
-              onMarkReceived={markReceived}
-              onUnmark={unmarkReceived}
-              onAddDeduction={addDeduction}
-              onDeleteDeduction={deleteDeduction}
-              hasNightShift={hasNightShift}
-            />
+            <Suspense fallback={<Loader label={t('common.loading')} />}>
+              <PayPeriodPage
+                shifts={shifts}
+                payrolls={payrolls}
+                deductions={deductions}
+                extraIncome={extraIncome}
+                payday={profile?.payday}
+                onMarkReceived={markReceived}
+                onUnmark={unmarkReceived}
+                onAddDeduction={addDeduction}
+                onDeleteDeduction={deleteDeduction}
+                hasNightShift={hasNightShift}
+              />
+            </Suspense>
           </div>
         </div>
       )}
 
       {showDeductions && (
-        <CompensationModal
-          periodKey={currentKey}
-          deductions={currentDeductions}
-          grossPay={monthStats.pay}
-          onAdd={addDeduction}
-          onDelete={deleteDeduction}
-          onClose={() => setShowDeductions(false)}
-        />
+        <Suspense fallback={null}>
+          <CompensationModal
+            periodKey={currentKey}
+            deductions={currentDeductions}
+            grossPay={monthStats.pay}
+            onAdd={addDeduction}
+            onDelete={deleteDeduction}
+            onClose={() => setShowDeductions(false)}
+          />
+        </Suspense>
       )}
 
       {showExtraIncome && (
-        <ExtraIncomeModal
-          periodKey={currentKey}
-          shiftPay={monthStats.pay}
-          extraIncome={extraIncome}
-          onAdd={addExtraIncome}
-          onUpdate={updateExtraIncome}
-          onDelete={deleteExtraIncome}
-          onSetReceived={setReceived}
-          onSetReceivedMany={setReceivedMany}
-          onClose={() => setShowExtraIncome(false)}
-        />
+        <Suspense fallback={null}>
+          <ExtraIncomeModal
+            periodKey={currentKey}
+            shiftPay={monthStats.pay}
+            extraIncome={extraIncome}
+            onAdd={addExtraIncome}
+            onUpdate={updateExtraIncome}
+            onDelete={deleteExtraIncome}
+            onSetReceived={setReceived}
+            onSetReceivedMany={setReceivedMany}
+            onClose={() => setShowExtraIncome(false)}
+          />
+        </Suspense>
       )}
 
       {/* Nút NỔI kéo-thả mở trợ lý lương; ẩn khi khung chat đang mở. Vị trí lưu
@@ -560,7 +579,10 @@ export default function App() {
         />
       )}
 
-      {/* Luôn mount để GIỮ tin nhắn khi đóng/mở; chỉ reset khi reload trang. */}
+      {/* Mount sau lần mở đầu (chatMounted latch) rồi ở mãi để GIỮ tin nhắn khi
+          đóng/mở; chỉ reset khi reload trang. Lazy → chunk chat tải khi mở lần đầu. */}
+      {chatMounted && (
+        <Suspense fallback={null}>
       <SalaryChat
         open={showChat}
         snapshot={chatSnapshot}
@@ -604,32 +626,39 @@ export default function App() {
         }}
         onClose={() => setShowChat(false)}
       />
+        </Suspense>
+      )}
 
       {showImport && (
-        <ScheduleImportModal
-          employeeCode={employeeCode}
-          fullName={fullName}
-          phone={profile?.phone || ''}
-          onImport={importWeekShifts}
-          onClose={() => setShowImport(false)}
-          onSuccess={(msg) => {
-            setShowImport(false)
-            showFlash(msg)
-          }}
-        />
+        <Suspense fallback={null}>
+          <ScheduleImportModal
+            employeeCode={employeeCode}
+            fullName={fullName}
+            phone={profile?.phone || ''}
+            onImport={importWeekShifts}
+            onClose={() => setShowImport(false)}
+            onSuccess={(msg) => {
+              setShowImport(false)
+              showFlash(msg)
+            }}
+          />
+        </Suspense>
       )}
 
       {showReconcile && (
-        <ReconcileModal
-          employeeCode={employeeCode}
-          fullName={fullName}
-          phone={profile?.phone || ''}
-          shifts={shifts}
-          onClose={() => setShowReconcile(false)}
-        />
+        <Suspense fallback={null}>
+          <ReconcileModal
+            employeeCode={employeeCode}
+            fullName={fullName}
+            phone={profile?.phone || ''}
+            shifts={shifts}
+            onClose={() => setShowReconcile(false)}
+          />
+        </Suspense>
       )}
 
       {showProfile && (
+        <Suspense fallback={null}>
         <ProfileModal
           user={session.user}
           profile={profile}
@@ -653,6 +682,7 @@ export default function App() {
             setAddingAccount(true)
           }}
         />
+        </Suspense>
       )}
 
       {showWelcome && <WelcomeGuide onClose={closeWelcome} />}
