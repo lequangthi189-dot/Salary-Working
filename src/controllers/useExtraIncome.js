@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import * as model from '../models/extraIncomeModel.js'
 import { localTodayStr } from '../lib/payPeriod.js'
 
@@ -6,17 +6,31 @@ import { localTodayStr } from '../lib/payPeriod.js'
 // dính tới shiftMath/rates. View gọi các hàm này, không đụng Supabase trực tiếp.
 export function useExtraIncome(session, onError) {
   const [extraIncome, setExtraIncome] = useState([])
+  // `loading` = true tới khi tải ĐẦU xong (nhất quán với các controller khác để
+  // view chờ được trước khi hiện số). Chỉ bật lại skeleton khi ĐỔI user.
+  const [loading, setLoading] = useState(true)
+  const loadedFor = useRef(null)
 
   const reload = useCallback(async () => {
     const { data, error } = await model.fetchExtraIncome()
     if (error) onError?.(error.message)
     else setExtraIncome(data ?? [])
+    setLoading(false) // xong (kể cả lỗi) → thoát skeleton
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    if (session) reload()
-    else setExtraIncome([])
+    if (!session) {
+      setExtraIncome([])
+      loadedFor.current = null
+      setLoading(false)
+      return
+    }
+    if (loadedFor.current !== session.user.id) {
+      loadedFor.current = session.user.id
+      setLoading(true)
+    }
+    reload()
   }, [session, reload])
 
   async function addExtraIncome({ date, description, amount }) {
@@ -66,6 +80,7 @@ export function useExtraIncome(session, onError) {
 
   return {
     extraIncome,
+    loading,
     addExtraIncome,
     updateExtraIncome,
     deleteExtraIncome,
