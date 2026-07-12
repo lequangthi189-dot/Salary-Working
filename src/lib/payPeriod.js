@@ -26,10 +26,6 @@ export function setPayPeriod({ startDay, endDay } = {}) {
   cfg = { startDay: clampDay(startDay, 26), endDay: clampDay(endDay, 25) }
 }
 
-export function getPayPeriodConfig() {
-  return { ...cfg }
-}
-
 // Ngày hôm nay theo giờ ĐỊA PHƯƠNG dạng "YYYY-MM-DD".
 export function localTodayStr() {
   const d = new Date()

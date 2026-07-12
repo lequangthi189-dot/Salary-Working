@@ -1,7 +1,6 @@
 import './ProgressButton.css'
 
-// Nút tiến độ (progress button) — thay cho CircularProgress, NHẬN ĐÚNG BỘ PROPS
-// để thay 1-1 ở mọi chỗ gọi (đọc lịch, đối chiếu công):
+// Nút tiến độ (progress button) dùng ở các bước chờ xử lý (đọc lịch, đối chiếu công):
 //   value         — 0..100 (xác định %); bỏ qua khi indeterminate.
 //   label         — chữ hiển thị trong nút (vd "AI đang đọc lịch…").
 //   indeterminate — true → ẩn số, lớp fill chạy qua lại liên tục (bước không ước
