@@ -2,28 +2,32 @@
 
 Nguồn: `src/lib/shiftMath.js`, hằng số `src/lib/rates.js`, test `src/lib/shiftMath.test.js`.
 
-## Hằng số (rates.js)
+## Hằng số & đơn giá (rates.js)
 
 | Tên | Giá trị | Ý nghĩa |
 |-----|---------|---------|
-| `DAY_RATE` | 25500 | VND/giờ, ca ngày |
-| `NIGHT_RATE` | 33150 | VND/giờ, ca đêm |
-| `NIGHT_START_HOUR` | 22 | đầu cửa sổ đêm (22:00) |
-| `NIGHT_END_HOUR` | 6 | cuối cửa sổ đêm (06:00) |
+| `DAY_RATE` | 25500 | VND/giờ, ca ngày — MẶC ĐỊNH/fallback |
+| `NIGHT_RATE` | 33150 | VND/giờ, ca đêm — MẶC ĐỊNH/fallback |
+| `NIGHT_START_HOUR` | 22 | mặc định đầu cửa sổ đêm (22:00) |
+| `NIGHT_END_HOUR` | 6 | mặc định cuối cửa sổ đêm (06:00) |
 
-Cửa sổ đêm là `[22:00, 24:00) ∪ [00:00, 06:00)`. Phần còn lại (`06:00–22:00`) là ngày.
+**Đơn giá thật theo TỪNG NGƯỜI**: nạp từ hồ sơ qua `setRates()`, đọc qua
+`getDayRate()/getNightRate()/getHolidayDayRate()/getHolidayNightRate()`. Các hằng
+trên chỉ là fallback khi hồ sơ chưa cấu hình. Cửa sổ đêm cũng theo từng người
+(`getNightStartMin()/getNightEndMin()`, mặc định 22:00–06:00, có thể vắt nửa đêm).
+Mặc định: cửa sổ đêm `[22:00, 24:00) ∪ [00:00, 06:00)`; phần còn lại (`06:00–22:00`) là ngày.
 
 ## Thuật toán `computeShift(startTime, endTime)`
 
 1. `parseTime("HH:MM")` → phút kể từ nửa đêm (`h*60 + m`).
 2. Nếu `end <= start` → ca qua nửa đêm, cộng `end += 1440` (MINUTES_PER_DAY).
-3. Duyệt **từng phút** `t` trong `[start, end)`; `isNightMinute(t)` quyết định phút đó là đêm (`m >= 1320 || m < 360`) hay ngày.
+3. Tách phút ngày/đêm bằng công thức đóng **O(1)** `nightMinutesBefore(x)` (số phút đêm trong `[0, x)`), KHÔNG lặp từng phút. `splitRange(lo, hi) = nightMinutesBefore(hi) − nightMinutesBefore(lo)`. Cửa sổ đêm lấy theo hồ sơ; nếu hồ sơ đặt "không có ca đêm" thì `foldNight` gộp mọi phút thành phút ngày.
 4. Trả về:
    - `decimalHours = totalMin / 60`
    - `dayHours = dayMin / 60`, `nightHours = nightMin / 60`
-   - `pay = (dayMin/60)*DAY_RATE + (nightMin/60)*NIGHT_RATE`
+   - `pay = dayHours*getDayRate() + nightHours*getNightRate()` (bản lễ dùng `getHolidayDayRate()/getHolidayNightRate()` khi `isHoliday`)
 
-Cách tính theo từng phút cho độ chính xác tới phút (vd ca `09:00–09:30` = 0.5h). Đây là cách quy đổi "thời gian → số thực" mô tả trong spec.
+Kết quả chính xác tới phút (vd ca `09:00–09:30` = 0.5h) mà không cần vòng lặp.
 
 ## Ví dụ biên (đã có test)
 
@@ -51,8 +55,8 @@ Thuật toán:
 1. Thiếu `scheduledStart`/`scheduledEnd` → fallback: lương = `computeShift(actualStart, actualEnd)` thô, `lost*` = 0.
 2. Chuẩn hoá lịch: `sStart`, `sEnd`; nếu `sEnd <= sStart` cộng 1440.
 3. Đưa giờ thực tế về cùng trục: `aStart = alignNear(actualStart, sStart)` (chọn biểu diễn trong ±12h quanh `sStart`, xử lý vào sớm/trễ & qua nửa đêm); `aEnd` cộng 1440 tới khi `> aStart`.
-4. Cửa sổ **được trả** = `[effStart, effEnd)` với `effStart = clamp(aStart, sStart, sEnd)`, `effEnd = clamp(aEnd, sStart, sEnd)`. Duyệt từng phút → `dayHours`/`nightHours`/`pay`.
-5. Giờ mất: `lateIn = [sStart, effStart)`, `earlyOut = [effEnd, sEnd)`; mỗi cái tách ngày/đêm theo `isNightMinute`.
+4. Cửa sổ **được trả** = `[effStart, effEnd)` với `effStart = clamp(aStart, sStart, sEnd)`, `effEnd = clamp(aEnd, sStart, sEnd)`. Tách ngày/đêm bằng `splitRange` (O(1)) → `dayHours`/`nightHours`/`pay`.
+5. Giờ mất: `lateIn = splitRange(sStart, effStart)`, `earlyOut = splitRange(effEnd, sEnd)`; mỗi cái đã tách sẵn ngày/đêm.
 6. Trả về: `{ decimalHours, dayHours, nightHours, pay }` (đã kẹp) + `{ lateIn, earlyOut, lostDayHours, lostNightHours, lostHours, lostPay }`.
 
 `formatLost(result)` trả chuỗi tiếng Việt mô tả vào trễ/ra sớm hoặc `null`. Tất cả tính lại ở client từ thời gian thô, không lưu DB (xem `data_model.md`). Test trong `shiftMath.test.js` (describe `computeEffective`).
@@ -66,7 +70,7 @@ Lương chốt ngày 25 hằng tháng. Công của "tháng M" = **26 của thán
 - `payPeriodRange(key)` / `paymentWindow(key)` / `payPeriodLabel(key)` / `isPeriodEnded(key, today)`.
 - Toán theo chuỗi `YYYY-MM-DD` (so sánh từ điển) để tránh lệch múi giờ; `localTodayStr()` lấy hôm nay theo giờ địa phương.
 
-`periodStats(shifts)` (trong `shiftMath.js`) = `shiftTotals` + `dayPay`/`nightPay` (theo `DAY_RATE`/`NIGHT_RATE`) + `shiftCount`/`workDays`/`avgHoursPerDay`. Đánh dấu đã nhận lương lưu ở bảng `payrolls` (xem `data_model.md`); tiền vẫn tính lại từ `shifts`, không lưu DB.
+`periodStats(shifts)` (trong `shiftMath.js`) = `shiftTotals` + `dayPay`/`nightPay` (theo `getDayRate()`/`getNightRate()`) + `idealPay`/`lostPay` + `dayShiftCount`/`nightShiftCount`/`shiftCount`/`workDays`/`avgHoursPerDay`. Đánh dấu đã nhận lương lưu ở bảng `payrolls` (xem `data_model.md`); tiền vẫn tính lại từ `shifts`, không lưu DB.
 
 ## Định dạng
 
@@ -75,13 +79,14 @@ Lương chốt ngày 25 hằng tháng. Công của "tháng M" = **26 của thán
 
 ## Quy tắc nâng cao trong SPEC
 
-> Trạng thái cập nhật: **Giới hạn 8 giờ/ngày** và **Lương lễ** đều ĐÃ được code (xem chi tiết bên dưới). Mục còn lại là quy ước, không phải tính năng phải code.
+> Trạng thái: **Lương lễ** ĐÃ được code. **Giới hạn 8 giờ/ngày** CHƯA được code.
 
-- ~~**Giới hạn 8 giờ/ngày**~~ — ĐÃ IMPLEMENT (validation, không cắt giờ ngầm):
-  - Hằng số `MAX_HOURS_PER_DAY = 8` trong `shiftMath.js`.
-  - `App.jsx` chặn khi thêm/sửa ca nếu **tổng giờ trong ngày** (cộng dồn các ca cùng `work_date`, dùng `computeEffective(...).decimalHours`) vượt 8 → trả chuỗi lỗi, không ghi DB.
-  - `ShiftForm.jsx` cảnh báo sớm + disable nút khi **một ca** > 8h.
-- ~~**Lương lễ (holiday)**~~ — ĐÃ IMPLEMENT (phụ cấp lễ là BỘI SỐ trên đơn giá, theo hồ sơ):
+- **Giới hạn 8 giờ/ngày** — ❌ CHƯA IMPLEMENT. Không có hằng `MAX_HOURS_PER_DAY`, không
+  có chỗ nào chặn khi tổng giờ/ngày (hay một ca) vượt 8h — `App.jsx`/`useShifts`/
+  `ShiftForm` đều KHÔNG kiểm tra. (`durationHours` trong `shiftMath.js` có sẵn để đo
+  thời lượng một khung giờ, nhưng hiện chỉ dùng ở `scheduleExtract.imageHours`, không
+  phải để cap.) Nếu cần thêm, xác nhận với chủ dự án trước.
+- **Lương lễ (holiday)** — ✅ ĐÃ IMPLEMENT (phụ cấp lễ là BỘI SỐ trên đơn giá, theo hồ sơ):
   - Lễ ca ngày: `getHolidayDayRate() = lương_ngày × holidayDayPct%` (mặc định hồ sơ 300%).
   - Lễ ca đêm: `getHolidayNightRate() = (lương_ngày × (1+nightPct/100)) × holidayNightPct%` (mặc định 390%) — cộng dồn phụ cấp đêm thường rồi mới nhân bội số lễ.
   - Cờ ngày lễ lưu ở cột `shifts.is_holiday` (boolean). UI bật/tắt ở `ShiftForm.jsx`/`ShiftCard.jsx`; % lễ cấu hình ở `EmployeeInfoForm.jsx`/`ProfileModal.jsx` (cột `profiles.holiday_day_pct`/`holiday_night_pct`).
