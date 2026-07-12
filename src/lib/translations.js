@@ -19,6 +19,9 @@ export const translations = {
     "common.no": "No",
     "common.warning": "Warning",
     "common.continue": "Continue",
+    "error.title": "Something went wrong",
+    "error.body": "The app hit an unexpected error. Your data is safe — please reload to continue.",
+    "error.reload": "Reload",
 
     // nav / app
     "nav.importWeek": "Import weekly schedule",
@@ -569,6 +572,9 @@ export const translations = {
     "common.no": "Không",
     "common.warning": "Cảnh báo",
     "common.continue": "Tiếp tục",
+    "error.title": "Đã có lỗi xảy ra",
+    "error.body": "Ứng dụng gặp lỗi ngoài dự kiến. Dữ liệu của bạn vẫn an toàn — hãy tải lại trang để tiếp tục.",
+    "error.reload": "Tải lại",
 
     // nav / app
     "nav.importWeek": "Nhập lịch tuần",
