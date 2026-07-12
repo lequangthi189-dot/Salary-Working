@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import * as profileModel from '../models/profileModel.js'
 import { setRates } from '../lib/rates.js'
 import { setPayPeriod } from '../lib/payPeriod.js'
@@ -41,10 +41,25 @@ function applyPeriod(p) {
 export function useProfile(session) {
   const [profile, setProfile] = useState(null)
   const [showPaydayPrompt, setShowPaydayPrompt] = useState(false)
-  // `loading` = true tới khi tải hồ sơ lần đầu xong (hiện skeleton ở trang Tài khoản).
+  // `loading` = true tới khi tải hồ sơ CỦA PHIÊN HIỆN TẠI xong (skeleton/gate chờ).
   const [loading, setLoading] = useState(true)
   const [profileError, setProfileError] = useState(null)
-  const loadedFor = useRef(null)
+
+  // Đồng bộ trạng thái theo phiên NGAY TRONG RENDER (không đợi effect): ngay sau khi
+  // đăng nhập, nếu chỉ bật `loading` trong effect thì render ĐẦU vẫn thấy loading còn
+  // false (đặt từ lúc chưa đăng nhập) → App render app chính một nhịp trước khi kịp
+  // chờ hồ sơ. Cập nhật state khi đổi user ngay ở render là mẫu React chuẩn (guard
+  // bằng so sánh id) — loại bỏ khe hụt đó. Cũng xoá hồ sơ user cũ để không hiện nhầm
+  // khi chuyển tài khoản.
+  const uid = session?.user?.id ?? null
+  const [trackedUid, setTrackedUid] = useState(null)
+  if (uid !== trackedUid) {
+    setTrackedUid(uid)
+    setLoading(!!uid) // có phiên mới → đang tải; đăng xuất → hết tải
+    setProfile(null)
+    setProfileError(null)
+    if (!uid) setShowPaydayPrompt(false)
+  }
 
   const reload = useCallback(async () => {
     if (!session) return
@@ -60,17 +75,7 @@ export function useProfile(session) {
   }, [session])
 
   useEffect(() => {
-    if (!session) {
-      setProfile(null)
-      loadedFor.current = null
-      setLoading(false)
-      return
-    }
-    if (loadedFor.current !== session.user.id) {
-      loadedFor.current = session.user.id
-      setLoading(true)
-    }
-    reload()
+    if (session) reload()
   }, [session, reload])
 
   async function savePayday(day) {
