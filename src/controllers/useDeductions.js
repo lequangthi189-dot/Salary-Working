@@ -9,9 +9,13 @@ export function useDeductions(session, onError) {
   const loadedFor = useRef(null)
 
   const reload = useCallback(async () => {
-    const { data } = await deductionsModel.fetchDeductions()
-    setDeductions(data ?? [])
+    const { data, error } = await deductionsModel.fetchDeductions()
+    // Lỗi tải nền → báo qua onError thay vì nuốt lặng; GIỮ dữ liệu cũ (không ghi
+    // đè bằng rỗng) để không mất danh sách đang hiển thị.
+    if (error) onError?.(error.message)
+    else setDeductions(data ?? [])
     setLoading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
