@@ -5,7 +5,7 @@ import { setPayPeriod } from '../lib/payPeriod.js'
 
 // Hồ sơ được coi là ĐÃ HOÀN TẤT khi có đủ thông tin nhân viên bắt buộc
 // (họ, tên, mã NV, lương 1 giờ). Thiếu → app bắt điền form thông tin.
-export function isProfileComplete(p) {
+function isProfileComplete(p) {
   return !!(
     p &&
     p.first_name &&

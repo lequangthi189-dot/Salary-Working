@@ -8,8 +8,8 @@
 import { supabase, supabaseUrl } from './supabase.js'
 
 // Chỉ nhận 3 định dạng ảnh này; tối đa 5MB.
-export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-export const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_SIZE = 5 * 1024 * 1024 // 5MB
 export const ACCEPT_ATTR = ACCEPTED_TYPES.join(',')
 
 // Đường dẫn CỐ ĐỊNH theo user → upsert cùng path = ghi đè, không rác Storage.

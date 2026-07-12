@@ -9,21 +9,13 @@ import { supabase } from './supabase.js'
 import { getLang, translate } from './i18n.jsx'
 import { localTodayStr } from './payPeriod.js'
 import { hhmm, durationHours, computeEffective } from './shiftMath.js'
-import { resolveWeek } from './reconcileDates.js'
+import { resolveWeek, WEEKDAYS, addDays } from './reconcileDates.js'
 
-export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+// WEEKDAYS/addDays định nghĩa MỘT nơi ở reconcileDates (trước đây lặp đôi ở cả
+// hai file); re-export để các lối vào (modal, chatbot) vẫn import từ đây như cũ.
+export { WEEKDAYS, addDays }
+
 const isoRe = /^\d{4}-\d{2}-\d{2}$/
-
-export function pad2(n) {
-  return String(n).padStart(2, '0')
-}
-
-// Cộng n ngày vào "YYYY-MM-DD" (tính theo UTC để tránh lệch múi giờ).
-export function addDays(dateStr, n) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1, d + n))
-  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`
-}
 
 // Thứ 2 của tuần chứa dateStr ("YYYY-MM-DD"), theo giờ địa phương.
 export function mondayOf(dateStr) {

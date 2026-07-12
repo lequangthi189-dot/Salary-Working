@@ -4,7 +4,7 @@
 export const APP_VERSION = '2.8.0'
 
 // items: { vi: [...], en: [...] } — danh sách thay đổi theo ngôn ngữ.
-export const CHANGELOG = [
+const CHANGELOG = [
   {
     version: '2.8.0',
     date: '2026-06-09',

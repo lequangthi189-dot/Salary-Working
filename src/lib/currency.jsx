@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const FALLBACK = { GBP: 1 / 31000, USD: 1 / 25000, AUD: 1 / 16500 } // ~xấp xỉ, chỉ dùng khi chưa có tỉ giá thật
 const STORAGE_KEY = 'fx-rates'
-export const FX_MAX_AGE = 24 * 60 * 60 * 1000 // 24 giờ
+const FX_MAX_AGE = 24 * 60 * 60 * 1000 // 24 giờ
 
 let _rates = { ...FALLBACK }
 let _updatedAt = null
@@ -15,7 +15,7 @@ let _updatedAt = null
 export function getRate(cur) {
   return _rates[cur] ?? FALLBACK[cur] ?? 1
 }
-export function getRatesUpdatedAt() {
+function getRatesUpdatedAt() {
   return _updatedAt
 }
 
@@ -30,7 +30,7 @@ function loadCache() {
 }
 
 // Đảm bảo có tỉ giá: dùng cache nếu còn mới (<24h), nếu không thì fetch mới.
-export async function ensureRates(force = false) {
+async function ensureRates(force = false) {
   const cached = loadCache()
   if (cached) {
     _rates = { ...FALLBACK, ...cached.rates }

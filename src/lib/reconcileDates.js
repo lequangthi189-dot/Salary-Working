@@ -14,7 +14,7 @@
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const isoRe = /^\d{4}-\d{2}-\d{2}$/
 
-export function pad2(n) {
+function pad2(n) {
   return String(n).padStart(2, '0')
 }
 

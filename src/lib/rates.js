@@ -7,8 +7,8 @@ export const NIGHT_RATE = 33150
 export const DEFAULT_NIGHT_PCT = 30
 
 // Night window on a 24-hour clock: [NIGHT_START:00, 24:00) ∪ [00:00, NIGHT_END:00)
-export const NIGHT_START_HOUR = 22 // 22:00
-export const NIGHT_END_HOUR = 6 // 06:00
+const NIGHT_START_HOUR = 22 // 22:00
+const NIGHT_END_HOUR = 6 // 06:00
 
 // --- Cấu hình đơn giá THEO TỪNG NGƯỜI DÙNG (nạp từ hồ sơ lúc chạy) ---
 // dayRate: lương 1 giờ (ca ngày). nightPct: phụ cấp ca đêm (%).
