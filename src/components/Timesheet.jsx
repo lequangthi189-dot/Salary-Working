@@ -9,6 +9,7 @@ import {
   computeShift,
   hhmm,
 } from '../lib/shiftMath.js'
+import { matchesShiftSearch } from '../lib/shiftRules.js'
 import { useI18n } from '../lib/i18n.jsx'
 
 // Phân loại ca là 'day' hay 'night': ưu tiên giờ thực tế, nếu chưa check-in thì
@@ -76,21 +77,31 @@ export default function Timesheet({
 }) {
   const { t: tr } = useI18n()
   const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
+  const [search, setSearch] = useState('') // ô tìm ca (ngày / giờ / loại ca)
 
-  // Nhóm theo ngày, memoize theo [shifts, filter] để không lọc/nhóm lại khi render
-  // vì lý do khác. Là hook nên phải đứng TRƯỚC các return sớm bên dưới.
+  // Nhóm theo ngày, memoize theo [shifts, filter, search] để không lọc/nhóm lại khi
+  // render vì lý do khác. Là hook nên phải đứng TRƯỚC các return sớm bên dưới.
   const groups = useMemo(() => {
     // Ngày đã có chấm công thật (có check-in). Với những ngày đó, ẩn thẻ ca chỉ-là-
     // lịch-dự-kiến (có Sched nhưng chưa check-in) — đã chấm công thì không cần hiện nữa.
     const actualDates = new Set(
       shifts.filter((s) => s.start_time).map((s) => s.work_date)
     )
-    const visibleShifts = shifts
-      .filter(
-        (s) =>
-          !(s.scheduled_start && !s.start_time && actualDates.has(s.work_date))
-      )
-      .filter((s) => filter === 'all' || shiftKind(s) === filter)
+    const query = search.trim()
+    const searching = query !== ''
+    // Nút LỌC (ngày/đêm) + Ô SEARCH chạy CÙNG NHAU: một ca phải QUA CẢ HAI mới hiện
+    // (vd lọc "Ca đêm" + gõ "10/6" → chỉ ca đêm ngày 10/6). Chỉ phân loại shiftKind khi
+    // CẦN (đang lọc ngày/đêm hoặc đang search) để không tính thừa lúc xem tất cả.
+    const needKind = filter !== 'all' || searching
+    const visibleShifts = shifts.filter((s) => {
+      if (s.scheduled_start && !s.start_time && actualDates.has(s.work_date))
+        return false
+      if (!needKind) return true
+      const kind = shiftKind(s)
+      if (filter !== 'all' && kind !== filter) return false // nút lọc ngày/đêm
+      if (searching && !matchesShiftSearch(s, kind, query)) return false // ô search
+      return true
+    })
 
     // Group by work_date, preserving the incoming (date-desc) order.
     const groups = []
@@ -105,7 +116,7 @@ export default function Timesheet({
     }
     return groups
     // hasNightShift trong deps vì shiftKind phân loại theo cửa sổ đêm (foldNight).
-  }, [shifts, filter, hasNightShift])
+  }, [shifts, filter, search, hasNightShift])
 
   // Đang tải lần đầu → skeleton; xong mà rỗng → "chưa có ca"; lỗi được App hiện riêng.
   if (loading) return <TimesheetSkeleton />
@@ -114,25 +125,71 @@ export default function Timesheet({
     return <p className="empty">{tr('timesheet.empty')}</p>
   }
 
-  const filterBar = (
-    <div className="shift-filter">
-      {['all', 'day', 'night'].map((f) => (
-        <button
-          key={f}
-          type="button"
-          className={`shift-filter-btn${filter === f ? ' active' : ''}`}
-          onClick={() => setFilter(f)}
+  const searching = search.trim() !== ''
+
+  // Thanh công cụ NGANG trên đầu danh sách: ô SEARCH + các nút LỌC ngày/đêm cạnh nhau
+  // (cùng mục đích thu hẹp danh sách). Ô search luôn hiện; nút lọc chỉ hiện khi có ca đêm.
+  const toolbar = (
+    <div className="shift-toolbar">
+      <div className="shift-search">
+        <svg
+          className="shift-search-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
         >
-          {tr(`filter.${f}`)}
-        </button>
-      ))}
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          className="shift-search-input"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={tr('search.placeholder')}
+          aria-label={tr('search.aria')}
+        />
+        {searching && (
+          <button
+            type="button"
+            className="shift-search-clear"
+            onClick={() => setSearch('')}
+            aria-label={tr('search.clear')}
+            title={tr('search.clear')}
+          >
+            ×
+          </button>
+        )}
+      </div>
+      {hasNightShift && (
+        <div className="shift-filter">
+          {['all', 'day', 'night'].map((f) => (
+            <button
+              key={f}
+              type="button"
+              className={`shift-filter-btn${filter === f ? ' active' : ''}`}
+              onClick={() => setFilter(f)}
+            >
+              {tr(`filter.${f}`)}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 
   return (
     <div className="timesheet">
-      {hasNightShift && filterBar}
-      {groups.length === 0 && <p className="empty">{tr('filter.none')}</p>}
+      {toolbar}
+      {groups.length === 0 && (
+        <p className="empty">
+          {searching ? tr('search.noResults') : tr('filter.none')}
+        </p>
+      )}
       {groups.map((g) => {
         const t = shiftTotals(g.items)
         return (

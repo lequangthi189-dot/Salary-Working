@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { overlapError, partitionImportShifts } from './shiftRules.js'
+import {
+  overlapError,
+  partitionImportShifts,
+  matchesShiftSearch,
+} from './shiftRules.js'
 
 // Helper tạo ca với giờ thực tế.
 const shift = (id, work_date, start_time, end_time) => ({
@@ -143,5 +147,61 @@ describe('partitionImportShifts', () => {
     const { toCreate, skipped } = partitionImportShifts(candidates, [])
     expect(toCreate).toHaveLength(1)
     expect(skipped).toHaveLength(1)
+  })
+})
+
+describe('matchesShiftSearch (tìm ca)', () => {
+  const day = shift(1, '2026-06-10', '08:00', '12:00') // ca NGÀY 10/6
+  const night = shift(2, '2026-06-10', '22:00', '06:00') // ca ĐÊM 10/6
+  const plan = planned('2026-06-05', '08:00', '12:00') // chỉ có LỊCH, chưa check-in
+
+  it('query rỗng / chỉ khoảng trắng → khớp hết (không lọc)', () => {
+    expect(matchesShiftSearch(day, 'day', '')).toBe(true)
+    expect(matchesShiftSearch(day, 'day', '   ')).toBe(true)
+  })
+
+  it('NGÀY: nhiều định dạng gõ ngày đều khớp work_date', () => {
+    for (const q of ['2026-06-10', '10/6', '10/06', '10/6/2026', '10-6', '10.6', '10']) {
+      expect(matchesShiftSearch(day, 'day', q)).toBe(true)
+    }
+    expect(matchesShiftSearch(day, 'day', '6')).toBe(true) // tháng 6
+    expect(matchesShiftSearch(day, 'day', '2026')).toBe(true) // năm
+  })
+
+  it('NGÀY: ngày KHÔNG khớp → false', () => {
+    expect(matchesShiftSearch(day, 'day', '11/6')).toBe(false)
+    expect(matchesShiftSearch(day, 'day', '2025-06-10')).toBe(false)
+  })
+
+  it('GIỜ: khớp giờ vào/ra, chuẩn hoá 6:00 = 06:00', () => {
+    expect(matchesShiftSearch(night, 'night', '22:00')).toBe(true) // giờ vào
+    expect(matchesShiftSearch(night, 'night', '06:00')).toBe(true) // giờ ra
+    expect(matchesShiftSearch(night, 'night', '6:00')).toBe(true) // ra, không số 0
+    expect(matchesShiftSearch(night, 'night', '06')).toBe(true)
+    expect(matchesShiftSearch(night, 'night', '2200')).toBe(true)
+    expect(matchesShiftSearch(day, 'day', '09:00')).toBe(false) // ca 08–12 không có
+  })
+
+  it('GIỜ: ca chỉ có LỊCH (chưa check-in) vẫn khớp theo giờ lịch dự kiến', () => {
+    expect(matchesShiftSearch(plan, 'day', '08:00')).toBe(true)
+    expect(matchesShiftSearch(plan, 'day', '8:00')).toBe(true)
+    expect(matchesShiftSearch(plan, 'day', '5/6')).toBe(true) // ngày 5/6
+  })
+
+  it('LOẠI CA: song ngữ đêm/ngày, không phân biệt dấu & hoa/thường', () => {
+    expect(matchesShiftSearch(night, 'night', 'đêm')).toBe(true)
+    expect(matchesShiftSearch(night, 'night', 'ĐÊM')).toBe(true)
+    expect(matchesShiftSearch(night, 'night', 'dem')).toBe(true)
+    expect(matchesShiftSearch(night, 'night', 'night')).toBe(true)
+    expect(matchesShiftSearch(night, 'night', 'ngày')).toBe(false)
+    expect(matchesShiftSearch(day, 'day', 'ngày')).toBe(true)
+    expect(matchesShiftSearch(day, 'day', 'Ngày')).toBe(true)
+    expect(matchesShiftSearch(day, 'day', 'day')).toBe(true)
+    expect(matchesShiftSearch(day, 'day', 'đêm')).toBe(false)
+  })
+
+  it('KẾT HỢP: gõ chuỗi vừa-ngày-vừa-loại không khớp cả hai → false', () => {
+    // "10/6 đêm" là một chuỗi liền → không có biểu diễn nào chứa nguyên cụm này.
+    expect(matchesShiftSearch(night, 'night', '10/6 đêm')).toBe(false)
   })
 })

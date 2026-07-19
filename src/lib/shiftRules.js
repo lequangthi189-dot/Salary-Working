@@ -141,6 +141,75 @@ export function buildSchedByDate(shifts) {
   return map
 }
 
+// ── TÌM CA (search bảng công) ────────────────────────────────────────────────
+// Chuẩn hoá chuỗi để so khớp KHÔNG phân biệt hoa/thường & DẤU tiếng Việt: bỏ dấu
+// (NFD) + quy 'đ'→'d', về chữ thường, cắt khoảng trắng 2 đầu. Nhờ vậy gõ
+// "đêm"/"Đêm"/"dem" đều khớp như nhau, "Ngày" khớp "ngay".
+function normalizeSearch(str) {
+  return String(str ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '') // bỏ dấu tổ hợp (huyền/sắc/hỏi/ngã/nặng, mũ, móc…)
+    .replace(/[đĐ]/g, 'd')
+    .trim()
+}
+
+// Gom MỌI cách gõ có thể khớp một ca thành 1 "kho" chuỗi (mỗi biểu diễn 1 dòng),
+// đã chuẩn hoá — để so bằng .includes(query). `kind` là 'day'|'night' (đã phân loại
+// ở view theo cửa sổ đêm). Bao gồm:
+//   - NGÀY: ISO 2026-06-10, 10/6, 10/06, 10/6/2026, 10-6, 10.6, và rời 10 / 6 / 2026.
+//   - GIỜ (vào & ra; ưu tiên giờ THỰC TẾ, thiếu thì lấy giờ LỊCH): 22:00, 6:00, 22, 6, 2200.
+//   - LOẠI CA: song ngữ 'ngay'/'day' hoặc 'dem'/'night'.
+// Ngăn cách bằng '\n' để query (không chứa '\n') không thể khớp vắt qua 2 biểu diễn.
+export function shiftSearchHaystack(shift, kind) {
+  const parts = []
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(shift.work_date || ''))
+  if (m) {
+    const [, y, mo, day] = m
+    const dd = String(+day) // '10', bỏ số 0 đứng đầu ('05' → '5')
+    const mm = String(+mo)
+    parts.push(
+      `${y}-${mo}-${day}`, // 2026-06-10
+      `${dd}/${mm}`, // 10/6
+      `${day}/${mo}`, // 10/06
+      `${dd}/${mm}/${y}`, // 10/6/2026
+      `${day}/${mo}/${y}`, // 10/06/2026
+      `${dd}-${mm}`, // 10-6
+      `${dd}.${mm}`, // 10.6
+      dd, // 10  (ngày)
+      mm, // 6   (tháng)
+      y // 2026
+    )
+  } else if (shift.work_date) {
+    parts.push(String(shift.work_date))
+  }
+  const start = hhmm(shift.start_time) || hhmm(shift.scheduled_start)
+  const end = hhmm(shift.end_time) || hhmm(shift.scheduled_end)
+  for (const tm of [start, end]) {
+    if (!tm) continue
+    const [hh, mi] = tm.split(':')
+    parts.push(
+      tm, // 22:00
+      `${+hh}:${mi}`, // 6:00 (bỏ số 0 đứng đầu của giờ)
+      hh, // 22 / 06
+      String(+hh), // 22 / 6
+      tm.replace(':', '') // 2200
+    )
+  }
+  if (kind === 'night') parts.push('dem', 'night', 'ca dem', 'night shift')
+  else if (kind === 'day') parts.push('ngay', 'day', 'ca ngay', 'day shift')
+  return normalizeSearch(parts.join('\n'))
+}
+
+// Ca có KHỚP truy vấn tìm kiếm không. `query` là chuỗi thô người dùng gõ; `kind` là
+// loại ca đã phân loại ('day'|'night'). Query rỗng → khớp hết (không lọc). So bằng
+// .includes trên kho đã chuẩn hoá nên gõ ngày/giờ/loại ca ở nhiều định dạng đều trúng.
+export function matchesShiftSearch(shift, kind, query) {
+  const q = normalizeSearch(query)
+  if (!q) return true
+  return shiftSearchHaystack(shift, kind).includes(q)
+}
+
 // Có tới hạn nhận lương chưa: đã đặt payday, có kỳ chờ nhận, và hôm nay >= ngày nhận.
 export function isSalaryDue(pendingKey, payday, paymentWindowOf) {
   if (!pendingKey || !payday) return false
