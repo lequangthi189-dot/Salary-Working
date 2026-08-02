@@ -2355,6 +2355,39 @@ input.t-out {
   align-items: center;
   gap: 0.75rem;
 }
+
+/* Danh sách ca cuộn theo chiều sâu: thẻ gần tâm màn hình rõ và lớn hơn, thẻ xa tâm lùi
+   nhẹ vào nền. --scroll-focus được Timesheet cập nhật liên tục trong requestAnimationFrame. */
+.timesheet--smooth-scroll .shift-card:not(.editing):not(.shift-card--skeleton) {
+  --scroll-focus: 0;
+  opacity: calc(0.68 + var(--scroll-focus) * 0.32);
+  transform: scale(calc(0.965 + var(--scroll-focus) * 0.045));
+  transform-origin: center center;
+  filter: saturate(calc(0.78 + var(--scroll-focus) * 0.22));
+  will-change: transform, opacity, filter;
+  transition:
+    transform 90ms linear,
+    opacity 90ms linear,
+    filter 90ms linear,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+/* Bàn phím/chuột luôn làm thẻ rõ hoàn toàn để thao tác sửa, xoá không bị phân tâm. */
+.timesheet--smooth-scroll .shift-card:not(.editing):is(:hover, :focus-within) {
+  opacity: 1;
+  transform: scale(1.01);
+  filter: saturate(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timesheet--smooth-scroll .shift-card:not(.editing):not(.shift-card--skeleton) {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+}
 .shift-card.editing {
   grid-template-columns: 1fr;
 }

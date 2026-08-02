@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import ShiftCard from './ShiftCard.jsx'
 import { Skeleton, SkeletonText } from './Skeleton.jsx'
 import {
@@ -76,6 +76,7 @@ export default function Timesheet({
   loading = false,
 }) {
   const { t: tr } = useI18n()
+  const timesheetRef = useRef(null)
   const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
   const [search, setSearch] = useState('') // ô tìm ca (ngày / giờ / loại ca)
 
@@ -117,6 +118,40 @@ export default function Timesheet({
     return groups
     // hasNightShift trong deps vì shiftKind phân loại theo cửa sổ đêm (foldNight).
   }, [shifts, filter, search, hasNightShift])
+
+  // Smooth-scroll focus: card gần tâm viewport nổi rõ hơn, card ở xa thu/mờ nhẹ.
+  // Dùng requestAnimationFrame để mỗi frame chỉ đo layout một lần dù sự kiện scroll bắn dày.
+  useEffect(() => {
+    const root = timesheetRef.current
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      return undefined
+
+    let frame = 0
+    const updateFocus = () => {
+      frame = 0
+      const viewportCenter = window.innerHeight / 2
+      const focusRadius = Math.min(window.innerHeight * 0.58, 560)
+      root.querySelectorAll('.shift-card:not(.shift-card--skeleton)').forEach((card) => {
+        const rect = card.getBoundingClientRect()
+        const cardCenter = rect.top + rect.height / 2
+        const distance = Math.abs(cardCenter - viewportCenter)
+        const focus = Math.max(0, 1 - distance / focusRadius)
+        card.style.setProperty('--scroll-focus', focus.toFixed(3))
+      })
+    }
+    const requestUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateFocus)
+    }
+
+    updateFocus()
+    window.addEventListener('scroll', requestUpdate, { passive: true })
+    window.addEventListener('resize', requestUpdate)
+    return () => {
+      window.removeEventListener('scroll', requestUpdate)
+      window.removeEventListener('resize', requestUpdate)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [groups, loading])
 
   // Đang tải lần đầu → skeleton; xong mà rỗng → "chưa có ca"; lỗi được App hiện riêng.
   if (loading) return <TimesheetSkeleton />
@@ -183,7 +218,7 @@ export default function Timesheet({
   )
 
   return (
-    <div className="timesheet">
+    <div ref={timesheetRef} className="timesheet timesheet--smooth-scroll">
       {toolbar}
       {groups.length === 0 && (
         <p className="empty">
