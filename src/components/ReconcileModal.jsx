@@ -24,6 +24,7 @@ import { useTrickleProgress } from '../lib/useTrickleProgress.js'
 import { useDoneHold } from '../lib/useDoneHold.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import ProgressButton from './ProgressButton.jsx'
+import ImageUploadZone from './ImageUploadZone.jsx'
 
 const isoRe = /^\d{4}-\d{2}-\d{2}$/
 
@@ -246,8 +247,8 @@ export default function ReconcileModal({
     return () => previewUrls.forEach((u) => URL.revokeObjectURL(u))
   }, [previewUrls])
 
-  function pickFile(e) {
-    const list = Array.from(e.target.files || [])
+  function pickFile(selected) {
+    const list = Array.from(selected || [])
     if (!list.length) return
     // Cho chọn nhiều ảnh ở MỌI chế độ; nếu chọn nhiều mà scope là Tuần/Tháng thì
     // chặn ở bước đối chiếu (xem tooManyForScope) chứ không tự ý cắt bớt ảnh.
@@ -541,15 +542,7 @@ export default function ReconcileModal({
         </div>
 
         <div className="import-fields">
-          <label className="import-file">
-            <span>{t('import.image')}</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={pickFile}
-            />
-          </label>
+          <ImageUploadZone files={files} multiple onFiles={pickFile} />
           <label className="import-week">
             <span>{t('reconcile.scope')}</span>
             <select
