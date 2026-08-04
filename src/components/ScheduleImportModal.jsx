@@ -15,6 +15,7 @@ import ManualScheduleModal from './ManualScheduleModal.jsx'
 import Checkbox from './Checkbox.jsx'
 import ProgressButton from './ProgressButton.jsx'
 import TimeInput from './TimeInput.jsx'
+import ImageUploadZone from './ImageUploadZone.jsx'
 
 // Modal: tải ảnh lịch → AI đọc theo mã nhân viên (lấy từ hồ sơ) → xem trước & sửa
 // → tạo ca cả tuần.
@@ -62,8 +63,8 @@ export default function ScheduleImportModal({
     return () => URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
-  function pickFile(e) {
-    const f = e.target.files?.[0]
+  function pickFile(selected) {
+    const f = selected?.[0]
     if (!f) return
     setFile(f)
     setPreviewUrl(URL.createObjectURL(f))
@@ -235,12 +236,7 @@ export default function ScheduleImportModal({
           </button>
         </div>
 
-        <div className="import-fields">
-          <label className="import-file">
-            <span>{t('import.image')}</span>
-            <input type="file" accept="image/*" onChange={pickFile} />
-          </label>
-        </div>
+        <ImageUploadZone files={file ? [file] : []} onFiles={pickFile} />
         <p className="import-empcode">
           {t('import.empcodeFrom')}
           <strong>{employeeCode || t('import.none')}</strong>

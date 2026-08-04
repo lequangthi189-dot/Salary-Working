@@ -1638,6 +1638,137 @@ button[type='submit']:disabled {
 }
 
 /* ---- Modal nhập lịch tuần từ ảnh ---- */
+.premium-upload {
+  position: relative;
+  margin: 0 0 0.9rem;
+  padding: 2px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #8b5cf6, #4f8cff 48%, #31d6c4);
+  box-shadow: 0 14px 34px rgba(85, 77, 210, 0.2);
+}
+.import-fields > .premium-upload {
+  grid-column: 1 / -1;
+}
+.premium-upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.premium-upload-drop {
+  width: 100%;
+  min-height: 220px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  color: var(--text);
+  border: 2px dashed color-mix(in srgb, var(--accent) 42%, var(--border));
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 18% 85%, rgba(66, 211, 255, 0.13), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(175, 92, 255, 0.16), transparent 34%),
+    color-mix(in srgb, var(--panel) 92%, transparent);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.premium-upload-drop:hover,
+.premium-upload.is-dragging .premium-upload-drop {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background-color: color-mix(in srgb, var(--panel-2) 95%, transparent);
+}
+.premium-upload-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.15rem;
+}
+.premium-upload-art svg {
+  width: 66px;
+  height: 66px;
+  fill: #7549dc;
+  filter: drop-shadow(0 8px 12px rgba(91, 71, 205, 0.25));
+}
+.premium-upload-art .upload-arrow {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.premium-upload-orbit {
+  position: absolute;
+  padding: 0.28rem 0.38rem;
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  border-radius: 7px;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.2);
+}
+.orbit-one {
+  right: calc(100% + 0.55rem);
+  top: 1.9rem;
+  background: #ff5e72;
+  transform: rotate(-10deg);
+}
+.orbit-two {
+  left: calc(100% + 0.55rem);
+  top: 0.6rem;
+  background: #467df4;
+  transform: rotate(9deg);
+}
+.premium-upload-drop > strong {
+  font-size: 1.15rem;
+}
+.premium-upload-browse {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.premium-upload-browse b {
+  color: var(--accent);
+}
+.premium-upload-limits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 0.3rem;
+}
+.premium-upload-limits span,
+.premium-upload-selected {
+  padding: 0.3rem 0.65rem;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel-2) 82%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+.premium-upload-selected {
+  max-width: 100%;
+  color: var(--green);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.premium-upload.has-file {
+  background: linear-gradient(135deg, #7057ed, #3f8cff 48%, #21c8b6);
+}
+@media (max-width: 560px) {
+  .premium-upload-drop {
+    min-height: 195px;
+    padding: 1rem 0.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .premium-upload-drop {
+    transition: none;
+  }
+}
 .import-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
