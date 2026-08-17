@@ -1,0 +1,553 @@
+/* ============================================================================
+   SalaryWorking — design tokens (full bundle)
+   Generated from the SalaryWorking design system. Single file on purpose:
+   drop it in, import it once, no build config.
+
+   WHERE THIS GOES
+     src/styles/salaryworking-tokens.css
+
+   HOW TO LOAD IT  (src/main.jsx — this import must come FIRST)
+     import './styles/salaryworking-tokens.css'
+     import './styles.css'
+
+   WHAT TO DELETE AFTER IT LOADS  (otherwise the old values win)
+     1. src/styles/themes.css                 — delete the file + its import
+     2. the :root { --bg … --danger … } token block at the top of src/styles.css
+     Keep every other rule in src/styles.css. They already reference these names.
+
+   CONTRACT
+     Theme is switched by [data-theme='dark'|'glass'|'neumorph'] on <html>.
+     'dark' is the default and carries the Trung tính (neutral) palette.
+     Text size is switched by [data-size='sm'|'md'|'lg'] on <html>.
+   ============================================================================ */
+
+
+/* ---------------------------------------------------------------------------
+   tokens/palette.css
+   --------------------------------------------------------------------------- */
+/* PALETTE — raw values lifted verbatim from Salary-Working (src/styles.css :root,
+   src/styles/themes.css, src/components/MonthStats.css). Never edit a value to
+   "round" it; these are the product's real numbers. Semantic aliases live in
+   colors.css, theme swaps in themes.css. */
+:root {
+  /* Ink / navy surfaces — Sleek Dark theme (the product default) */
+  --sw-navy-900: #0a1929; /* page background */
+  --sw-navy-800: #0f2334; /* panel */
+  --sw-navy-700: #14293c; /* panel-2 (raised) */
+  --sw-navy-600: #1b3145; /* skeleton block */
+  --sw-hairline: #1a2d40; /* hairline border */
+
+  /* GitHub-dark surfaces still used by the stats block (MonthStats.css) */
+  --sw-slate-900: #1c2128; /* info-card / salary-hero background */
+  --sw-slate-800: #22272e; /* info-card hover */
+  --sw-slate-700: #2d333b; /* info-card border */
+  --sw-slate-600: #444c56; /* info-card hover border */
+
+  /* Text */
+  --sw-paper-50: #f3f8fd; /* primary text on dark */
+  --sw-paper-0: #ffffff; /* numbers, values */
+  --sw-slate-300: #8696aa; /* muted text (dark theme) */
+  --sw-slate-350: #9da7b3; /* salary-hero sub */
+  --sw-slate-400: #6e7681; /* fx line */
+
+  /* Accents & semantics */
+  --sw-blue-400: #5b9ec6; /* accent (dark theme) */
+  --sw-blue-500: #4f9dff; /* legacy accent / add-shift gradient top */
+  --sw-blue-700: #1f5fae; /* add-shift gradient bottom */
+  --sw-blue-300: #539bf5; /* stat tone-blue */
+  --sw-cyan-500: #3aa0d8; /* progress fill, loader ball */
+  --sw-mint-400: #4fd6a0; /* green (dark theme) */
+  --sw-green-600: #2ea043; /* salary-hero border + label */
+  --sw-red-400: #f0676b; /* danger (dark theme) */
+  --sw-red-500: #f85149; /* penalty / late */
+  --sw-red-600: #ff1f1f; /* not-checked-in warning frame */
+  --sw-amber-400: #ff9f43; /* check-in / planned */
+  --sw-amber-500: #f0883e; /* stat tone-orange */
+
+  /* Glass theme */
+  --sw-glass-bg: #0f1430;
+  --sw-glass-base: #1a2050;
+  --sw-glass-base-2: #1d2358;
+  --sw-glass-text: #f6f8ff;
+  --sw-glass-muted: #d3dcf2;
+  --sw-glass-accent: #7cc4ff;
+  --sw-glass-green: #5ff0a8;
+  --sw-glass-danger: #ff7d97;
+  --sw-glass-amber: #ffc36b;
+  --sw-aurora-violet: #a855f7;
+  --sw-aurora-cyan: #22d3ee;
+  --sw-aurora-pink: #ec4899;
+  --sw-aurora-teal: #14b8a6;
+  --sw-aurora-indigo: #6366f1;
+
+  /* Neumorph theme */
+  --sw-nm-bg: #e0e5ec;
+  --sw-nm-panel-2: #e8edf3;
+  --sw-nm-light: #ffffff;
+  --sw-nm-dark: #bcc3ce;
+  --sw-nm-dark-2: #b2b9c4;
+  --sw-nm-dark-3: #b6bdc8;
+  --sw-nm-text: #4a5468;
+  --sw-nm-muted: #8b95a8;
+  --sw-nm-accent: #8ab0e8;
+  --sw-nm-green: #7ed0b0;
+  --sw-nm-danger: #f0a79b;
+  --sw-nm-amber: #f3c19a;
+  --sw-nm-peach: #ffd9c2;
+  --sw-nm-sky: #c6dcf5;
+  --sw-nm-mint: #bce7d4;
+  --sw-nm-coral: #f6cabf;
+  --sw-nm-lavender: #d8cbf2;
+}
+
+/* ---------------------------------------------------------------------------
+   tokens/colors.css
+   --------------------------------------------------------------------------- */
+/* COLORS — the product's live token contract. These exact names (--bg, --panel,
+   --accent, --checkin …) are what every component in Salary-Working reads, so a
+   consumer that sets them gets a themed app for free. Values below are the dark
+   default; themes.css swaps them per [data-theme]. Semantic aliases underneath
+   spell out the MEANING of each so new UI picks the right one. */
+:root {
+  --bg: var(--sw-navy-900);
+  --panel: var(--sw-navy-800);
+  --panel-2: var(--sw-navy-700);
+  --text: var(--sw-paper-50);
+  --muted: var(--sw-slate-300);
+  --accent: var(--sw-blue-400);
+  --green: var(--sw-mint-400);
+  --danger: var(--sw-red-400);
+  --border: var(--sw-hairline);
+  --checkin: var(--sw-amber-400);
+  --checkout: var(--sw-blue-400);
+  --skeleton-base: var(--sw-navy-600);
+  --skeleton-sheen: rgba(255, 255, 255, 0.06);
+
+  /* --- Semantic aliases (use these when authoring new UI) --- */
+  --surface-page: var(--bg);
+  --surface-card: var(--panel); /* date-group, shift-form, modal, auth-card */
+  --surface-raised: var(--panel-2); /* shift-card, stat tile, filter button */
+  --surface-overlay: rgba(0, 0, 0, 0.6); /* modal scrim */
+
+  --text-primary: var(--text);
+  --text-muted: var(--muted); /* labels, units, secondary meta */
+  --text-value: var(--sw-paper-0); /* money & hour figures */
+  --text-on-accent: #ffffff;
+
+  --border-hairline: var(--border);
+  --border-strong: var(--accent); /* hover / focus */
+
+  /* Money & time meaning — never re-map these */
+  --pay-positive: var(--sw-green-600); /* salary earned / received */
+  --pay-negative: var(--sw-red-500); /* late pay, deductions, penalties */
+  --time-in: var(--checkin); /* check-in, amber */
+  --time-out: var(--checkout); /* check-out, blue */
+  --time-scheduled: var(--muted); /* planned reference (dashed) */
+
+  /* Stat card tones (MonthStats) */
+  --tone-orange: var(--sw-amber-500); /* total hours, day shifts */
+  --tone-green: var(--sw-green-600); /* day hours */
+  --tone-blue: var(--sw-blue-300); /* night hours, night shifts */
+  --tone-red: var(--sw-red-500); /* late hours */
+
+  /* Status */
+  --status-planned: var(--checkin);
+  --status-planned-fill: rgba(255, 159, 67, 0.12);
+  --status-planned-chip: rgba(255, 159, 67, 0.18);
+  --status-overdue: var(--danger);
+  --status-missing: var(--sw-red-600);
+  --status-missing-fill: rgba(255, 31, 31, 0.18);
+  --status-received: var(--green);
+
+  /* Progress / loading */
+  --progress-track: var(--panel);
+  --progress-fill: rgba(58, 160, 216, 0.22);
+  --progress-bar: var(--sw-cyan-500);
+  --loader-ball: var(--sw-cyan-500);
+}
+
+/* ---------------------------------------------------------------------------
+   tokens/typography.css
+   --------------------------------------------------------------------------- */
+/* TYPOGRAPHY — Salary-Working ships NO webfont. It runs on the OS UI stack, and
+   that is deliberate: the app must look like a tool the phone already had, and it
+   must render instantly on cheap Android handsets in a factory. Numbers are the
+   protagonists, so every figure sits on tabular / monospaced widths so money
+   columns line up and can be compared by eye.
+   Root size is swapped by data-font on <html> (sm 87.5% / md 100% / lg 112.5%),
+   so ALWAYS size text in rem — never px — or it will not scale for the user. */
+:root {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+  --font-core: var(--font-sans);
+
+  /* Numerals: put this on ANY element that shows money, hours or a clock time. */
+  --numeric: tabular-nums; /* @kind other */
+
+  /* Scale — rem values as used in the product, smallest to largest */
+  --text-2xs: 0.68rem; /* @kind other */ /* fx line, dock label (mobile), edit-time label */
+  --text-xs: 0.72rem; /* @kind other */ /* stat label, badges, table body */
+  --text-sm: 0.8rem; /* @kind other */ /* hero label, sub-lines, muted meta */
+  --text-base: 0.85rem; /* @kind other */ /* form labels, messages, filter buttons */
+  --text-md: 0.9rem; /* @kind other */ /* period card label, search input */
+  --text-lg: 0.95rem; /* @kind other */ /* section title (form-title) */
+  --text-xl: 1.15rem; /* @kind other */ /* preview line */
+  --text-2xl: 1.25rem; /* @kind other */ /* stat tile value */
+  --text-3xl: 1.35rem; /* @kind other */ /* period total value */
+  --text-4xl: 1.4rem; /* @kind other */ /* stat card value */
+  --text-5xl: 2.2rem; /* @kind other */ /* salary hero value */
+
+  --weight-regular: 400; /* @kind other */
+  --weight-medium: 500; /* @kind other */
+  --weight-semibold: 600; /* @kind other */ /* labels, buttons, filter chips */
+  --weight-bold: 700; /* @kind other */ /* section titles, date labels, badges */
+  --weight-heavy: 800; /* @kind other */ /* money & hour figures */
+
+  --leading-tight: 1.1; /* @kind other */ /* all large numbers */
+  --leading-normal: 1.45; /* @kind other */
+  --leading-relaxed: 1.6; /* @kind other */ /* long help copy inside modals */
+
+  --tracking-title: 0.04em; /* @kind other */ /* uppercase section titles */
+  --tracking-label: 0.03em; /* @kind other */ /* uppercase small labels */
+  --tracking-hero: 0.08em; /* @kind other */ /* uppercase salary-hero label */
+}
+
+/* ---------------------------------------------------------------------------
+   tokens/spacing.css
+   --------------------------------------------------------------------------- */
+/* SPACING — the product is a timesheet, so density beats whitespace. The scale is
+   the rem ladder actually used across src/styles.css; nothing here is invented to
+   fit a 4/8px grid. Values are rem so they scale with the user's font-size setting. */
+:root {
+  --space-0: 0;
+  --space-1: 0.15rem; /* label→value gap inside a stat tile */
+  --space-2: 0.25rem; /* tight stacks, hero label gap */
+  --space-3: 0.3rem;
+  --space-4: 0.4rem; /* filter chip gap, date-header padding */
+  --space-5: 0.5rem; /* stats-panel gap, grid gap on mobile */
+  --space-6: 0.6rem; /* shift-list gap */
+  --space-7: 0.7rem; /* card inner gap */
+  --space-8: 0.75rem; /* form field gap, card padding-y */
+  --space-9: 0.85rem; /* shift-card padding-y, toolbar bottom */
+  --space-10: 1rem; /* card padding-x, modal head margin */
+  --space-11: 1.15rem;
+  --space-12: 1.25rem; /* shift-form padding, timesheet top margin */
+  --space-14: 1.5rem; /* modal padding, dark-theme card padding */
+  --space-16: 2rem; /* auth card padding, empty state padding */
+  --space-20: 7rem; /* app bottom padding: clearance for the dock */
+
+  /* Layout */
+  --app-max-width: 980px; /* .app content column */
+  --board-columns: minmax(0, 2fr) minmax(0, 3fr); /* @kind other */ /* entry 40% / stats 60% */
+  --board-gap: 1.25rem;
+  --auth-max-width: 360px;
+  --modal-max-width: 360px;
+  --modal-max-width-wide: 480px;
+  --dock-clearance: calc(9rem + env(safe-area-inset-bottom)); /* @kind other */ /* mobile */
+
+  /* Touch — one-handed, just off shift, in a dark workshop */
+  --touch-min: 44px; /* dock button width */
+  --touch-icon: 26px; /* dock icon box */
+}
+
+/* ---------------------------------------------------------------------------
+   tokens/shape.css
+   --------------------------------------------------------------------------- */
+/* SHAPE — radii and shadows. Radius grows with surface size, not with fashion:
+   6px for inline controls, 10–12px for rows and cards, 14px for the salary hero,
+   999px for the dock and status chips. Glass adds 18–20px, Soft UI 20–24px.
+   In the dark theme content cards carry NO shadow at all — elevation is a glass /
+   neumorph device, not a dark-theme one. */
+:root {
+  --radius-xs: 6px; /* edit-mode inputs, save/cancel buttons, theme swatch */
+  --radius-sm: 8px; /* inputs, filter chips, primary buttons, skeleton block */
+  --radius-md: 10px; /* shift card, stat tile, period card */
+  --radius-lg: 12px; /* date group, shift form, modal, progress button */
+  --radius-xl: 14px; /* salary hero */
+  --radius-2xl: 18px; /* glass surfaces */
+  --radius-3xl: 20px; /* neumorph surfaces */
+  --radius-4xl: 24px; /* neumorph shift-form */
+  --radius-pill: 999px; /* dock, planned / overdue / received chips */
+  --radius-circle: 50%;
+
+  /* Elevation — dark theme keeps only these two (popovers and the dock). */
+  --shadow-none: none; /* @kind shadow */
+  --shadow-popover: 0 6px 16px rgba(0, 0, 0, 0.25);
+  --shadow-dock: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
+  --shadow-warning-missing: 0 0 0 1px rgba(255, 31, 31, 0.5),
+    0 0 12px rgba(255, 31, 31, 0.45);
+  --shadow-received-glow: 0 0 10px rgba(56, 160, 255, 0.3);
+
+  /* Focus ring — accent at 35%, never a browser blue outline */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); /* @kind shadow */
+
+  /* Borders */
+  --border-width-hairline: 1px; /* @kind spacing */
+  --border-width-emphasis: 2px; /* @kind spacing */ /* salary hero, missing-checkin frame */
+  --border-dashed-scheduled: 1px dashed var(--border); /* @kind other */ /* planned reference input */
+}
+
+/* ---------------------------------------------------------------------------
+   tokens/motion.css
+   --------------------------------------------------------------------------- */
+/* MOTION — motion explains state, it never performs. Colour/border transitions in
+   the dark theme; lift + glow in glass; shadow depth in Soft UI. Everything below
+   is switched off under prefers-reduced-motion in the product's own stylesheets. */
+:root {
+  --duration-instant: 90ms; /* @kind other */ /* scroll-focus depth on the shift list */
+  --duration-fast: 0.15s; /* @kind other */ /* dock icon scale, stat card hover */
+  --duration-base: 0.2s; /* @kind other */ /* border/background hover, checkbox tick */
+  --duration-slow: 0.28s; /* @kind other */ /* glass card lift */
+  --duration-slower: 0.35s; /* @kind other */ /* dock hide/show */
+  --duration-progress: 0.4s; /* @kind other */ /* progress fill width */
+
+  --ease-standard: ease; /* @kind other */
+  --ease-out: ease-out; /* @kind other */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1); /* @kind other */ /* glass lift + button press */
+  --ease-loader: cubic-bezier(0.3, 0.06, 0.4, 1); /* @kind other */ /* bouncing loader ball */
+
+  --transition-surface: border-color var(--duration-base) var(--ease-standard),
+    background var(--duration-base) var(--ease-standard); /* @kind other */
+  --transition-lift: transform var(--duration-slow) var(--ease-spring),
+    box-shadow var(--duration-slow) var(--ease-standard),
+    border-color var(--duration-slow) var(--ease-standard); /* @kind other */
+  --transition-soft: box-shadow 0.22s var(--ease-standard),
+    transform 0.22s var(--ease-standard); /* @kind other */
+
+  --shimmer-duration: 1.4s; /* @kind other */ /* skeleton sheen */
+  --dock-hidden-offset: calc(100% + 28px); /* @kind other */
+  --dock-autohide-delay: 5000ms; /* @kind other */ /* dock hides 5s after scrolling stops */
+}
+
+/* ---------------------------------------------------------------------------
+   tokens/themes.css
+   --------------------------------------------------------------------------- */
+/* THEMES — three personalities, not three palettes. Applied with data-theme on
+   <html> (see src/lib/theme.js in the app). Each scope swaps the colour contract
+   from colors.css AND a set of SURFACE RECIPE tokens so one component stylesheet
+   renders correctly in all three. There are exactly THREE themes: dark, glass, neumorph.
+   glass and neumorph are verbatim from src/styles/themes.css; dark carries the agreed
+   Trung tính palette (one graphite ramp, one accent, three hues total). */
+
+/* Fallback recipe tokens for pages that never set data-theme (dark is default). */
+:root {
+  --page-bg-image: none; /* @kind other */
+  --card-bg: var(--panel);
+  --card-bg-image: none; /* @kind other */
+  --card-border: 1px solid var(--border); /* @kind other */
+  --card-radius: 12px;
+  --card-shadow: none;
+  --card-shadow-hover: none;
+  --card-hover-border: rgba(91, 158, 198, 0.55);
+  --card-hover-lift: none; /* @kind other */
+  --card-blur: none; /* @kind other */
+  --card-padding: 1.5rem;
+  --shift-card-padding: 1.1rem 1.25rem;
+  --input-bg: var(--bg);
+  --input-border: 1px solid var(--border); /* @kind other */
+  --input-shadow: none;
+  --input-radius: 8px;
+  --button-bg: var(--accent);
+  --button-shadow: none;
+}
+
+/* ---------- dark — Sleek Dark & Minimalist (default) ----------
+   Focus by subtraction: ONE graphite ramp for every surface, ONE accent, and colour
+   used only where it carries meaning about money. Time colours are neutral — check-in
+   and check-out are told apart by weight and position, a planned shift by a dashed
+   muted edge, a missed clock-in by the single red. Hue count in the whole UI: 3
+   (accent, earned, lost). Flat fields, hairline borders, no elevation on content cards.
+   Measured against AA: money 16.5:1, body 14.2:1, muted 6.3:1, earned 6.9:1,
+   lost 5.0:1, button 7.0:1 / label on button 7.2:1. */
+[data-theme='dark'] {
+  --bg: #15171a;
+  --panel: #1c1f23;
+  --panel-2: #23272c;
+  --text: #eceef0;
+  --muted: #9aa1a9;
+  --accent: #6aa9c9;
+  --green: #57b98a;
+  --danger: #e2665e;
+  --border: #2f343a;
+  /* Time is neutral here: emphasis comes from weight, not from a second hue. */
+  --checkin: #eceef0;
+  --checkout: #9aa1a9;
+  --skeleton-base: #23272c;
+  --skeleton-sheen: rgba(255, 255, 255, 0.05);
+
+  --text-value: #ffffff;
+  --text-on-accent: #0e1418;
+  --pay-positive: #57b98a;
+  --pay-negative: #e2665e;
+  --time-in: #eceef0;
+  --time-out: #9aa1a9;
+  --time-scheduled: #9aa1a9;
+  /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
+  --tone-orange: #9aa1a9;
+  --tone-green: #57b98a;
+  --tone-blue: #9aa1a9;
+  --tone-red: #e2665e;
+  --status-planned: #9aa1a9;
+  --status-planned-fill: rgba(154, 161, 169, 0.08);
+  --status-planned-chip: rgba(154, 161, 169, 0.14);
+  --status-overdue: #e2665e;
+  --status-missing: #e2665e;
+  --status-missing-fill: rgba(226, 102, 94, 0.12);
+  --status-received: #57b98a;
+  --progress-fill: rgba(106, 169, 201, 0.18);
+  --progress-bar: #6aa9c9;
+  --loader-ball: #6aa9c9;
+
+  --page-bg-image: none; /* @kind other */
+  --card-bg: var(--panel);
+  --card-bg-image: none; /* @kind other */
+  --card-border: 1px solid var(--border); /* @kind other */
+  --card-radius: 12px;
+  --card-shadow: none;
+  --card-shadow-hover: none;
+  --card-hover-border: #3c434b;
+  --card-hover-lift: none; /* @kind other */
+  --card-blur: none; /* @kind other */
+  --card-padding: 1.35rem;
+  --shift-card-padding: 0.9rem 1.05rem;
+  --shift-card-accent-edge: 0; /* @kind other */
+  --input-bg: #15171a;
+  --input-border: 1px solid var(--border); /* @kind other */
+  --input-shadow: none;
+  --input-radius: 8px;
+  --button-bg: var(--accent);
+  --button-shadow: none;
+  --button-press: scale(0.99); /* @kind other */
+}
+
+/* ---------- glass — Modern Glassmorphism ----------
+   Aurora gradient page, frosted translucent surfaces, glowing gradient hairline,
+   18px radii, cards lift 4px on hover. */
+[data-theme='glass'] {
+  --bg: var(--sw-glass-bg);
+  --panel: rgba(255, 255, 255, 0.1);
+  --panel-2: rgba(255, 255, 255, 0.16);
+  --text: var(--sw-glass-text);
+  --muted: var(--sw-glass-muted);
+  --accent: var(--sw-glass-accent);
+  --green: var(--sw-glass-green);
+  --danger: var(--sw-glass-danger);
+  --border: rgba(255, 255, 255, 0.28);
+  --checkin: var(--sw-glass-amber);
+  --checkout: #8fd0ff;
+  --surface-blur: blur(18px) saturate(150%); /* @kind other */
+  --skeleton-base: rgba(255, 255, 255, 0.16);
+  --skeleton-sheen: rgba(255, 255, 255, 0.4);
+  --text-value: #ffffff;
+  --text-on-accent: #0f1430;
+
+  --page-bg-image:
+    radial-gradient(58% 62% at 12% 16%, rgba(168, 85, 247, 0.55), transparent 72%),
+    radial-gradient(60% 66% at 88% 12%, rgba(34, 211, 238, 0.5), transparent 72%),
+    radial-gradient(64% 64% at 80% 90%, rgba(20, 184, 166, 0.5), transparent 72%),
+    radial-gradient(60% 60% at 16% 92%, rgba(236, 72, 153, 0.5), transparent 72%),
+    radial-gradient(80% 90% at 50% 50%, rgba(99, 102, 241, 0.3), transparent 78%),
+    linear-gradient(135deg, #1a2050 0%, #1d2358 100%); /* @kind other */
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --card-bg-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0.04) 55%,
+    rgba(255, 255, 255, 0.1)
+  ); /* @kind other */
+  --card-border: 1px solid rgba(255, 255, 255, 0.28); /* @kind other */
+  --card-radius: 18px;
+  --card-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --card-shadow-hover:
+    0 16px 44px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 8px 28px rgba(124, 196, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --card-hover-border: rgba(255, 255, 255, 0.4);
+  --card-hover-lift: translateY(-4px); /* @kind other */
+  --card-blur: var(--surface-blur); /* @kind other */
+  --card-padding: 1.5rem;
+  --shift-card-padding: 0.85rem 1rem;
+  --shift-card-accent-edge: 0; /* @kind other */
+  --glass-edge-gradient: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.9),
+    rgba(34, 211, 238, 0.85) 50%,
+    rgba(236, 72, 153, 0.9)
+  ); /* @kind other */
+  --glass-hero-gradient: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.9),
+    rgba(236, 72, 153, 0.9)
+  ); /* @kind other */
+  --tone-orange-fill: linear-gradient(135deg, #a855f7, #ec4899); /* @kind other */
+  --tone-blue-fill: linear-gradient(135deg, #3b82f6, #22d3ee); /* @kind other */
+  --tone-green-fill: linear-gradient(135deg, #14b8a6, #22c55e); /* @kind other */
+  --tone-red-fill: linear-gradient(135deg, #f43f5e, #fb923c); /* @kind other */
+  --input-bg: rgba(255, 255, 255, 0.12);
+  --input-border: 1px solid rgba(255, 255, 255, 0.25); /* @kind other */
+  --input-shadow: none;
+  --input-radius: 12px;
+  --input-focus-ring: 0 0 0 3px rgba(124, 196, 255, 0.25); /* @kind shadow */
+  --button-bg: var(--accent);
+  --button-shadow: 0 8px 22px rgba(124, 196, 255, 0.28);
+  --button-press: translateY(0); /* @kind other */
+}
+
+/* ---------- neumorph — Soft UI ----------
+   Light room, no borders at all, everything is shadow: light from top-left,
+   shade bottom-right. Raised = idle, deeper = hover, inset = pressed. */
+[data-theme='neumorph'] {
+  --bg: var(--sw-nm-bg);
+  --panel: var(--sw-nm-bg);
+  --panel-2: var(--sw-nm-panel-2);
+  --text: var(--sw-nm-text);
+  --muted: var(--sw-nm-muted);
+  --accent: var(--sw-nm-accent);
+  --green: var(--sw-nm-green);
+  --danger: var(--sw-nm-danger);
+  --border: transparent;
+  --checkin: var(--sw-nm-amber);
+  --checkout: var(--sw-nm-accent);
+  --nm-shadow: 6px 6px 14px #bcc3ce, -6px -6px 14px #ffffff;
+  --nm-inset: inset 3px 3px 7px #bcc3ce, inset -3px -3px 7px #ffffff;
+  --nm-shadow-hover: 9px 9px 20px #b2b9c4, -9px -9px 20px #ffffff;
+  --nm-shadow-raised: 8px 8px 18px #b6bdc8, -8px -8px 18px #ffffff;
+  --nm-convex: linear-gradient(145deg, #f0f4fa, #cdd3dd); /* @kind other */
+  --skeleton-base: #cfd6e0;
+  --skeleton-sheen: rgba(255, 255, 255, 0.7);
+  /* Soft UI is a light room: money, button labels and time figures must be dark.
+     Upstream's peach check-in colour is invisible on this ground — darkened here. */
+  --text-value: var(--sw-nm-text);
+  --text-on-accent: var(--sw-nm-text);
+  --time-in: #8a5a1e;
+  --time-out: #2f6d8f;
+
+  --page-bg-image: none; /* @kind other */
+  --card-bg: transparent;
+  --card-bg-image: var(--nm-convex); /* @kind other */
+  --card-border: none; /* @kind other */
+  --card-radius: 20px;
+  --card-shadow: var(--nm-shadow);
+  --card-shadow-hover: var(--nm-shadow-hover);
+  --card-hover-border: transparent;
+  --card-hover-lift: none; /* @kind other */
+  --card-blur: none; /* @kind other */
+  --card-padding: 1.5rem;
+  --shift-card-padding: 0.85rem 1rem;
+  --shift-card-accent-edge: 0; /* @kind other */
+  --tone-orange-fill: var(--sw-nm-peach); /* @kind other */
+  --tone-blue-fill: var(--sw-nm-sky); /* @kind other */
+  --tone-green-fill: var(--sw-nm-mint); /* @kind other */
+  --tone-red-fill: var(--sw-nm-coral); /* @kind other */
+  --hero-fill: var(--sw-nm-lavender); /* @kind other */
+  --input-bg: var(--bg);
+  --input-border: none; /* @kind other */
+  --input-shadow: var(--nm-inset);
+  --input-radius: 12px;
+  --button-bg: transparent;
+  --button-bg-image: var(--nm-convex); /* @kind other */
+  --button-shadow: 4px 4px 10px #bcc3ce, -4px -4px 10px #ffffff;
+  --button-press: scale(0.985); /* @kind other */
+}

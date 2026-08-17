@@ -1,0 +1,24 @@
+<!-- @dsCard group="Type" viewport="700x160" name="Text-size setting" subtitle="data-font on the root scales it all: 87.5% / 100% / 112.5%" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+
+</style>
+</head>
+<body>
+<div style="display:flex;gap:10px;align-items:flex-end">
+<div style="flex:1;font-size:87.5%"><span class="lbl">SM 87.5%</span><div style="font-size:var(--text-4xl);font-weight:800;font-variant-numeric:tabular-nums">182.50</div></div>
+<div style="flex:1"><span class="lbl">MD 100% (default)</span><div style="font-size:var(--text-4xl);font-weight:800;font-variant-numeric:tabular-nums">182.50</div></div>
+<div style="flex:1;font-size:112.5%"><span class="lbl">LG 112.5%</span><div style="font-size:var(--text-4xl);font-weight:800;font-variant-numeric:tabular-nums">182.50</div></div>
+</div>
+<p style="margin:10px 0 0;font-size:0.72rem;color:var(--muted)">Because every size is rem, one root change resizes the whole app — so never size text in px.</p>
+</body>
+</html>

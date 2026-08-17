@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SalaryWorking — logo</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);padding:2.5rem 2rem 4rem}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:2rem}
+h1{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:var(--tracking-title);margin:0}
+.lede{margin:0;color:var(--muted);font-size:0.9rem;max-width:68ch;line-height:var(--leading-relaxed)}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:1.5rem;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem}
+.stage{display:flex;flex-direction:column;gap:1rem}
+.tile{display:grid;place-items:center;border-radius:var(--radius-lg);padding:1.25rem;min-height:150px}
+.paper{background:#f3f8fd}
+.ink{background:var(--sw-navy-900);border:1px solid var(--border)}
+.tile img{width:100%;height:auto;display:block}
+.tile.icon img{width:118px}
+.sizes{display:flex;align-items:flex-end;gap:1rem;background:#f3f8fd;border-radius:var(--radius-lg);padding:0.85rem 1rem}
+.sizes img{display:block}
+.meta{display:flex;flex-direction:column;gap:0.85rem;min-width:0}
+p{margin:0;font-size:0.86rem;line-height:var(--leading-relaxed)}
+p.muted{color:var(--muted)}
+dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:0.3rem 0.85rem;font-size:0.8rem}
+dt{color:var(--muted);text-transform:uppercase;letter-spacing:var(--tracking-label);font-size:0.7rem;font-weight:600;padding-top:0.1rem}
+dd{margin:0}
+.swatches{display:flex;gap:0.4rem;flex-wrap:wrap}
+.sw{display:flex;align-items:center;gap:0.4rem;font-family:var(--font-mono);font-size:0.7rem;color:var(--muted);background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.2rem 0.6rem 0.2rem 0.25rem}
+.sw i{width:14px;height:14px;border-radius:50%;display:block}
+.files{display:flex;gap:0.5rem;flex-wrap:wrap}
+.files a{font-family:var(--font-mono);font-size:0.72rem;color:var(--accent);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.35rem 0.6rem}
+.files a:hover{border-color:var(--accent)}
+a{color:var(--accent)}a:hover{color:var(--text)}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header style="display:flex;flex-direction:column;gap:0.6rem">
+<h1>Logo</h1>
+<p class="lede">One mark: <strong>Bảng kẹp</strong>, the clipboard ledger you supplied (<code>uploads/sw-29-bangkep-icon.svg</code>). Kept as drawn — only the reconcile stroke gained round caps, and a lockup plus a light-ground variant were built around it. No alternative directions are proposed.</p>
+</header>
+
+<section class="grid">
+<div class="stage">
+<div class="tile paper icon"><img src="../assets/logo/a-bangkep-icon.svg" alt="SalaryWorking mark on paper"></div>
+<div class="tile ink icon"><img src="../assets/logo/a-bangkep-icon-light.svg" alt="SalaryWorking mark on ink"></div>
+<div class="tile paper"><img src="../assets/logo/a-bangkep-lockup.svg" alt="SalaryWorking lockup"></div>
+<div class="sizes"><img src="../assets/logo/a-bangkep-icon.svg" width="48" alt=""><img src="../assets/logo/a-bangkep-icon.svg" width="32" alt=""><img src="../assets/logo/a-bangkep-icon.svg" width="20" alt=""><img src="../assets/logo/a-bangkep-icon.svg" width="16" alt=""></div>
+</div>
+<div class="meta">
+<p>A hairline clipboard frame holds a solid header row, three tick boxes and three half-opacity data rows — the exact anatomy of the app's shift list. One maroon check crosses the last rows: the reconcile stroke, drawn by the worker, not by the system.</p>
+<p class="muted">Construction is additive and orthogonal — every element sits on a 4px sub-grid of the 256 box, corner radii are 2/5/7/12, and the structure holds one stroke weight throughout: 9. The check is heavier at 16 and is the only diagonal in the mark, so it carries the emphasis without a gradient or a glow.</p>
+<dl>
+<dt>Idea</dt><dd>A record you keep and sign off yourself.</dd>
+<dt>Colour</dt><dd>Ink navy structure, 55% opacity data rows, ledger maroon accent — deliberately not SaaS blue.</dd>
+<dt>On dark</dt><dd>Use <code>a-bangkep-icon-light.svg</code>. The base file draws with <code>currentColor</code>, so inside HTML you can also just set <code>color</code> on an inlined copy.</dd>
+<dt>Sizes</dt><dd>Holds at 16px because the frame survives when the rows blur. Below 16px, drop the data rows and keep frame + check.</dd>
+<dt>Clear space</dt><dd>Half the clip width on every side; never place the mark on a photo or a gradient.</dd>
+<dt>Don't</dt><dd>Recolour the check to the accent blue, rotate the mark, add a container tile behind it, or set the wordmark in anything but the OS UI stack.</dd>
+</dl>
+<div class="swatches"><span class="sw"><i style="background:#0a1929"></i>#0a1929</span><span class="sw"><i style="background:#f3f8fd"></i>#f3f8fd</span><span class="sw"><i style="background:#B03A55"></i>#B03A55</span></div>
+<div class="files"><a href="../assets/logo/a-bangkep-icon.svg" download>a-bangkep-icon.svg</a><a href="../assets/logo/a-bangkep-icon-light.svg" download>a-bangkep-icon-light.svg</a><a href="../assets/logo/a-bangkep-lockup.svg" download>a-bangkep-lockup.svg</a></div>
+</div>
+</section>
+
+<p class="lede">The lockup wordmark is live text in the OS UI stack (<code>system-ui</code>), matching the app — there is no licensed brand font in the repository, so convert the text to outlines before print or embedding. The pre-existing app icon (blue tile, clock, ₫ badge) stays at <code>assets/logo/legacy-app-icon.svg</code> for reference only.</p>
+</div>
+</body>
+</html>

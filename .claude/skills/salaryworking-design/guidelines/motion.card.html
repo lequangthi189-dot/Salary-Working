@@ -1,0 +1,32 @@
+<!-- @dsCard group="Motion" viewport="700x220" name="Durations & easing" subtitle="Motion reports state; it never performs" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+@keyframes sh{100%{transform:translateX(100%)}}
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:0.74rem">
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--duration-fast</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">0.15s</span><span style="color:var(--muted)">dock icon scale, tile hover</span></div>
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--duration-base</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">0.2s</span><span style="color:var(--muted)">border/background hover, checkbox tick</span></div>
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--duration-slow</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">0.28s</span><span style="color:var(--muted)">glass card lift</span></div>
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--duration-slower</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">0.35s</span><span style="color:var(--muted)">dock hide / show</span></div>
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--duration-progress</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">0.4s</span><span style="color:var(--muted)">progress fill width</span></div>
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--ease-spring</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">cubic-bezier(0.22,1,0.36,1)</span><span style="color:var(--muted)">lift + button press</span></div>
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--ease-loader</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">cubic-bezier(0.3,0.06,0.4,1)</span><span style="color:var(--muted)">bouncing loader ball</span></div>
+<div style="display:flex;gap:10px"><span class="mono" style="flex:0 0 150px;color:var(--muted);font-size:0.66rem">--shimmer-duration</span><span class="mono" style="flex:0 0 190px;font-size:0.66rem">1.4s</span><span style="color:var(--muted)">skeleton sheen</span></div>
+</div>
+<div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+<span style="position:relative;overflow:hidden;display:block;width:180px;height:16px;border-radius:8px;background:var(--skeleton-base)"><span style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--skeleton-sheen),transparent);animation:sh 1.4s ease-in-out infinite"></span></span>
+<span class="lbl">SKELETON SHEEN</span>
+</div>
+</body>
+</html>

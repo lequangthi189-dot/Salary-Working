@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 176" width="660" height="176" role="img" aria-label="SalaryWorking">
+  <title>SalaryWorking — Bảng kẹp lockup</title>
+  <g transform="translate(8 24) scale(0.5)" color="#0a1929">
+  <rect x="52" y="56" width="152" height="168" rx="12" fill="none" stroke="currentColor" stroke-width="9"></rect>
+  <g fill="currentColor">
+    <rect x="102" y="34" width="52" height="34" rx="7"></rect>
+    <rect x="115" y="22" width="26" height="16" rx="5"></rect>
+    <rect x="76" y="90" width="104" height="13" rx="2"></rect>
+    <rect x="76" y="118" width="13" height="13" rx="2"></rect>
+    <rect x="76" y="142" width="13" height="13" rx="2"></rect>
+    <rect x="76" y="166" width="13" height="13" rx="2"></rect>
+  </g>
+  <g fill="currentColor" fill-opacity="0.55">
+    <rect x="96" y="120" width="72" height="9" rx="2"></rect>
+    <rect x="96" y="144" width="54" height="9" rx="2"></rect>
+    <rect x="96" y="168" width="64" height="9" rx="2"></rect>
+  </g>
+  <path fill="none" stroke="#B03A55" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" d="M126 180 L148 202 L198 152"></path>
+  </g>
+  <text x="156" y="112" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="66" font-weight="700" letter-spacing="-0.5" fill="#0a1929">Salary<tspan font-weight="400" fill="#4a5468">Working</tspan></text>
+  <rect x="156" y="128" width="60" height="6" rx="3" fill="#B03A55"></rect>
+</svg>

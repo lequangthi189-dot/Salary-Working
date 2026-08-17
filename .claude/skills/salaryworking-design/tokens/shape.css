@@ -1,0 +1,33 @@
+/* SHAPE — radii and shadows. Radius grows with surface size, not with fashion:
+   6px for inline controls, 10–12px for rows and cards, 14px for the salary hero,
+   999px for the dock and status chips. Glass adds 18–20px, Soft UI 20–24px.
+   In the dark theme content cards carry NO shadow at all — elevation is a glass /
+   neumorph device, not a dark-theme one. */
+:root {
+  --radius-xs: 6px; /* edit-mode inputs, save/cancel buttons, theme swatch */
+  --radius-sm: 8px; /* inputs, filter chips, primary buttons, skeleton block */
+  --radius-md: 10px; /* shift card, stat tile, period card */
+  --radius-lg: 12px; /* date group, shift form, modal, progress button */
+  --radius-xl: 14px; /* salary hero */
+  --radius-2xl: 18px; /* glass surfaces */
+  --radius-3xl: 20px; /* neumorph surfaces */
+  --radius-4xl: 24px; /* neumorph shift-form */
+  --radius-pill: 999px; /* dock, planned / overdue / received chips */
+  --radius-circle: 50%;
+
+  /* Elevation — dark theme keeps only these two (popovers and the dock). */
+  --shadow-none: none; /* @kind shadow */
+  --shadow-popover: 0 6px 16px rgba(0, 0, 0, 0.25);
+  --shadow-dock: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
+  --shadow-warning-missing: 0 0 0 1px rgba(255, 31, 31, 0.5),
+    0 0 12px rgba(255, 31, 31, 0.45);
+  --shadow-received-glow: 0 0 10px rgba(56, 160, 255, 0.3);
+
+  /* Focus ring — accent at 35%, never a browser blue outline */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); /* @kind shadow */
+
+  /* Borders */
+  --border-width-hairline: 1px; /* @kind spacing */
+  --border-width-emphasis: 2px; /* @kind spacing */ /* salary hero, missing-checkin frame */
+  --border-dashed-scheduled: 1px dashed var(--border); /* @kind other */ /* planned reference input */
+}

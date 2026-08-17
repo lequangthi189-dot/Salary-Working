@@ -1,0 +1,30 @@
+<!-- @dsCard group="Colors" viewport="700x190" name="Status & certainty" subtitle="Planned, overdue, missing clock-in, machine-read" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+<span style="font-size:0.72rem;font-weight:700;color:var(--status-planned);background:var(--status-planned-chip);border:1px solid var(--status-planned);border-radius:999px;padding:1px 8px">Planned</span>
+<span style="font-size:0.72rem;font-weight:700;color:#fff;background:var(--status-overdue);border-radius:999px;padding:1px 8px">Overdue — not checked in</span>
+<span style="font-size:0.85rem;font-weight:600;color:var(--status-received)">✓ Received</span>
+<span style="font-size:0.72rem;font-weight:700;color:var(--sw-amber-500);border:1px dashed var(--sw-amber-500);border-radius:999px;padding:1px 8px">read from image</span>
+</div>
+<div style="display:flex;gap:8px">
+<div style="flex:1;border:1px solid var(--status-planned);background:var(--status-planned-fill);border-radius:10px;padding:8px 10px"><span class="lbl">FUTURE ROSTER ROW</span><div class="mono" style="color:var(--muted)">14:00 – 22:00</div></div>
+<div style="flex:1;border:2px solid var(--status-missing);background:var(--status-missing-fill);border-radius:10px;padding:8px 10px;box-shadow:var(--shadow-warning-missing)"><span class="lbl">PAST DAY, NEVER CLOCKED IN</span><div class="mono" style="color:var(--muted)">06:00 – 14:00</div></div>
+</div>
+</div>
+</body>
+</html>

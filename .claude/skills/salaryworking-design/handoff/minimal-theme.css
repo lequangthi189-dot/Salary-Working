@@ -1,0 +1,87 @@
+/* SalaryWorking — bảng màu Trung tính, viết vào theme "dark"
+   App có đúng BA theme: dark / glass / neumorph. Bảng này KHÔNG thêm theme thứ tư —
+   nó thay giá trị của theme 'dark' hiện có, nên không cần sửa ThemeToggle, không cần
+   migration database, người dùng đang ở 'dark' sẽ thấy bảng màu mới ngay.
+
+   Cách dán: trong src/styles/themes.css (repo lequangthi189-dot/Salary-Working, branch
+   master), thay TOÀN BỘ block [data-theme='dark'] hiện tại bằng block dưới đây.
+
+   Nguyên tắc: một dải xám graphite cho mọi bề mặt, MỘT màu nhấn, tổng 3 họ màu
+   (nhấn / đã kiếm / mất tiền). Cam–xanh của giờ vào–giờ ra bị bỏ: phân biệt bằng độ đậm
+   và vị trí. Ca dự kiến = viền nét đứt xám. Ngày chưa chấm công = màu đỏ duy nhất.
+
+   Tương phản (AA cần 4.5:1 cho chữ, 3:1 cho nút):
+     số tiền 16.54 · chữ thường 14.22 · nhãn phụ 6.34
+     đã kiếm 6.86 · mất tiền 4.96 · nút 6.95 · chữ trên nút 7.18
+*/
+
+[data-theme='dark'] {
+  --bg: #15171a;
+  --panel: #1c1f23;
+  --panel-2: #23272c;
+  --text: #eceef0;
+  --muted: #9aa1a9;
+  --accent: #6aa9c9;
+  --green: #57b98a;
+  --danger: #e2665e;
+  --border: #2f343a;
+  /* Time is neutral here: emphasis comes from weight, not from a second hue. */
+  --checkin: #eceef0;
+  --checkout: #9aa1a9;
+  --skeleton-base: #23272c;
+  --skeleton-sheen: rgba(255, 255, 255, 0.05);
+
+  --text-value: #ffffff;
+  --text-on-accent: #0e1418;
+  --pay-positive: #57b98a;
+  --pay-negative: #e2665e;
+  --time-in: #eceef0;
+  --time-out: #9aa1a9;
+  --time-scheduled: #9aa1a9;
+  /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
+  --tone-orange: #9aa1a9;
+  --tone-green: #57b98a;
+  --tone-blue: #9aa1a9;
+  --tone-red: #e2665e;
+  --status-planned: #9aa1a9;
+  --status-planned-fill: rgba(154, 161, 169, 0.08);
+  --status-planned-chip: rgba(154, 161, 169, 0.14);
+  --status-overdue: #e2665e;
+  --status-missing: #e2665e;
+  --status-missing-fill: rgba(226, 102, 94, 0.12);
+  --status-received: #57b98a;
+  --progress-fill: rgba(106, 169, 201, 0.18);
+  --progress-bar: #6aa9c9;
+  --loader-ball: #6aa9c9;
+
+  --page-bg-image: none; /* @kind other */
+  --card-bg: var(--panel);
+  --card-bg-image: none; /* @kind other */
+  --card-border: 1px solid var(--border); /* @kind other */
+  --card-radius: 12px;
+  --card-shadow: none;
+  --card-shadow-hover: none;
+  --card-hover-border: #3c434b;
+  --card-hover-lift: none; /* @kind other */
+  --card-blur: none; /* @kind other */
+  --card-padding: 1.35rem;
+  --shift-card-padding: 0.9rem 1.05rem;
+  --shift-card-accent-edge: 0; /* @kind other */
+  --input-bg: #15171a;
+  --input-border: 1px solid var(--border); /* @kind other */
+  --input-shadow: none;
+  --input-radius: 8px;
+  --button-bg: var(--accent);
+  --button-shadow: none;
+  --button-press: scale(0.99); /* @kind other */
+}
+
+/* --- Hai alias cần thêm cho 2 theme còn lại ------------------------------------
+   Trước đây --text-value và --text-on-accent chỉ khai báo ở :root, nên theme nền sáng
+   bị chữ tiền và chữ trên nút màu trắng-trên-trắng. Thêm 2 dòng này vào đúng scope: */
+
+/*
+[data-theme='glass']    { --text-value: #ffffff; --text-on-accent: #0f1430; }
+[data-theme='neumorph'] { --text-value: #4a5468; --text-on-accent: #4a5468;
+                          --time-in: #8a5a1e; --time-out: #2f6d8f; } /* peach cũ chìm vào nền sáng */
+*/

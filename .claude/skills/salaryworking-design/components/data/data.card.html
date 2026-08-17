@@ -1,0 +1,84 @@
+<!-- @dsCard group="Components" viewport="700x860" name="Data display" subtitle="Salary hero, stat cards, shift rows, avatar, badges, periods, timesheet table" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+body{margin:0;padding:18px;background:var(--bg);color:var(--text);font-family:var(--font-sans)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.row:last-child{margin-bottom:0}
+.cap{width:100%;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:0 0 2px}
+a{color:var(--accent)}a:hover{color:var(--text)}
+@keyframes sw-skeleton-shimmer{100%{transform:translateX(100%)}}
+@keyframes sw-ball{0%{top:0}50%{top:60px}100%{top:0}}
+@keyframes sw-shadow{0%{transform:scale(1);opacity:.3}50%{transform:scale(.5);opacity:.1}100%{transform:scale(1);opacity:.3}}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const NS = window.SalaryWorkingDesignSystem_f6e8d6;
+const { SalaryHero, StatCard, StatTile, ShiftCard, DateGroup, TimesheetTable, PeriodCard, Badge, Avatar } = NS;
+function Card(){
+  return (<div>
+    <div className="row"><p className="cap">Salary hero + stat cards</p>
+      <div style={{flex:'1 1 100%',display:'flex',flexDirection:'column',gap:8}}>
+        <SalaryHero net={7480000} expected={7900000} latePenalty={320000} deduction={100000}/>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:8}}>
+          <StatCard tone="orange" title="Total Hours" value="182.50 (h)"/>
+          <StatCard tone="green" title="Day Hours" value="121.25 (h)"/>
+          <StatCard tone="blue" title="Night Hours" value="61.25 (h)"/>
+          <StatCard tone="red" title="Late Hours" value="3.75 (h)"/>
+        </div>
+      </div>
+    </div>
+    <div className="row"><p className="cap">Shift rows in a day card · states: normal / planned / never clocked in</p>
+      <div style={{flex:'1 1 100%'}}>
+        <DateGroup date="2026-08-14" totalHours={8.42} nightHours={8.42} lostHours={0.25} pay={402900}>
+          <ShiftCard start="21:45" end="06:10" pay={402900} lostHours={0.25} lateInHours={0.25}/>
+          <ShiftCard scheduledStart="14:00" scheduledEnd="22:00" pay={0} state="planned"/>
+          <ShiftCard scheduledStart="06:00" scheduledEnd="14:00" pay={0} state="missing"/>
+        </DateGroup>
+      </div>
+    </div>
+    <div className="row"><p className="cap">Avatar — photo, initials fallback, dock size, active</p>
+      {Avatar && <Avatar name="Lê Quang Thi" size={48}/>}
+      {Avatar && <Avatar name="Nguyễn Thị Hoa" size={40}/>}
+      {Avatar && <Avatar name="Lê Quang Thi" size={26}/>}
+      {Avatar && <Avatar name="Lê Quang Thi" size={26} active/>}
+      <span style={{fontSize:'0.68rem',color:'var(--muted)'}}>JPG, PNG, WEBP — up to 5MB</span>
+    </div>
+    <div className="row"><p className="cap">Badges · summary tiles</p>
+      <Badge kind="planned">Planned</Badge>
+      <Badge kind="overdue">Overdue — not checked in</Badge>
+      <Badge kind="received">✓ Received</Badge>
+      <Badge kind="ocr">read from image</Badge>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,flex:'1 1 100%',marginTop:6}}>
+        <StatTile label="Total hours" value="182.50"/>
+        <StatTile label="Total pay" value="7,900,000" variant="pay"/>
+        <StatTile label="Lost to late" value="−320,000" variant="negative"/>
+      </div>
+    </div>
+    <div className="row"><p className="cap">Pay periods · Excel-style timesheet</p>
+      <div style={{flex:'1 1 46%',minWidth:260}}>
+        <PeriodCard label="26/7 → 25/8" dateRange="26/07 – 25/08" meta="21 shifts · 182.50 h" pay={7480000}/>
+        <PeriodCard label="26/6 → 25/7" dateRange="26/06 – 25/07" pay={7120000} received receivedOn="03/08"/>
+      </div>
+      <div style={{flex:'1 1 46%',minWidth:260}}>
+        <TimesheetTable totalHours={24.5} totalPay={1180400} rows={[
+          {date:'12/8',start:'14:00',end:'22:05',pay:388200},
+          {date:'13/8',start:'21:45',end:'06:10',pay:402900},
+          {date:'14/8',start:'06:00',end:'14:00',pay:389300}
+        ]}/>
+      </div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Card/>);
+</script>
+</body>
+</html>

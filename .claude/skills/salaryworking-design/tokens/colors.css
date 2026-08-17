@@ -1,0 +1,62 @@
+/* COLORS — the product's live token contract. These exact names (--bg, --panel,
+   --accent, --checkin …) are what every component in Salary-Working reads, so a
+   consumer that sets them gets a themed app for free. Values below are the dark
+   default; themes.css swaps them per [data-theme]. Semantic aliases underneath
+   spell out the MEANING of each so new UI picks the right one. */
+:root {
+  --bg: var(--sw-navy-900);
+  --panel: var(--sw-navy-800);
+  --panel-2: var(--sw-navy-700);
+  --text: var(--sw-paper-50);
+  --muted: var(--sw-slate-300);
+  --accent: var(--sw-blue-400);
+  --green: var(--sw-mint-400);
+  --danger: var(--sw-red-400);
+  --border: var(--sw-hairline);
+  --checkin: var(--sw-amber-400);
+  --checkout: var(--sw-blue-400);
+  --skeleton-base: var(--sw-navy-600);
+  --skeleton-sheen: rgba(255, 255, 255, 0.06);
+
+  /* --- Semantic aliases (use these when authoring new UI) --- */
+  --surface-page: var(--bg);
+  --surface-card: var(--panel); /* date-group, shift-form, modal, auth-card */
+  --surface-raised: var(--panel-2); /* shift-card, stat tile, filter button */
+  --surface-overlay: rgba(0, 0, 0, 0.6); /* modal scrim */
+
+  --text-primary: var(--text);
+  --text-muted: var(--muted); /* labels, units, secondary meta */
+  --text-value: var(--sw-paper-0); /* money & hour figures */
+  --text-on-accent: #ffffff;
+
+  --border-hairline: var(--border);
+  --border-strong: var(--accent); /* hover / focus */
+
+  /* Money & time meaning — never re-map these */
+  --pay-positive: var(--sw-green-600); /* salary earned / received */
+  --pay-negative: var(--sw-red-500); /* late pay, deductions, penalties */
+  --time-in: var(--checkin); /* check-in, amber */
+  --time-out: var(--checkout); /* check-out, blue */
+  --time-scheduled: var(--muted); /* planned reference (dashed) */
+
+  /* Stat card tones (MonthStats) */
+  --tone-orange: var(--sw-amber-500); /* total hours, day shifts */
+  --tone-green: var(--sw-green-600); /* day hours */
+  --tone-blue: var(--sw-blue-300); /* night hours, night shifts */
+  --tone-red: var(--sw-red-500); /* late hours */
+
+  /* Status */
+  --status-planned: var(--checkin);
+  --status-planned-fill: rgba(255, 159, 67, 0.12);
+  --status-planned-chip: rgba(255, 159, 67, 0.18);
+  --status-overdue: var(--danger);
+  --status-missing: var(--sw-red-600);
+  --status-missing-fill: rgba(255, 31, 31, 0.18);
+  --status-received: var(--green);
+
+  /* Progress / loading */
+  --progress-track: var(--panel);
+  --progress-fill: rgba(58, 160, 216, 0.22);
+  --progress-bar: var(--sw-cyan-500);
+  --loader-ball: var(--sw-cyan-500);
+}

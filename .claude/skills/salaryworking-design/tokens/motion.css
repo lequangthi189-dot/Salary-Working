@@ -1,0 +1,28 @@
+/* MOTION — motion explains state, it never performs. Colour/border transitions in
+   the dark theme; lift + glow in glass; shadow depth in Soft UI. Everything below
+   is switched off under prefers-reduced-motion in the product's own stylesheets. */
+:root {
+  --duration-instant: 90ms; /* @kind other */ /* scroll-focus depth on the shift list */
+  --duration-fast: 0.15s; /* @kind other */ /* dock icon scale, stat card hover */
+  --duration-base: 0.2s; /* @kind other */ /* border/background hover, checkbox tick */
+  --duration-slow: 0.28s; /* @kind other */ /* glass card lift */
+  --duration-slower: 0.35s; /* @kind other */ /* dock hide/show */
+  --duration-progress: 0.4s; /* @kind other */ /* progress fill width */
+
+  --ease-standard: ease; /* @kind other */
+  --ease-out: ease-out; /* @kind other */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1); /* @kind other */ /* glass lift + button press */
+  --ease-loader: cubic-bezier(0.3, 0.06, 0.4, 1); /* @kind other */ /* bouncing loader ball */
+
+  --transition-surface: border-color var(--duration-base) var(--ease-standard),
+    background var(--duration-base) var(--ease-standard); /* @kind other */
+  --transition-lift: transform var(--duration-slow) var(--ease-spring),
+    box-shadow var(--duration-slow) var(--ease-standard),
+    border-color var(--duration-slow) var(--ease-standard); /* @kind other */
+  --transition-soft: box-shadow 0.22s var(--ease-standard),
+    transform 0.22s var(--ease-standard); /* @kind other */
+
+  --shimmer-duration: 1.4s; /* @kind other */ /* skeleton sheen */
+  --dock-hidden-offset: calc(100% + 28px); /* @kind other */
+  --dock-autohide-delay: 5000ms; /* @kind other */ /* dock hides 5s after scrolling stops */
+}

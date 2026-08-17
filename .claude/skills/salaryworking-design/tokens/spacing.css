@@ -1,0 +1,34 @@
+/* SPACING — the product is a timesheet, so density beats whitespace. The scale is
+   the rem ladder actually used across src/styles.css; nothing here is invented to
+   fit a 4/8px grid. Values are rem so they scale with the user's font-size setting. */
+:root {
+  --space-0: 0;
+  --space-1: 0.15rem; /* label→value gap inside a stat tile */
+  --space-2: 0.25rem; /* tight stacks, hero label gap */
+  --space-3: 0.3rem;
+  --space-4: 0.4rem; /* filter chip gap, date-header padding */
+  --space-5: 0.5rem; /* stats-panel gap, grid gap on mobile */
+  --space-6: 0.6rem; /* shift-list gap */
+  --space-7: 0.7rem; /* card inner gap */
+  --space-8: 0.75rem; /* form field gap, card padding-y */
+  --space-9: 0.85rem; /* shift-card padding-y, toolbar bottom */
+  --space-10: 1rem; /* card padding-x, modal head margin */
+  --space-11: 1.15rem;
+  --space-12: 1.25rem; /* shift-form padding, timesheet top margin */
+  --space-14: 1.5rem; /* modal padding, dark-theme card padding */
+  --space-16: 2rem; /* auth card padding, empty state padding */
+  --space-20: 7rem; /* app bottom padding: clearance for the dock */
+
+  /* Layout */
+  --app-max-width: 980px; /* .app content column */
+  --board-columns: minmax(0, 2fr) minmax(0, 3fr); /* @kind other */ /* entry 40% / stats 60% */
+  --board-gap: 1.25rem;
+  --auth-max-width: 360px;
+  --modal-max-width: 360px;
+  --modal-max-width-wide: 480px;
+  --dock-clearance: calc(9rem + env(safe-area-inset-bottom)); /* @kind other */ /* mobile */
+
+  /* Touch — one-handed, just off shift, in a dark workshop */
+  --touch-min: 44px; /* dock button width */
+  --touch-icon: 26px; /* dock icon box */
+}
