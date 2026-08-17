@@ -7,6 +7,11 @@ import { LanguageProvider } from './lib/i18n.jsx'
 import { CurrencyProvider } from './lib/currency.jsx'
 import './lib/theme.js' // áp dụng theme đã lưu trước khi render (tránh nháy)
 import './lib/appearance.js' // áp dụng cỡ chữ đã lưu trước khi render
+// Thứ tự 3 file CSS này QUAN TRỌNG (cùng độ ưu tiên → file sau thắng file trước):
+//   1. token  — :root + biến theo [data-theme]
+//   2. base   — rule component dùng các biến đó
+//   3. themes — rule component riêng theo từng theme
+import './styles/salaryworking-tokens.css'
 import './styles.css'
 import './styles/themes.css'
 

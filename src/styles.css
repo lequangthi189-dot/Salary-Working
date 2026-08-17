@@ -1,21 +1,8 @@
-:root {
-  --bg: #0d1117;
-  --panel: #1a212b;
-  --panel-2: #232c38;
-  --text: #e6edf3;
-  --muted: #8b98a9;
-  --accent: #4f9dff;
-  --green: #3fb950;
-  --danger: #f85149;
-  --border: #2b3542;
-  --checkin: #ff9f43;
-  --checkout: #58b3ff;
-  /* Skeleton (khung xám lúc chờ tải). Base = màu khối; sheen = vệt sáng chạy qua.
-     Theme khác (neumorph/glass) có thể override 2 biến này: glass nền gradient thì
-     đặt --skeleton-base sang màu bán trong suốt cho hợp nền. */
-  --skeleton-base: #222c38;
-  --skeleton-sheen: rgba(255, 255, 255, 0.09);
-}
+/* ===== TOKEN MÀU: đã chuyển sang src/styles/salaryworking-tokens.css =====
+   Bảng :root cũ (--bg, --panel, --accent, --checkin, --skeleton-*…) nằm trong
+   file token đó, import TRƯỚC file này ở main.jsx. ĐỪNG khai báo lại :root ở
+   đây: cùng độ ưu tiên nhưng file này load sau nên sẽ THẮNG token bundle và
+   kéo bảng màu về bản navy cũ. Muốn đổi màu → sửa file token. */
 
 /* ===== CỠ CHỮ (data-font trên <html>, đặt ở src/lib/appearance.js) =====
    Đổi font-size GỐC → mọi kích thước dùng rem co giãn theo (nhỏ / vừa / lớn). */
@@ -155,7 +142,7 @@ label input {
 
 button[type='submit'] {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 0.7rem;
@@ -393,7 +380,7 @@ button[type='submit']:disabled {
 .chat-user {
   align-self: flex-end;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border-bottom-right-radius: 4px;
 }
 /* Message chứa bảng công: trải rộng hết khung chat */
@@ -584,7 +571,7 @@ button[type='submit']:disabled {
 .chat-input button {
   flex: 0 0 auto;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 0 0.95rem;
@@ -1634,7 +1621,7 @@ button[type='submit']:disabled {
 }
 .seg-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 /* ---- Modal nhập lịch tuần từ ảnh ---- */
@@ -2330,7 +2317,7 @@ input.t-out {
 .shift-filter-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 /* Thanh công cụ bảng công: ô TÌM CA + các nút LỌC ngày/đêm nằm NGANG cùng một hàng
@@ -3040,7 +3027,7 @@ input.t-out {
 .extra-add-btn {
   flex: 0 0 auto;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
@@ -3154,16 +3141,16 @@ input.t-out {
   white-space: nowrap;
 }
 .recv-badge.received {
-  color: var(--ok, #16a34a);
-  background: rgba(22, 163, 74, 0.15);
-  border-color: var(--ok, #16a34a);
+  color: var(--ok);
+  background: var(--ok-fill);
+  border-color: var(--ok);
 }
 /* Nút đổi trạng thái nhận. Trạng thái CHƯA NHẬN = nút XANH ĐẶC nổi bật (gọi hành
    động "Đã nhận"); trạng thái ĐÃ NHẬN = nút viền mờ "Bỏ nhận". */
 .recv-toggle {
-  background: var(--ok, #16a34a);
-  border: 1px solid var(--ok, #16a34a);
-  color: #fff;
+  background: var(--ok);
+  border: 1px solid var(--ok);
+  color: var(--text-on-ok);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 700;
@@ -3201,7 +3188,7 @@ input.t-out {
 .recv-on {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--ok, #16a34a);
+  color: var(--ok);
   white-space: nowrap;
 }
 /* Thanh hành động hàng loạt */
@@ -3226,9 +3213,9 @@ input.t-out {
   gap: 0.4rem;
 }
 .extra-bulk-mark {
-  background: var(--ok, #16a34a);
+  background: var(--ok);
   border: none;
-  color: #fff;
+  color: var(--text-on-ok);
   font-weight: 700;
   font-size: 0.78rem;
   padding: 0.3rem 0.7rem;
@@ -3369,7 +3356,7 @@ input.t-out {
   transform: translateX(-50%);
   font-size: 0.7rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-on-accent);
   background: var(--accent);
   border-radius: 8px;
   padding: 1px 7px;
@@ -3412,7 +3399,7 @@ input.t-out {
 .row-btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .avatar-hint {
   font-size: 0.72rem;
