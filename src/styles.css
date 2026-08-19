@@ -149,13 +149,14 @@ label input {
 }
 .pw-toggle {
   position: absolute;
-  right: 0.4rem;
+  right: var(--space-4);
   background: none;
   border: none;
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.25rem 0.4rem;
+  /* Nút chữ trên nền panel → dùng --text-accent (bản dùng cho CHỮ). */
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  padding: var(--space-2) var(--space-4);
 }
 
 button[type='submit'] {
