@@ -1,0 +1,74 @@
+/* PALETTE — raw values lifted verbatim from Salary-Working (src/styles.css :root,
+   src/styles/themes.css, src/components/MonthStats.css). Never edit a value to
+   "round" it; these are the product's real numbers. Semantic aliases live in
+   colors.css, theme swaps in themes.css. */
+:root {
+  /* Ink / navy surfaces — Sleek Dark theme (the product default) */
+  --sw-navy-900: #0a1929; /* page background */
+  --sw-navy-800: #0f2334; /* panel */
+  --sw-navy-700: #14293c; /* panel-2 (raised) */
+  --sw-navy-600: #1b3145; /* skeleton block */
+  --sw-hairline: #1a2d40; /* hairline border */
+
+  /* GitHub-dark surfaces still used by the stats block (MonthStats.css) */
+  --sw-slate-900: #1c2128; /* info-card / salary-hero background */
+  --sw-slate-800: #22272e; /* info-card hover */
+  --sw-slate-700: #2d333b; /* info-card border */
+  --sw-slate-600: #444c56; /* info-card hover border */
+
+  /* Text */
+  --sw-paper-50: #f3f8fd; /* primary text on dark */
+  --sw-paper-0: #ffffff; /* numbers, values */
+  --sw-slate-300: #8696aa; /* muted text (dark theme) */
+  --sw-slate-350: #9da7b3; /* salary-hero sub */
+  --sw-slate-400: #6e7681; /* fx line */
+
+  /* Accents & semantics */
+  --sw-blue-400: #5b9ec6; /* accent (dark theme) */
+  --sw-blue-500: #4f9dff; /* legacy accent / add-shift gradient top */
+  --sw-blue-700: #1f5fae; /* add-shift gradient bottom */
+  --sw-blue-300: #539bf5; /* stat tone-blue */
+  --sw-cyan-500: #3aa0d8; /* progress fill, loader ball */
+  --sw-mint-400: #4fd6a0; /* green (dark theme) */
+  --sw-green-600: #2ea043; /* salary-hero border + label */
+  --sw-red-400: #f0676b; /* danger (dark theme) */
+  --sw-red-500: #f85149; /* penalty / late */
+  --sw-red-600: #ff1f1f; /* not-checked-in warning frame */
+  --sw-amber-400: #ff9f43; /* check-in / planned */
+  --sw-amber-500: #f0883e; /* stat tone-orange */
+
+  /* Glass theme */
+  --sw-glass-bg: #0f1430;
+  --sw-glass-base: #1a2050;
+  --sw-glass-base-2: #1d2358;
+  --sw-glass-text: #f6f8ff;
+  --sw-glass-muted: #d3dcf2;
+  --sw-glass-accent: #7cc4ff;
+  --sw-glass-green: #5ff0a8;
+  --sw-glass-danger: #ff7d97;
+  --sw-glass-amber: #ffc36b;
+  --sw-aurora-violet: #a855f7;
+  --sw-aurora-cyan: #22d3ee;
+  --sw-aurora-pink: #ec4899;
+  --sw-aurora-teal: #14b8a6;
+  --sw-aurora-indigo: #6366f1;
+
+  /* Neumorph theme */
+  --sw-nm-bg: #e0e5ec;
+  --sw-nm-panel-2: #e8edf3;
+  --sw-nm-light: #ffffff;
+  --sw-nm-dark: #bcc3ce;
+  --sw-nm-dark-2: #b2b9c4;
+  --sw-nm-dark-3: #b6bdc8;
+  --sw-nm-text: #4a5468;
+  --sw-nm-muted: #8b95a8;
+  --sw-nm-accent: #8ab0e8;
+  --sw-nm-green: #7ed0b0;
+  --sw-nm-danger: #f0a79b;
+  --sw-nm-amber: #f3c19a;
+  --sw-nm-peach: #ffd9c2;
+  --sw-nm-sky: #c6dcf5;
+  --sw-nm-mint: #bce7d4;
+  --sw-nm-coral: #f6cabf;
+  --sw-nm-lavender: #d8cbf2;
+}

@@ -1,0 +1,30 @@
+<!-- @dsCard group="Spacing" viewport="700x210" name="Density in use" subtitle="A timesheet, not a dashboard: 0.6rem between rows, 0.85rem inside" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+
+</style>
+</head>
+<body>
+<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:0.75rem 0.85rem">
+<div style="display:flex;align-items:baseline;gap:1rem;padding:0.4rem 0.25rem;border-bottom:1px solid var(--border);margin-bottom:0.6rem">
+<span style="font-weight:700" class="mono">2026-08-14</span>
+<span style="margin-left:auto;color:var(--muted);font-size:0.85rem" class="mono">8.20 h · Night 8.20h</span>
+<span style="color:var(--pay-positive);font-weight:700" class="mono">271.830</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:0.6rem">
+<div style="background:var(--panel-2);border:1px solid var(--border);border-left:3px solid rgba(91,158,198,0.6);border-radius:10px;padding:0.85rem 1rem;display:grid;grid-template-columns:1.3fr 1.4fr auto;align-items:center;gap:0.75rem"><span class="mono" style="font-weight:600"><span style="color:var(--time-in)">21:52</span> – <span style="color:var(--time-out)">06:04</span></span><span></span><span class="mono" style="font-weight:700;text-align:right">271.830</span></div>
+<div style="background:var(--panel-2);border:1px solid var(--border);border-left:3px solid rgba(91,158,198,0.6);border-radius:10px;padding:0.85rem 1rem;display:grid;grid-template-columns:1.3fr 1.4fr auto;align-items:center;gap:0.75rem"><span class="mono" style="font-weight:600"><span style="color:var(--time-in)">22:06</span> – <span style="color:var(--time-out)">06:02</span></span><span></span><span class="mono" style="font-weight:700;text-align:right">264.198</span></div>
+<div style="background:var(--panel-2);border:1px solid var(--border);border-left:3px solid rgba(91,158,198,0.6);border-radius:10px;padding:0.85rem 1rem;display:grid;grid-template-columns:1.3fr 1.4fr auto;align-items:center;gap:0.75rem"><span class="mono" style="font-weight:600"><span style="color:var(--time-in)">22:00</span> – <span style="color:var(--time-out)">06:00</span></span><span></span><span class="mono" style="font-weight:700;text-align:right">265.200</span></div>
+</div>
+</div>
+</body>
+</html>

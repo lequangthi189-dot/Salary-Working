@@ -1,0 +1,25 @@
+<!-- @dsCard group="Surfaces" viewport="700x200" name="Elevation" subtitle="Dark theme: flat content, elevation only for dock and popovers" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+
+</style>
+</head>
+<body>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start">
+<div style="flex:1 1 150px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow-none)"><span class="lbl">--shadow-none · every content card</span></div>
+<div style="flex:1 1 150px;background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:12px 16px;box-shadow:var(--shadow-dock)"><span class="lbl">--shadow-dock</span></div>
+<div style="flex:1 1 150px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:var(--shadow-popover)"><span class="lbl">--shadow-popover</span></div>
+<div style="flex:1 1 150px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:var(--focus-ring)"><span class="lbl">--focus-ring · accent 35%</span></div>
+<div style="flex:1 1 150px;background:var(--status-missing-fill);border:2px solid var(--status-missing);border-radius:10px;padding:12px;box-shadow:var(--shadow-warning-missing)"><span class="lbl">--shadow-warning-missing</span></div>
+</div>
+</body>
+</html>

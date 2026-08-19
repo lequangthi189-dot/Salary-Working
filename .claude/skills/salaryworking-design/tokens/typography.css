@@ -1,0 +1,43 @@
+/* TYPOGRAPHY — Salary-Working ships NO webfont. It runs on the OS UI stack, and
+   that is deliberate: the app must look like a tool the phone already had, and it
+   must render instantly on cheap Android handsets in a factory. Numbers are the
+   protagonists, so every figure sits on tabular / monospaced widths so money
+   columns line up and can be compared by eye.
+   Root size is swapped by data-font on <html> (sm 87.5% / md 100% / lg 112.5%),
+   so ALWAYS size text in rem — never px — or it will not scale for the user. */
+:root {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+  --font-core: var(--font-sans);
+
+  /* Numerals: put this on ANY element that shows money, hours or a clock time. */
+  --numeric: tabular-nums; /* @kind other */
+
+  /* Scale — rem values as used in the product, smallest to largest */
+  --text-2xs: 0.68rem; /* @kind other */ /* fx line, dock label (mobile), edit-time label */
+  --text-xs: 0.72rem; /* @kind other */ /* stat label, badges, table body */
+  --text-sm: 0.8rem; /* @kind other */ /* hero label, sub-lines, muted meta */
+  --text-base: 0.85rem; /* @kind other */ /* form labels, messages, filter buttons */
+  --text-md: 0.9rem; /* @kind other */ /* period card label, search input */
+  --text-lg: 0.95rem; /* @kind other */ /* section title (form-title) */
+  --text-xl: 1.15rem; /* @kind other */ /* preview line */
+  --text-2xl: 1.25rem; /* @kind other */ /* stat tile value */
+  --text-3xl: 1.35rem; /* @kind other */ /* period total value */
+  --text-4xl: 1.4rem; /* @kind other */ /* stat card value */
+  --text-5xl: 2.2rem; /* @kind other */ /* salary hero value */
+
+  --weight-regular: 400; /* @kind other */
+  --weight-medium: 500; /* @kind other */
+  --weight-semibold: 600; /* @kind other */ /* labels, buttons, filter chips */
+  --weight-bold: 700; /* @kind other */ /* section titles, date labels, badges */
+  --weight-heavy: 800; /* @kind other */ /* money & hour figures */
+
+  --leading-tight: 1.1; /* @kind other */ /* all large numbers */
+  --leading-normal: 1.45; /* @kind other */
+  --leading-relaxed: 1.6; /* @kind other */ /* long help copy inside modals */
+
+  --tracking-title: 0.04em; /* @kind other */ /* uppercase section titles */
+  --tracking-label: 0.03em; /* @kind other */ /* uppercase small labels */
+  --tracking-hero: 0.08em; /* @kind other */ /* uppercase salary-hero label */
+}

@@ -1,0 +1,24 @@
+<!-- @dsCard group="Spacing" viewport="700x190" name="Board layout" subtitle="Entry 2fr / stats 3fr, one column under 760px, 7rem dock clearance" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+
+</style>
+</head>
+<body>
+<div style="display:grid;grid-template-columns:var(--board-columns);gap:var(--board-gap)">
+<div style="border:1px dashed var(--accent);border-radius:12px;padding:12px;min-height:96px"><span class="lbl">SHIFT ENTRY · minmax(0,2fr)</span></div>
+<div style="border:1px dashed var(--muted);border-radius:12px;padding:12px"><span class="lbl">STATS + SALARY HERO · minmax(0,3fr)</span></div>
+</div>
+<div style="border:1px dashed var(--muted);border-radius:12px;padding:12px;margin-top:var(--board-gap)"><span class="lbl">TIMESHEET · full width, margin-top 1.25rem</span></div>
+<p style="margin:8px 0 0;font-size:0.7rem;color:var(--muted)">Content column max-width 980px · page padding 1.5rem 1rem 7rem · mobile bottom padding 9rem + safe-area for the dock.</p>
+</body>
+</html>

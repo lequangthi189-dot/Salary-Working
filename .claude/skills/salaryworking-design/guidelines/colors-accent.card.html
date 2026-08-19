@@ -1,0 +1,29 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Accent & state" subtitle="One accent, one green, one red — contrast from weight, not light" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+.sw{flex:1 1 96px;min-width:96px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.sw .chip{height:52px}
+.sw .meta{padding:5px 7px;background:var(--panel);display:flex;flex-direction:column;gap:1px}
+.sw .n{font-size:0.72rem;font-weight:600}
+.sw .v{font-family:var(--font-mono);font-size:0.62rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="g">
+<div class="sw"><div class="chip" style="background:var(--accent)"></div><div class="meta"><span class="n">--accent</span><span class="v">#5b9ec6</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--green)"></div><div class="meta"><span class="n">--green</span><span class="v">#4fd6a0</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--danger)"></div><div class="meta"><span class="n">--danger</span><span class="v">#f0676b</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--checkin)"></div><div class="meta"><span class="n">--checkin</span><span class="v">#ff9f43</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--checkout)"></div><div class="meta"><span class="n">--checkout</span><span class="v">#5b9ec6</span></div></div>
+</div>
+</body>
+</html>

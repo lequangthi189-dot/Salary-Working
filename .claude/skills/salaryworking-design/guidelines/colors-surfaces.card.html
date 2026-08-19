@@ -1,0 +1,30 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Dark surfaces & text" subtitle="The default theme: navy ground, two panel steps, hairline border" -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:16px;background:var(--bg);background-image:var(--page-bg-image);color:var(--text);font-family:var(--font-sans);font-size:14px}
+.g{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+a{color:var(--accent)}a:hover{color:var(--text)}
+.sw{flex:1 1 96px;min-width:96px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.sw .chip{height:52px}
+.sw .meta{padding:5px 7px;background:var(--panel);display:flex;flex-direction:column;gap:1px}
+.sw .n{font-size:0.72rem;font-weight:600}
+.sw .v{font-family:var(--font-mono);font-size:0.62rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="g">
+<div class="sw"><div class="chip" style="background:var(--bg)"></div><div class="meta"><span class="n">--bg</span><span class="v">#0a1929</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--panel)"></div><div class="meta"><span class="n">--panel</span><span class="v">#0f2334</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--panel-2)"></div><div class="meta"><span class="n">--panel-2</span><span class="v">#14293c</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--border)"></div><div class="meta"><span class="n">--border</span><span class="v">#1a2d40</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--text)"></div><div class="meta"><span class="n">--text</span><span class="v">#f3f8fd</span></div></div>
+<div class="sw"><div class="chip" style="background:var(--muted)"></div><div class="meta"><span class="n">--muted</span><span class="v">#8696aa</span></div></div>
+</div>
+</body>
+</html>

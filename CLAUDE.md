@@ -56,6 +56,29 @@ Tuyệt đối KHÔNG được thay đổi hoặc tự ý giả định những 
 - Khi đổi logic tính toán, phải cập nhật và chạy `src/lib/shiftMath.test.js`.
 - **Branch Management**: Trước khi thêm bất kỳ tính năng nào hoặc sửa lỗi, luôn luôn làm việc trên một nhánh (branch) git mới. Không bao giờ commit trực tiếp trên nhánh master. Các nhánh sửa lỗi phải tuân theo quy ước đặt tên bug/[des], các nhánh tính năng phải tuân theo quy ước đặt tên feature/[desc].
 
+## Design System
+
+Trước khi dựng bất kỳ UI mới nào, đọc `.claude/skills/salaryworking-design/readme.md`.
+
+- **Con số là nhân vật chính** — tiền và giờ dùng chữ số tabular, weight 700–800, là thứ lớn nhất trên màn hình.
+- Không gradient, không glow, không emoji, không nhãn AI. Đọc ảnh lịch chỉ gọi là "nhập từ ảnh"; chatbot chỉ là "trợ lý lương".
+- **Mật độ cao**, không thoáng: đây là bảng công, thấy nhiều ca cùng lúc quan trọng hơn khoảng trắng.
+- Thẻ phẳng, viền hairline, theme `dark` KHÔNG đổ bóng. Đúng một màu nhấn.
+- Số do máy đọc từ ảnh phải trông KHÁC số do người nhập, và luôn cần xác nhận.
+- Mọi thứ mới phải đúng trong cả 3 theme (`dark` / `glass` / `neumorph`) và cả 2 bản dịch (vi / en).
+
+**Token màu/chữ/khoảng cách nằm ở `src/styles/salaryworking-tokens.css`** — import
+đầu tiên trong `main.jsx`. Đừng khai báo lại `:root` trong `styles.css` (sẽ thắng
+token bundle). Đổi tông → sửa `--accent` / `--green` / `--danger`; phần còn lại là xám.
+
+Khi thêm màu chữ trên nền có màu, dùng `--text-on-accent` / `--text-on-ok` chứ
+đừng hardcode `#fff`: nền nhấn của cả 3 theme đều sáng nên chữ trắng FAIL WCAG AA.
+
+24 component trong skill là **bản dựng lại phần hình** (inline style, không có
+className) — dùng làm ĐẶC TẢ để sửa CSS của app, đừng thay thẳng vào app: chúng
+sẽ mất 119 rule theme trong `styles/themes.css` và kéo lại bảng navy cũ.
+Chi tiết: `.claude/skills/salaryworking-design/handoff/full/README.md`.
+
 ## Additional Documentation
 
 - `.claude/docs/architecture.md` — cấu trúc thư mục, luồng dữ liệu, vai trò từng module/component.

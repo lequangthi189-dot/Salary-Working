@@ -1,0 +1,228 @@
+/* THEMES — three personalities, not three palettes. Applied with data-theme on
+   <html> (see src/lib/theme.js in the app). Each scope swaps the colour contract
+   from colors.css AND a set of SURFACE RECIPE tokens so one component stylesheet
+   renders correctly in all three. There are exactly THREE themes: dark, glass, neumorph.
+   glass and neumorph are verbatim from src/styles/themes.css; dark carries the agreed
+   Trung tính palette (one graphite ramp, one accent, three hues total). */
+
+/* Fallback recipe tokens for pages that never set data-theme (dark is default). */
+:root {
+  --page-bg-image: none; /* @kind other */
+  --card-bg: var(--panel);
+  --card-bg-image: none; /* @kind other */
+  --card-border: 1px solid var(--border); /* @kind other */
+  --card-radius: 12px;
+  --card-shadow: none;
+  --card-shadow-hover: none;
+  --card-hover-border: rgba(91, 158, 198, 0.55);
+  --card-hover-lift: none; /* @kind other */
+  --card-blur: none; /* @kind other */
+  --card-padding: 1.5rem;
+  --shift-card-padding: 1.1rem 1.25rem;
+  --input-bg: var(--bg);
+  --input-border: 1px solid var(--border); /* @kind other */
+  --input-shadow: none;
+  --input-radius: 8px;
+  --button-bg: var(--accent);
+  --button-shadow: none;
+}
+
+/* ---------- dark — Sleek Dark & Minimalist (default) ----------
+   Focus by subtraction: ONE graphite ramp for every surface, ONE accent, and colour
+   used only where it carries meaning about money. Time colours are neutral — check-in
+   and check-out are told apart by weight and position, a planned shift by a dashed
+   muted edge, a missed clock-in by the single red. Hue count in the whole UI: 3
+   (accent, earned, lost). Flat fields, hairline borders, no elevation on content cards.
+   Measured against AA: money 16.5:1, body 14.2:1, muted 6.3:1, earned 6.9:1,
+   lost 5.0:1, button 7.0:1 / label on button 7.2:1. */
+[data-theme='dark'] {
+  --bg: #15171a;
+  --panel: #1c1f23;
+  --panel-2: #23272c;
+  --text: #eceef0;
+  --muted: #9aa1a9;
+  --accent: #6aa9c9;
+  --green: #57b98a;
+  --danger: #e2665e;
+  --border: #2f343a;
+  /* Time is neutral here: emphasis comes from weight, not from a second hue. */
+  --checkin: #eceef0;
+  --checkout: #9aa1a9;
+  --skeleton-base: #23272c;
+  --skeleton-sheen: rgba(255, 255, 255, 0.05);
+
+  --text-value: #ffffff;
+  --text-on-accent: #0e1418;
+  --pay-positive: #57b98a;
+  --pay-negative: #e2665e;
+  --time-in: #eceef0;
+  --time-out: #9aa1a9;
+  --time-scheduled: #9aa1a9;
+  /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
+  --tone-orange: #9aa1a9;
+  --tone-green: #57b98a;
+  --tone-blue: #9aa1a9;
+  --tone-red: #e2665e;
+  --status-planned: #9aa1a9;
+  --status-planned-fill: rgba(154, 161, 169, 0.08);
+  --status-planned-chip: rgba(154, 161, 169, 0.14);
+  --status-overdue: #e2665e;
+  --status-missing: #e2665e;
+  --status-missing-fill: rgba(226, 102, 94, 0.12);
+  --status-received: #57b98a;
+  --progress-fill: rgba(106, 169, 201, 0.18);
+  --progress-bar: #6aa9c9;
+  --loader-ball: #6aa9c9;
+
+  --page-bg-image: none; /* @kind other */
+  --card-bg: var(--panel);
+  --card-bg-image: none; /* @kind other */
+  --card-border: 1px solid var(--border); /* @kind other */
+  --card-radius: 12px;
+  --card-shadow: none;
+  --card-shadow-hover: none;
+  --card-hover-border: #3c434b;
+  --card-hover-lift: none; /* @kind other */
+  --card-blur: none; /* @kind other */
+  --card-padding: 1.35rem;
+  --shift-card-padding: 0.9rem 1.05rem;
+  --shift-card-accent-edge: 0; /* @kind other */
+  --input-bg: #15171a;
+  --input-border: 1px solid var(--border); /* @kind other */
+  --input-shadow: none;
+  --input-radius: 8px;
+  --button-bg: var(--accent);
+  --button-shadow: none;
+  --button-press: scale(0.99); /* @kind other */
+}
+
+/* ---------- glass — Modern Glassmorphism ----------
+   Aurora gradient page, frosted translucent surfaces, glowing gradient hairline,
+   18px radii, cards lift 4px on hover. */
+[data-theme='glass'] {
+  --bg: var(--sw-glass-bg);
+  --panel: rgba(255, 255, 255, 0.1);
+  --panel-2: rgba(255, 255, 255, 0.16);
+  --text: var(--sw-glass-text);
+  --muted: var(--sw-glass-muted);
+  --accent: var(--sw-glass-accent);
+  --green: var(--sw-glass-green);
+  --danger: var(--sw-glass-danger);
+  --border: rgba(255, 255, 255, 0.28);
+  --checkin: var(--sw-glass-amber);
+  --checkout: #8fd0ff;
+  --surface-blur: blur(18px) saturate(150%); /* @kind other */
+  --skeleton-base: rgba(255, 255, 255, 0.16);
+  --skeleton-sheen: rgba(255, 255, 255, 0.4);
+  --text-value: #ffffff;
+  --text-on-accent: #0f1430;
+
+  --page-bg-image:
+    radial-gradient(58% 62% at 12% 16%, rgba(168, 85, 247, 0.55), transparent 72%),
+    radial-gradient(60% 66% at 88% 12%, rgba(34, 211, 238, 0.5), transparent 72%),
+    radial-gradient(64% 64% at 80% 90%, rgba(20, 184, 166, 0.5), transparent 72%),
+    radial-gradient(60% 60% at 16% 92%, rgba(236, 72, 153, 0.5), transparent 72%),
+    radial-gradient(80% 90% at 50% 50%, rgba(99, 102, 241, 0.3), transparent 78%),
+    linear-gradient(135deg, #1a2050 0%, #1d2358 100%); /* @kind other */
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --card-bg-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0.04) 55%,
+    rgba(255, 255, 255, 0.1)
+  ); /* @kind other */
+  --card-border: 1px solid rgba(255, 255, 255, 0.28); /* @kind other */
+  --card-radius: 18px;
+  --card-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --card-shadow-hover:
+    0 16px 44px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 8px 28px rgba(124, 196, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --card-hover-border: rgba(255, 255, 255, 0.4);
+  --card-hover-lift: translateY(-4px); /* @kind other */
+  --card-blur: var(--surface-blur); /* @kind other */
+  --card-padding: 1.5rem;
+  --shift-card-padding: 0.85rem 1rem;
+  --shift-card-accent-edge: 0; /* @kind other */
+  --glass-edge-gradient: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.9),
+    rgba(34, 211, 238, 0.85) 50%,
+    rgba(236, 72, 153, 0.9)
+  ); /* @kind other */
+  --glass-hero-gradient: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.9),
+    rgba(236, 72, 153, 0.9)
+  ); /* @kind other */
+  --tone-orange-fill: linear-gradient(135deg, #a855f7, #ec4899); /* @kind other */
+  --tone-blue-fill: linear-gradient(135deg, #3b82f6, #22d3ee); /* @kind other */
+  --tone-green-fill: linear-gradient(135deg, #14b8a6, #22c55e); /* @kind other */
+  --tone-red-fill: linear-gradient(135deg, #f43f5e, #fb923c); /* @kind other */
+  --input-bg: rgba(255, 255, 255, 0.12);
+  --input-border: 1px solid rgba(255, 255, 255, 0.25); /* @kind other */
+  --input-shadow: none;
+  --input-radius: 12px;
+  --input-focus-ring: 0 0 0 3px rgba(124, 196, 255, 0.25); /* @kind shadow */
+  --button-bg: var(--accent);
+  --button-shadow: 0 8px 22px rgba(124, 196, 255, 0.28);
+  --button-press: translateY(0); /* @kind other */
+}
+
+/* ---------- neumorph — Soft UI ----------
+   Light room, no borders at all, everything is shadow: light from top-left,
+   shade bottom-right. Raised = idle, deeper = hover, inset = pressed. */
+[data-theme='neumorph'] {
+  --bg: var(--sw-nm-bg);
+  --panel: var(--sw-nm-bg);
+  --panel-2: var(--sw-nm-panel-2);
+  --text: var(--sw-nm-text);
+  --muted: var(--sw-nm-muted);
+  --accent: var(--sw-nm-accent);
+  --green: var(--sw-nm-green);
+  --danger: var(--sw-nm-danger);
+  --border: transparent;
+  --checkin: var(--sw-nm-amber);
+  --checkout: var(--sw-nm-accent);
+  --nm-shadow: 6px 6px 14px #bcc3ce, -6px -6px 14px #ffffff;
+  --nm-inset: inset 3px 3px 7px #bcc3ce, inset -3px -3px 7px #ffffff;
+  --nm-shadow-hover: 9px 9px 20px #b2b9c4, -9px -9px 20px #ffffff;
+  --nm-shadow-raised: 8px 8px 18px #b6bdc8, -8px -8px 18px #ffffff;
+  --nm-convex: linear-gradient(145deg, #f0f4fa, #cdd3dd); /* @kind other */
+  --skeleton-base: #cfd6e0;
+  --skeleton-sheen: rgba(255, 255, 255, 0.7);
+  /* Soft UI is a light room: money, button labels and time figures must be dark.
+     Upstream's peach check-in colour is invisible on this ground — darkened here. */
+  --text-value: var(--sw-nm-text);
+  --text-on-accent: var(--sw-nm-text);
+  --time-in: #8a5a1e;
+  --time-out: #2f6d8f;
+
+  --page-bg-image: none; /* @kind other */
+  --card-bg: transparent;
+  --card-bg-image: var(--nm-convex); /* @kind other */
+  --card-border: none; /* @kind other */
+  --card-radius: 20px;
+  --card-shadow: var(--nm-shadow);
+  --card-shadow-hover: var(--nm-shadow-hover);
+  --card-hover-border: transparent;
+  --card-hover-lift: none; /* @kind other */
+  --card-blur: none; /* @kind other */
+  --card-padding: 1.5rem;
+  --shift-card-padding: 0.85rem 1rem;
+  --shift-card-accent-edge: 0; /* @kind other */
+  --tone-orange-fill: var(--sw-nm-peach); /* @kind other */
+  --tone-blue-fill: var(--sw-nm-sky); /* @kind other */
+  --tone-green-fill: var(--sw-nm-mint); /* @kind other */
+  --tone-red-fill: var(--sw-nm-coral); /* @kind other */
+  --hero-fill: var(--sw-nm-lavender); /* @kind other */
+  --input-bg: var(--bg);
+  --input-border: none; /* @kind other */
+  --input-shadow: var(--nm-inset);
+  --input-radius: 12px;
+  --button-bg: transparent;
+  --button-bg-image: var(--nm-convex); /* @kind other */
+  --button-shadow: 4px 4px 10px #bcc3ce, -4px -4px 10px #ffffff;
+  --button-press: scale(0.985); /* @kind other */
+}

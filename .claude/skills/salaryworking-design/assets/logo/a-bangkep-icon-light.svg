@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="SalaryWorking">
+  <title>SalaryWorking — Bảng kẹp (for dark grounds)</title>
+  <rect x="52" y="56" width="152" height="168" rx="12" fill="none" stroke="#f3f8fd" stroke-width="9"></rect>
+  <g fill="#f3f8fd">
+    <rect x="102" y="34" width="52" height="34" rx="7"></rect>
+    <rect x="115" y="22" width="26" height="16" rx="5"></rect>
+    <rect x="76" y="90" width="104" height="13" rx="2"></rect>
+    <rect x="76" y="118" width="13" height="13" rx="2"></rect>
+    <rect x="76" y="142" width="13" height="13" rx="2"></rect>
+    <rect x="76" y="166" width="13" height="13" rx="2"></rect>
+  </g>
+  <g fill="#f3f8fd" fill-opacity="0.55">
+    <rect x="96" y="120" width="72" height="9" rx="2"></rect>
+    <rect x="96" y="144" width="54" height="9" rx="2"></rect>
+    <rect x="96" y="168" width="64" height="9" rx="2"></rect>
+  </g>
+  <path fill="none" stroke="#B03A55" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" d="M126 180 L148 202 L198 152"></path>
+</svg>
