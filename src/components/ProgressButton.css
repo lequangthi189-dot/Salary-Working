@@ -110,7 +110,7 @@
   background: var(--green);
 }
 .pbtn--done .pbtn-icon {
-  color: var(--green);
+  color: var(--pay-positive);
 }
 
 @media (prefers-reduced-motion: reduce) {

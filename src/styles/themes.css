@@ -90,7 +90,7 @@
 }
 /* Tiêu đề: tô accent + gạch chân mảnh để hút mắt vào khối nhập ca. */
 [data-theme='dark'] .shift-form .form-title {
-  color: var(--accent);
+  color: var(--text-accent);
   display: inline-block;
   padding-bottom: var(--space-3);
   border-bottom: var(--border-width-emphasis) solid var(--accent);
@@ -420,7 +420,7 @@
 /* MODERN — Tiêu đề khối nhập ca: tô accent + gạch chân sáng để khối kính nổi bật,
    ăn nhập với bề mặt glass (blur + viền gradient phát sáng đã thêm qua :is). */
 [data-theme='glass'] .shift-form .form-title {
-  color: var(--accent);
+  color: var(--text-accent);
   display: inline-block;
   padding-bottom: 0.3rem;
   border-bottom: 2px solid rgba(124, 196, 255, 0.7);
@@ -665,7 +665,7 @@
 /* Tiêu đề khối nhập ca: tô accent + thanh gạch nhỏ phía dưới để hút mắt, giúp
    khối nổi bật giữa các thẻ thống kê pastel bên cạnh. */
 [data-theme='neumorph'] .shift-form .form-title {
-  color: var(--accent);
+  color: var(--text-accent);
   display: inline-block;
   padding-bottom: 0.3rem;
   border-bottom: 2px solid var(--accent);
