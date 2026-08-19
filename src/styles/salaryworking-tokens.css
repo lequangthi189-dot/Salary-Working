@@ -453,7 +453,9 @@
   --tone-red: #de8279;
   --status-planned: #c59247;
   --status-planned-fill: rgba(197, 146, 71, 0.07);
-  --status-planned-chip: rgba(197, 146, 71, 0.14);
+  /* 0.08, khong phai 0.14: chu badge nam tren chip CUNG TONG chong len nen the
+     cung tong, hai lop keo nen len sat mau chu. O 0.14 chi con 4.26:1. */
+  --status-planned-chip: rgba(197, 146, 71, 0.08);
   --status-overdue: #de8279;
   --status-missing: #de8279;
   --status-missing-fill: rgba(222, 130, 121, 0.1);
@@ -521,7 +523,7 @@
   --status-missing-fill: rgba(224, 132, 151, 0.16);
   --status-planned: #ddb776;
   --status-planned-fill: rgba(221, 183, 118, 0.1);
-  --status-planned-chip: rgba(221, 183, 118, 0.16);
+  --status-planned-chip: rgba(221, 183, 118, 0.10);
   /* Stat-tile labels: solved on this theme's own ground, not inherited from dark. */
   --tone-orange: #b1bed7;
   --tone-blue: #b1bed7;

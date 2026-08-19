@@ -2551,13 +2551,20 @@ input.t-out {
   color: var(--status-missing);
   font-weight: var(--weight-bold);
 }
-/* Ca dự kiến (tương lai, chưa chấm công) — dùng token trạng thái nên ở theme
-   dark là XÁM trung tính (bảng Trung tính bỏ hue amber), còn glass/neumorph vẫn
-   amber như cũ. Trước đây nền là amber CỨNG nên ở dark thành chữ trắng trên nền
-   cam. */
+/* Ca dự kiến (tương lai, chưa chấm công) — dùng token trạng thái, HỔ PHÁCH ở cả
+   ba theme: đây là trạng thái thật "chưa làm", tô xám sẽ bị đọc thành "bị vô hiệu
+   hoá". Trước đây nền là amber CỨNG nên ở dark thành chữ trắng trên nền cam. */
 .shift-card.planned {
   border-color: var(--status-planned);
   background: var(--status-planned-fill);
+}
+/* Giờ dự kiến phải LẤY token --time-scheduled, không phải --muted. Markup gắn
+   sẵn class .muted (ShiftCard.jsx) nên cần selector 2 lớp để thắng. Trước đây
+   không ai thấy sai vì --time-scheduled và --muted trùng đúng một giá trị xám;
+   khi ca dự kiến chuyển sang hổ phách thì chỗ này mới lộ ra là chưa nối. */
+.shift-card.planned .t-in,
+.shift-card.planned .t-out {
+  color: var(--time-scheduled);
 }
 .planned-badge {
   margin-left: var(--space-4);
