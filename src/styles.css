@@ -2553,9 +2553,14 @@ input.t-out {
 }
 /* Ca dự kiến (tương lai, chưa chấm công) — dùng token trạng thái, HỔ PHÁCH ở cả
    ba theme: đây là trạng thái thật "chưa làm", tô xám sẽ bị đọc thành "bị vô hiệu
-   hoá". Trước đây nền là amber CỨNG nên ở dark thành chữ trắng trên nền cam. */
+   hoá". Trước đây nền là amber CỨNG nên ở dark thành chữ trắng trên nền cam.
+   VIỀN NÉT ĐỨT là luật của design system (guidelines/palette-explorations.html):
+   nét đứt = "chưa xảy ra", phân biệt ngay với ngày CHƯA CHẤM CÔNG dùng viền LIỀN
+   2px đỏ. Hai trạng thái này khác nhau về kiểu nét trước, về màu sau — nên vẫn
+   đọc được khi in đen trắng hoặc với người khó phân biệt màu. */
 .shift-card.planned {
   border-color: var(--status-planned);
+  border-style: dashed;
   background: var(--status-planned-fill);
 }
 /* Giờ dự kiến phải LẤY token --time-scheduled, không phải --muted. Markup gắn

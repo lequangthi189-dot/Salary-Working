@@ -716,3 +716,37 @@
   background: #e0e5ec;
   box-shadow: inset 2px 2px 3px #bcc3ce, inset -2px -2px 3px #ffffff;
 }
+
+/* =========================================================================
+   TRẠNG THÁI CA phải THẮNG viền bề mặt chung của theme.
+   themes.css nạp SAU styles.css (main.jsx), và [data-theme='x'] :is(…, .shift-card, …)
+   có specificity BẰNG .shift-card.planned nên thắng nhờ thứ tự. Hậu quả: khung hổ
+   phách của ca dự kiến và khung đỏ của ngày chưa chấm công không hiện ở glass và
+   neumorph — đo trên app thật mới thấy. Hai trạng thái này mang NGHĨA (chưa xảy ra /
+   đã qua mà thiếu), không phải trang trí, nên chúng được phép phá luật bề mặt:
+   ở neumorph là ngoại lệ có chủ ý với "Soft UI không dùng viền".
+   Selector 3 lớp (0,3,0) nên thắng bất kể thứ tự file.
+   Neumorph GIỮ nền convex: chỉ viền mang trạng thái, không làm phẳng bề mặt đặc
+   trưng của theme. Glass nhận thêm nền wash vì bề mặt kính vốn đã trong suốt.
+   ========================================================================= */
+[data-theme='glass'] .shift-card.planned,
+[data-theme='neumorph'] .shift-card.planned {
+  border: var(--border-width-hairline) dashed var(--status-planned);
+}
+[data-theme='glass'] .shift-card.not-checked-in,
+[data-theme='neumorph'] .shift-card.not-checked-in {
+  border: var(--border-width-emphasis) solid var(--status-missing);
+}
+[data-theme='glass'] .shift-card.planned {
+  background: var(--status-planned-fill);
+  background-image: none;
+}
+[data-theme='glass'] .shift-card.not-checked-in {
+  background: var(--status-missing-fill);
+  background-image: none;
+}
+/* Viền gradient ::before của kính chồng lên viền trạng thái và làm nhoè nghĩa. */
+[data-theme='glass'] .shift-card.planned::before,
+[data-theme='glass'] .shift-card.not-checked-in::before {
+  display: none;
+}
