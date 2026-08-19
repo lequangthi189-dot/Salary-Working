@@ -241,7 +241,7 @@ button[type='submit']:disabled {
 .period-total-value {
   font-size: 1.35rem;
   font-weight: 700;
-  color: var(--green);
+  color: var(--pay-positive);
 }
 .period-total-sub {
   font-size: 0.78rem;
@@ -449,7 +449,7 @@ button[type='submit']:disabled {
 }
 .chat-choice-btns button:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 .chat-typing {
   color: var(--muted);
@@ -474,7 +474,7 @@ button[type='submit']:disabled {
 }
 .chat-menu-btn:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 /* Tiêu đề nhóm trong menu chức năng */
 .chat-menu-group {
@@ -509,7 +509,7 @@ button[type='submit']:disabled {
 }
 .chat-dd-head:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 /* Mũi tên ▼ xoay 180° khi mở */
 .chat-dd-arrow {
@@ -640,7 +640,7 @@ button[type='submit']:disabled {
 }
 .row-btn:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 .row-btn:disabled {
   opacity: 0.6;
@@ -682,7 +682,7 @@ button[type='submit']:disabled {
 .edit-icon {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--text-accent);
   font-size: 0.95rem;
   line-height: 1;
   padding: 0.15rem 0.3rem;
@@ -701,23 +701,13 @@ button[type='submit']:disabled {
   gap: 0.5rem 0.75rem;
   margin-bottom: 0.85rem;
 }
+/* Tên app: chữ đặc, đứng yên. Bỏ gradient chạy xanh↔trắng — luật brand "không
+   gradient, không lấp lánh", và phần chrome không nên tranh chỗ với con số. */
 .app-header h1 {
   margin: 0;
   font-size: 1.05rem;
-  font-weight: 800;
-  /* Chữ gradient ĐỘNG xanh dương ↔ trắng, chạy ngang lặp vô hạn */
-  background: linear-gradient(90deg, #4f9dff, #ffffff, #4f9dff, #ffffff);
-  background-size: 300% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: salaryShimmer 6s linear infinite;
-}
-@keyframes salaryShimmer {
-  to {
-    background-position: 300% center;
-  }
+  font-weight: var(--weight-heavy);
+  color: var(--text);
 }
 .user {
   display: flex;
@@ -737,7 +727,7 @@ button[type='submit']:disabled {
 }
 .account-btn:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 /* Nhóm nút bên phải header */
 .header-actions {
@@ -954,7 +944,7 @@ button[type='submit']:disabled {
   cursor: pointer;
 }
 .acct-forget:hover {
-  color: var(--danger);
+  color: var(--text-danger);
   border-color: var(--danger);
 }
 .acct-add {
@@ -977,7 +967,7 @@ button[type='submit']:disabled {
 }
 .lang-toggle:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 .lang-wrap {
   position: relative;
@@ -1026,7 +1016,7 @@ button[type='submit']:disabled {
   background: var(--panel-2);
 }
 .lang-menu button.active {
-  color: var(--accent);
+  color: var(--text-accent);
 }
 .lang-toggle .flag {
   width: 20px;
@@ -1124,7 +1114,7 @@ button[type='submit']:disabled {
 }
 .dropdown-menu button:hover {
   background: var(--panel-2);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 .menu-toggle {
   background: none;
@@ -1250,7 +1240,7 @@ button[type='submit']:disabled {
 }
 .sidebar-footer button:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-accent);
 }
 
 /* ---- Modal ---- */
@@ -1477,7 +1467,7 @@ button[type='submit']:disabled {
 }
 
 .danger-link {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 .account-btn.full {
   width: 100%;
@@ -1525,11 +1515,11 @@ button[type='submit']:disabled {
   color: var(--checkout);
 }
 .signout-btn {
-  color: var(--danger); /* đỏ sáng */
+  color: var(--text-danger); /* đỏ sáng */
 }
 .signout-btn:hover {
   border-color: var(--danger);
-  color: var(--danger);
+  color: var(--text-danger);
 }
 
 /* ---- Shift form ---- */
@@ -1648,14 +1638,16 @@ button[type='submit']:disabled {
   color: var(--text-on-accent);
 }
 
-/* ---- Modal nhập lịch tuần từ ảnh ---- */
+/* ---- Modal nhập lịch tuần từ ảnh ----
+   Đây ĐÚNG LÀ tính năng mà luật brand nhắc đích danh: "không gradient, không
+   glow, không lấp lánh, không nhãn AI — đọc ảnh lịch chỉ gọi là nhập lịch tuần".
+   Trước đây khối này là viền gradient tím→xanh→teal + quầng sáng tím, tức đúng
+   kiểu "AI magic" cần tránh. Nay chỉ là một vùng thả ảnh bình thường: bọc ngoài
+   không trang trí, bản thân vùng thả đã có viền đứt. */
 .premium-upload {
   position: relative;
   margin: 0 0 0.9rem;
-  padding: 2px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #8b5cf6, #4f8cff 48%, #31d6c4);
-  box-shadow: 0 14px 34px rgba(85, 77, 210, 0.2);
+  border-radius: var(--radius-2xl);
 }
 .import-fields > .premium-upload {
   grid-column: 1 / -1;
@@ -1677,19 +1669,18 @@ button[type='submit']:disabled {
   justify-content: center;
   gap: 0.45rem;
   color: var(--text);
-  border: 2px dashed color-mix(in srgb, var(--accent) 42%, var(--border));
+  border: var(--border-width-emphasis) dashed
+    color-mix(in srgb, var(--accent) 42%, var(--border));
   border-radius: 16px;
-  background:
-    radial-gradient(circle at 18% 85%, rgba(66, 211, 255, 0.13), transparent 30%),
-    radial-gradient(circle at 82% 18%, rgba(175, 92, 255, 0.16), transparent 34%),
-    color-mix(in srgb, var(--panel) 92%, transparent);
+  /* Bỏ 2 vệt sáng tròn tím/cyan — chỉ còn nền panel phẳng. */
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
   cursor: pointer;
   overflow: hidden;
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: background var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
 }
 .premium-upload-drop:hover,
 .premium-upload.is-dragging .premium-upload-drop {
-  transform: translateY(-2px);
   border-color: var(--accent);
   background-color: color-mix(in srgb, var(--panel-2) 95%, transparent);
 }
@@ -1702,36 +1693,34 @@ button[type='submit']:disabled {
 .premium-upload-art svg {
   width: 66px;
   height: 66px;
-  fill: #7549dc;
-  filter: drop-shadow(0 8px 12px rgba(91, 71, 205, 0.25));
+  fill: var(--accent);
 }
 .premium-upload-art .upload-arrow {
   fill: none;
-  stroke: #fff;
+  stroke: var(--text-on-accent);
   stroke-width: 5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+/* Nhãn JPG/PNG: là THÔNG TIN (định dạng nhận được), không phải trang trí — nên
+   để yên như chip xám, bỏ màu cứng hồng/xanh, bỏ xoay nghiêng và bỏ đổ bóng. */
 .premium-upload-orbit {
   position: absolute;
   padding: 0.28rem 0.38rem;
-  color: #fff;
+  color: var(--text-muted);
+  background: var(--panel-2);
+  border: var(--border-width-hairline) solid var(--border);
   font-size: 0.55rem;
-  font-weight: 800;
-  border-radius: 7px;
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.2);
+  font-weight: var(--weight-bold);
+  border-radius: var(--radius-xs);
 }
 .orbit-one {
   right: calc(100% + 0.55rem);
   top: 1.9rem;
-  background: #ff5e72;
-  transform: rotate(-10deg);
 }
 .orbit-two {
   left: calc(100% + 0.55rem);
   top: 0.6rem;
-  background: #467df4;
-  transform: rotate(9deg);
 }
 .premium-upload-drop > strong {
   font-size: 1.15rem;
@@ -1741,7 +1730,7 @@ button[type='submit']:disabled {
   font-size: 0.9rem;
 }
 .premium-upload-browse b {
-  color: var(--accent);
+  color: var(--text-accent);
 }
 .premium-upload-limits {
   display: flex;
@@ -1761,13 +1750,15 @@ button[type='submit']:disabled {
 }
 .premium-upload-selected {
   max-width: 100%;
-  color: var(--green);
+  color: var(--pay-positive);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.premium-upload.has-file {
-  background: linear-gradient(135deg, #7057ed, #3f8cff 48%, #21c8b6);
+/* Đã chọn ảnh → viền liền màu "đã xong" thay cho đổi gradient. */
+.premium-upload.has-file .premium-upload-drop {
+  border-style: solid;
+  border-color: var(--ok);
 }
 @media (max-width: 560px) {
   .premium-upload-drop {
@@ -1871,15 +1862,18 @@ button[type='submit']:disabled {
 }
 
 /* ===== Đối chiếu OCR: đánh dấu ô khớp/lệch giữa AI và OCR ===== */
-/* Khớp → xanh nhẹ (đáng tin). Lệch → viền vàng + nền vàng nhạt (cần soát tay). */
+/* Khớp → viền "đã tin được" (--ok). Lệch → viền + nền trạng thái "chưa xác nhận"
+   (--status-planned), tức cần người soát tay. Dùng token nên đổi theo theme thay
+   vì màu cứng. Không chỉ dựa vào màu: ô lệch còn có dấu ⚠ ở góc (xem rule dưới),
+   nên người mù màu vẫn phân biệt được. */
 .import-table td.cell-match {
-  box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.35);
-  border-radius: 6px;
+  box-shadow: inset 0 0 0 var(--border-width-emphasis) var(--ok);
+  border-radius: var(--radius-xs);
 }
 .import-table td.cell-mismatch {
-  box-shadow: inset 0 0 0 2px rgba(234, 179, 8, 0.75);
-  background: rgba(234, 179, 8, 0.12);
-  border-radius: 6px;
+  box-shadow: inset 0 0 0 var(--border-width-emphasis) var(--status-planned);
+  background: var(--status-planned-fill);
+  border-radius: var(--radius-xs);
 }
 /* Cảnh báo ô lệch: dấu ⚠ nhỏ góc trên phải để nhận ra ngay cả khi mù màu. */
 .import-table td.cell-mismatch {
@@ -1939,7 +1933,7 @@ button[type='submit']:disabled {
 }
 .deduction-total {
   font-size: 1.05rem;
-  color: var(--danger);
+  color: var(--text-danger);
 }
 .deduction-body {
   padding: 0 0.85rem 0.8rem;
@@ -1987,18 +1981,23 @@ button[type='submit']:disabled {
   outline: none;
   border-color: var(--accent);
 }
+/* Nút "Thêm" trong popup tiền bồi thường — là hành động chính của popup nên tô
+   đặc màu nhấn như mọi nút chính khác. Bỏ gradient vàng→cam→đỏ: nó là màu cứng
+   (không theo theme), và ba màu đó trong bảng màu này mang nghĩa CẢNH BÁO /
+   MẤT TIỀN, dùng cho một nút "thêm" bình thường là sai nghĩa. */
 .deduction-add-btn {
-  background: linear-gradient(90deg, #ffd93b, #ff9f43, #f85149);
+  background: var(--accent);
   border: none;
-  border-radius: 8px;
-  color: #2a1500;
-  font-weight: 700;
+  border-radius: var(--radius-sm);
+  color: var(--text-on-accent);
+  font-weight: var(--weight-bold);
   cursor: pointer;
   padding: 0.55rem 0.8rem;
   font-size: 0.88rem;
+  transition: var(--transition-surface);
 }
 .deduction-add-btn:hover {
-  filter: brightness(1.07);
+  background: color-mix(in srgb, var(--accent) 88%, var(--text));
 }
 .deduction-add-btn:disabled {
   opacity: 0.6;
@@ -2026,10 +2025,10 @@ button[type='submit']:disabled {
 .deduction-net strong {
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--green);
+  color: var(--pay-positive);
 }
 .deduction-net strong.neg {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 
 /* Danh sách khoản trừ */
@@ -2058,7 +2057,7 @@ button[type='submit']:disabled {
   gap: 0.1rem;
 }
 .deduction-amt {
-  color: var(--danger);
+  color: var(--text-danger);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -2086,7 +2085,7 @@ button[type='submit']:disabled {
   padding: 0 0.2rem;
 }
 .deduction-del:hover {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 .msg.sm,
 .muted.sm {
@@ -2126,40 +2125,26 @@ button[type='submit']:disabled {
   white-space: nowrap;
 }
 .period-ded-amt {
-  color: var(--danger);
+  color: var(--text-danger);
   font-weight: 600;
   white-space: nowrap;
 }
 .stat-net .stat-value.neg,
 .stat-value.neg {
-  color: var(--danger);
+  color: var(--text-danger);
 }
-/* Dòng ca đang nhập: to + chữ màu động cam/trắng/xanh dương/đen */
+/* Dòng xem trước ca đang nhập — CHÍNH LÀ tiền và giờ, tức nhân vật chính.
+   Trước đây vẽ bằng chữ TRONG SUỐT trên gradient 5 màu chạy vô hạn: con số quan
+   trọng nhất màn hình lại là chỗ khó đọc nhất (color: transparent nên không đo
+   được tương phản, và màu nền đổi liên tục nên có lúc chữ gần như biến mất).
+   Nay chữ đặc, đứng yên, chữ số tabular. --text-xl chính là nấc design system
+   dành riêng cho dòng này. */
 .preview-line {
   margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-  background: linear-gradient(
-    90deg,
-    #ff9f43,
-    #ffffff,
-    #4f9dff,
-    #0a1d38,
-    #ff9f43
-  );
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: previewColorShift 6s linear infinite;
-}
-@keyframes previewColorShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 300% 50%;
-  }
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text);
+  font-variant-numeric: var(--numeric);
 }
 
 .summary {
@@ -2674,7 +2659,7 @@ input.t-out {
   padding: 0 0.25rem;
 }
 .edit:hover {
-  color: var(--accent);
+  color: var(--text-accent);
 }
 /* Giờ vào–ra trên thẻ ca: đậm hơn phần còn lại (ở bảng Trung tính đây là cách
    phân biệt chính, thay cho màu) và dùng chữ số tabular. */
@@ -2683,7 +2668,7 @@ input.t-out {
   font-variant-numeric: var(--numeric);
 }
 .next-day {
-  color: var(--accent);
+  color: var(--text-accent);
   font-size: 0.75rem;
 }
 .shift-breakdown {
@@ -2714,7 +2699,7 @@ input.t-out {
   padding: 0 0.25rem;
 }
 .delete:hover {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 
 .totals {
@@ -2731,7 +2716,7 @@ input.t-out {
   margin-right: auto;
 }
 .totals .pay {
-  color: var(--green);
+  color: var(--pay-positive);
   font-size: 1.1rem;
 }
 
@@ -2781,13 +2766,13 @@ input.t-out {
 .period-stat-main {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--green);
+  color: var(--pay-positive);
 }
 /* Dòng tham khảo (không trừ tiền) → nhỏ nhưng đỏ SÁNG cho nổi */
 .period-stat-lost {
   font-size: 0.68rem;
   font-weight: 400;
-  color: var(--danger);
+  color: var(--text-danger);
   opacity: 1;
 }
 
@@ -3019,7 +3004,7 @@ input.t-out {
 .msched-del {
   border: none;
   background: transparent;
-  color: var(--danger);
+  color: var(--text-danger);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
@@ -3052,7 +3037,7 @@ input.t-out {
   font-size: 1.05rem;
 }
 .extra-summary-row.total strong {
-  color: var(--green);
+  color: var(--pay-positive);
 }
 .extra-add {
   display: flex;
@@ -3170,10 +3155,10 @@ input.t-out {
   padding: 0.1rem 0.3rem;
 }
 .extra-actions .delete:hover {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 .extra-actions .edit:hover {
-  color: var(--accent);
+  color: var(--text-accent);
 }
 /* Khoản việc ngoài DỰ KIẾN (ngày tương lai) — chưa tính thực nhận */
 .extra-item.planned {
@@ -3373,7 +3358,7 @@ input.t-out {
 .avatar-initials {
   font-weight: 700;
   font-size: 1.7rem;
-  color: var(--accent);
+  color: var(--text-accent);
   letter-spacing: 0.5px;
 }
 /* Vòng tiến độ: SVG phủ khít avatar, xoay -90° để cung bắt đầu từ đỉnh. */

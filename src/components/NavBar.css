@@ -104,7 +104,7 @@
   border-color: var(--accent);
 }
 .dock-item.active .dock-icon {
-  color: var(--accent);
+  color: var(--text-accent);
 }
 
 /* Chấm "đang mở" dưới icon active (kiểu macOS running dot). */
@@ -164,7 +164,7 @@
     color: var(--muted);
   }
   .dock-item.active .dock-label {
-    color: var(--accent);
+    color: var(--text-accent);
   }
   /* Mobile dùng nhãn để báo active → bỏ chấm tròn (tránh đè lên nhãn). */
   .dock-item.active::after {
