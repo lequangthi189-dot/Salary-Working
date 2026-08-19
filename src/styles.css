@@ -186,15 +186,17 @@ button[type='submit']:disabled {
   text-align: left;
 }
 
+/* Thông báo dạng chữ (Message). Dùng bản --text-* vì đây là CHỮ trên nền panel:
+   --danger/--accent là màu nền pastel ở Soft UI nên đọc không ra. */
 .msg {
-  font-size: 0.85rem;
-  margin: 0.75rem 0 0;
+  font-size: var(--text-base);
+  margin: var(--space-8) 0 0;
 }
 .msg.error {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 .msg.info {
-  color: var(--accent);
+  color: var(--text-accent);
 }
 
 /* ---- App ---- */
@@ -326,7 +328,7 @@ button[type='submit']:disabled {
   width: 25%;
 }
 .modal-card.wide {
-  max-width: 480px;
+  max-width: var(--modal-max-width-wide);
 }
 /* Popup Tiền bồi thường: bề rộng vừa phải cho cân đối khu nhập + danh sách */
 .modal-card.deduction-modal {
@@ -1254,7 +1256,7 @@ button[type='submit']:disabled {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--surface-overlay);
   display: grid;
   /* safe + cuộn: popup cao hơn màn hình vẫn xem/cuộn được, không bị cắt */
   place-items: safe center;
@@ -1263,12 +1265,12 @@ button[type='submit']:disabled {
   z-index: 50;
 }
 .modal-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: var(--surface-card);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-14);
   width: 100%;
-  max-width: 360px;
+  max-width: var(--modal-max-width);
   /* Nội dung cao (ảnh + bảng 7 ngày) không tràn ra ngoài màn hình → cho cuộn dọc.
      Dùng dvh để khớp vùng nhìn thấy thật trên mobile (trừ thanh URL), fallback vh. */
   max-height: calc(100vh - 2rem);
@@ -2322,9 +2324,9 @@ input.t-out {
 
 /* ---- Timesheet ---- */
 .empty {
-  color: var(--muted);
+  color: var(--text-muted);
   text-align: center;
-  padding: 2rem;
+  padding: var(--space-16);
 }
 .timesheet {
   margin-top: 1.25rem; /* tách bảng công khỏi khối Nhập ca + Thống kê phía trên */

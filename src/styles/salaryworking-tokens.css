@@ -624,10 +624,15 @@
      stat-tile fills. */
   --muted: #525a66;
   /* Text-usage variants: the pastel fills measure 1.75:1 (accent) and 1.55:1
-     (danger) as text on this theme's #e0e5ec ground. Darkened to 4.3:1 / 5.0:1
-     while --accent / --danger keep their pastel value for fills. */
-  --text-accent: #426b9e;
-  --text-danger: #9c4433;
+     (danger) as TEXT on this theme's grounds. Darkened until each clears AA on
+     ALL FOUR Soft UI surfaces — page #e0e5ec, panel-2 #e8edf3, and both stops of
+     the convex card gradient #f0f4fa→#cdd3dd. That dark stop is the binding
+     constraint (modals and cards are painted with the gradient, not the page
+     colour), so tuning against the page alone is not enough.
+     Measured worst case: accent 4.87:1, danger 4.89:1.
+     --accent / --danger keep their pastel value for FILLS. */
+  --text-accent: #345788;
+  --text-danger: #8e3d2e;
 
   --page-bg-image: none; /* @kind other */
   --card-bg: transparent;

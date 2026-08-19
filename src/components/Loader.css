@@ -21,8 +21,8 @@
   width: 1em;
   height: 1em;
   border-radius: 50%;
-  background-color: var(--ball-color, #3aa0d8);
-  animation: sw-ball 1.2s infinite cubic-bezier(0.3, 0.06, 0.4, 1);
+  background-color: var(--ball-color, var(--loader-ball));
+  animation: sw-ball 1.2s infinite var(--ease-loader);
 }
 
 /* Bóng đổ dưới sàn */
@@ -35,15 +35,15 @@
   width: 1em;
   height: 0.25em;
   border-radius: 50%;
-  background-color: var(--ball-color, #3aa0d8);
+  background-color: var(--ball-color, var(--loader-ball));
   opacity: 0.3;
-  animation: sw-shadow 1.2s infinite cubic-bezier(0.3, 0.06, 0.4, 1);
+  animation: sw-shadow 1.2s infinite var(--ease-loader);
 }
 
 .sw-loader-label {
   margin: 0;
-  font-size: 0.9rem;
-  color: #94a3b8;
+  font-size: var(--text-md);
+  color: var(--text-muted);
   letter-spacing: 0.02em;
 }
 
@@ -54,7 +54,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(10, 25, 41, 0.85);
+  background: var(--surface-overlay);
   z-index: 9999;
 }
 
