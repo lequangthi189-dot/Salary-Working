@@ -209,6 +209,11 @@ export const translations = {
     "pp.seg.nightShifts": "Night shifts",
     "pp.seg.noReason": "(no reason)",
     "pp.unit.shift": "{n} shifts",
+    "pp.trend.title": "Work hours trend",
+    "pp.trend.subtitle": "Total checked-in hours by work date across all periods.",
+    "pp.trend.aria": "Work hours trend by work date",
+    "pp.trend.workDays": "{n} work days",
+    "pp.trend.point": "{date}: {hours} h",
 
     // pay period panel
     "ppl.grandNet": "Total net received (after deductions)",
@@ -774,6 +779,11 @@ export const translations = {
     "pp.seg.nightShifts": "Ca đêm",
     "pp.seg.noReason": "(không lý do)",
     "pp.unit.shift": "{n} ca",
+    "pp.trend.title": "Xu hướng giờ làm",
+    "pp.trend.subtitle": "Tổng giờ đã chấm công theo từng ngày, xuyên suốt tất cả kỳ.",
+    "pp.trend.aria": "Xu hướng giờ làm theo từng ngày",
+    "pp.trend.workDays": "{n} ngày làm",
+    "pp.trend.point": "{date}: {hours} h",
 
     // pay period panel
     "ppl.grandNet": "Tổng thực nhận (sau trừ)",
