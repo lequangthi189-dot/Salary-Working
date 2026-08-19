@@ -51,9 +51,8 @@ body {
   overflow-x: hidden;
 }
 
-/* Khi có bất kỳ popup/sidebar nào mở → khoá cuộn nền, không tác động layout chính. */
-body:has(.modal-overlay),
-body:has(.sidebar-overlay) {
+/* Khi có popup mở → khoá cuộn nền, không tác động layout chính. */
+body:has(.modal-overlay) {
   overflow: hidden;
 }
 
@@ -355,12 +354,6 @@ button[type='submit']:disabled {
 }
 
 /* ---- Trợ lý lương (chat) ---- */
-.modal-card.chat-card {
-  max-width: 440px;
-  display: flex;
-  flex-direction: column;
-  height: min(70vh, 560px);
-}
 /* Cửa sổ chat NỔI, CỐ ĐỊNH ở góc dưới bên phải (khớp vị trí nút nổi). */
 .chat-float {
   position: fixed;
@@ -477,14 +470,6 @@ button[type='submit']:disabled {
   color: var(--text-accent);
 }
 /* Tiêu đề nhóm trong menu chức năng */
-.chat-menu-group {
-  margin-top: 0.5rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
 
 /* DROPDOWN nhóm nút trong menu chức năng (accordion, mặc định đóng) */
 .chat-dd {
@@ -753,32 +738,7 @@ button[type='submit']:disabled {
   }
 }
 /* Nút avatar Trợ lý lương, kế bên dropdown Công cụ */
-.chat-avatar-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  line-height: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  display: inline-flex;
-  flex: 0 0 auto;
-}
-.chat-avatar-btn:hover {
-  filter: brightness(1.1);
-}
-.chat-avatar-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 /* Nút "Nhập lịch tuần" ở header: thấp bằng logo (26px) */
-.header-import {
-  height: 26px;
-  padding: 0 0.6rem;
-  font-size: 0.72rem;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-}
 
 /* ---- Checkbox dùng chung (component Checkbox.jsx) ----
    Kiểu "premium": ô vuông bo góc; chưa tick → viền mảnh nền trong; đã tick → nền
@@ -1063,18 +1023,6 @@ button[type='submit']:disabled {
 }
 
 /* ---- Dropdown ở tiêu đề "Salary Working" ---- */
-.title-menu {
-  position: relative;
-}
-.title-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
 .title-caret {
   color: var(--muted);
   font-size: 0.85rem;
@@ -1085,64 +1033,9 @@ button[type='submit']:disabled {
   inset: 0;
   z-index: 40;
 }
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  left: 0;
-  z-index: 41;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.35rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 180px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
 /* căn phải cho dropdown ở header bên phải, tránh tràn mép màn hình */
-.dropdown-menu.right {
-  left: auto;
-  right: 0;
-}
-.dropdown-menu button {
-  text-align: left;
-  background: none;
-  border: none;
-  color: var(--text);
-  border-radius: 7px;
-  padding: 0.55rem 0.7rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-.dropdown-menu button:hover {
-  background: var(--panel-2);
-  color: var(--text-accent);
-}
-.menu-toggle {
-  background: none;
-  border: none;
-  padding: 0;
-  line-height: 0;
-  cursor: pointer;
-  border-radius: 9px;
-}
-.menu-toggle:hover {
-  filter: brightness(1.08);
-}
-.menu-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 
 /* ---- Thanh bên (sidebar) ---- */
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 60;
-}
 .sidebar {
   position: fixed;
   top: 0;
@@ -1160,11 +1053,6 @@ button[type='submit']:disabled {
   animation: sidebarIn 0.18s ease;
 }
 /* Vùng cuộn chứa nội dung Kỳ lương; head/footer cố định trên/dưới */
-.sidebar-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
 /* Trong sidebar: xếp các kỳ theo chiều dọc (1 cột) + bố cục gọn */
 .salary-embedded .period-stat-grid {
   /* Lưới 2 cột lấp khoảng trống bên phải; thẻ cùng hàng cao bằng nhau (stretch). */
@@ -1200,52 +1088,7 @@ button[type='submit']:disabled {
     transform: translateX(-100%);
   }
 }
-.sidebar-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.6rem;
-}
-.sidebar-title {
-  font-weight: 800;
-  font-size: 1.05rem;
-}
-.sidebar-close {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-}
-.sidebar-close:hover {
-  color: var(--text);
-}
 /* Ghim Tài khoản + Hướng dẫn xuống đáy sidebar — nút gọn, vừa nội dung */
-.sidebar-footer {
-  margin-top: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.8rem;
-}
-.sidebar-footer button {
-  text-align: left;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 0.4rem 0.8rem;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-.sidebar-footer button:hover {
-  border-color: var(--accent);
-  color: var(--text-accent);
-}
 
 /* ---- Modal ---- */
 .modal-overlay {
@@ -1470,9 +1313,6 @@ button[type='submit']:disabled {
   gap: 0.5rem 1rem;
 }
 
-.danger-link {
-  color: var(--text-danger);
-}
 .account-btn.full {
   width: 100%;
 }
@@ -1492,13 +1332,6 @@ button[type='submit']:disabled {
 }
 .change-pw-actions button[type='submit'] {
   flex: 1;
-}
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
 }
 
 /* Nút thao tác trong popup tài khoản — Sign out trái, Đổi mật khẩu phải */
@@ -1799,7 +1632,6 @@ button[type='submit']:disabled {
 .import-table input[type='time'] {
   color-scheme: dark;
 }
-.import-file,
 .import-week {
   grid-column: 1 / -1;
 }
@@ -2179,12 +2011,6 @@ button[type='submit']:disabled {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: var(--tracking-label);
-}
-.stat-total {
-  border-color: var(--accent);
-}
-.stat-total .stat-value {
-  color: var(--text-accent);
 }
 /* Tiền KIẾM ĐƯỢC → --pay-positive (bản an toàn khi làm chữ ở cả 3 theme),
    không dùng --green vì --green là màu NỀN pastel ở Soft UI. */
@@ -2898,11 +2724,6 @@ input.t-out {
   }
 }
 /* Donut đơn lẻ (vd Tổng giờ khi không có ca đêm): trải 2 cột + căn giữa */
-.donut-span {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-}
 .donut-title {
   font-size: 0.78rem;
   font-weight: 600;
@@ -2923,9 +2744,6 @@ input.t-out {
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-.donut-empty {
-  justify-content: center;
 }
 /* Tooltip khi rê chuột vào lát donut */
 .donut-tip {
@@ -3063,12 +2881,6 @@ input.t-out {
 }
 .tt-table td.lost {
   color: var(--pay-negative);
-}
-.tt-table .tt-sched {
-  color: var(--time-scheduled);
-}
-.tt-table tr.tt-planned td {
-  font-style: italic;
 }
 .tt-table tfoot td {
   background: var(--surface-raised);

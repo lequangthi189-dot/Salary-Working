@@ -640,9 +640,9 @@
 }
 
 /* SOFT UI — Bỏ viền màu của ô tổng trong khung tổng kết (.summary). Mặc định
-   .stat-grand/.stat-total ép border xanh/accent → hiện thành "khung" bao quanh,
-   lạc lõng với phong cách không-viền của Soft UI. Override về trong suốt. */
-[data-theme='neumorph'] .summary :is(.stat, .stat-grand, .stat-total) {
+   .stat-grand ép border xanh/accent → hiện thành "khung" bao quanh, lạc lõng với
+   phong cách không-viền của Soft UI. Override về trong suốt. */
+[data-theme='neumorph'] .summary :is(.stat, .stat-grand) {
   border-color: transparent;
 }
 
