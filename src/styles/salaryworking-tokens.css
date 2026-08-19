@@ -497,6 +497,9 @@
      ground. Lightened to clear AA (5.1:1) while staying the loudest red here. */
   --status-missing: #ff5c52;
   --status-missing-fill: rgba(255, 92, 82, 0.18);
+  /* Base --pay-positive (#2ea043) only reaches 3.32:1 on the frosted panel.
+     This theme already has a bright green; use it so "earned" stays readable. */
+  --pay-positive: var(--sw-glass-green);
 
   --page-bg-image:
     radial-gradient(58% 62% at 12% 16%, rgba(168, 85, 247, 0.55), transparent 72%),
@@ -604,6 +607,20 @@
   --status-received: #215840;
   --status-missing: #9c241c;
   --status-missing-fill: rgba(156, 36, 28, 0.12);
+
+  /* Money meaning as TEXT. Inherited, --pay-positive/--pay-negative stay at the
+     base #2ea043 / #f85149, which measure 2.87:1 and 2.85:1 on this theme's light
+     panels. Re-stated at the same values used for received / missing above, so
+     "earned" and "lost" read as one family across the whole theme. */
+  --pay-positive: #215840;
+  --pay-negative: #9c241c;
+
+  /* Secondary text. Upstream's #8b95a8 is a DARK-theme muted reused unchanged on
+     a light room: 2.38:1 on the page, 1.97:1 on the lavender salary hero — below
+     AA everywhere it appears, and --muted is the app's main label colour. Darkened
+     until it clears 4.5:1 on the page, both panels, the hero fill and all four
+     stat-tile fills. */
+  --muted: #525a66;
   /* Text-usage variants: the pastel fills measure 1.75:1 (accent) and 1.55:1
      (danger) as text on this theme's #e0e5ec ground. Darkened to 4.3:1 / 5.0:1
      while --accent / --danger keep their pastel value for fills. */

@@ -2165,34 +2165,41 @@ button[type='submit']:disabled {
   border-radius: 10px;
   padding: 0.7rem 0.85rem;
 }
+/* Ô thống kê (StatTile). Con số là nhân vật chính: nặng, to hơn nhãn, và dùng
+   chữ số TABULAR để các cột số thẳng hàng khi đọc lướt. */
 .stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--text-value);
+  font-variant-numeric: var(--numeric);
 }
 .stat-label {
-  font-size: 0.72rem;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--tracking-label);
 }
 .stat-total {
   border-color: var(--accent);
 }
 .stat-total .stat-value {
-  color: var(--accent);
+  color: var(--text-accent);
 }
+/* Tiền KIẾM ĐƯỢC → --pay-positive (bản an toàn khi làm chữ ở cả 3 theme),
+   không dùng --green vì --green là màu NỀN pastel ở Soft UI. */
 .stat-pay .stat-value {
-  color: var(--green);
+  color: var(--pay-positive);
 }
 .stat-grand {
   border-color: var(--green);
 }
 
+/* Giờ MẤT (vào trễ / ra sớm) → --pay-negative: tiền bị mất, cùng họ với phạt. */
 .lost {
-  color: var(--danger);
-  font-weight: 600;
-  font-size: 0.85rem;
+  color: var(--pay-negative);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-base);
   margin: 0;
 }
 .lost-detail {
