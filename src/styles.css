@@ -2440,29 +2440,32 @@ input.t-out {
 }
 /* Date grouping — mỗi ngày là 1 thẻ riêng để phân biệt rõ giữa các block. */
 .date-group {
-  margin-bottom: 1.25rem;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
+  margin-bottom: var(--space-12);
+  background: var(--surface-card);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) 0.85rem;
 }
 .date-header {
   display: flex;
   align-items: baseline;
-  gap: 1rem;
-  padding: 0.4rem 0.25rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.6rem;
+  gap: var(--space-10);
+  padding: var(--space-4) var(--space-2);
+  border-bottom: var(--border-width-hairline) solid var(--border);
+  margin-bottom: var(--space-6);
 }
 .date-label {
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 .date-header .muted {
   margin-left: auto;
 }
+/* Tiền của một ngày → --pay-positive (nghĩa "kiếm được"), chữ số tabular để
+   cột tiền của các ngày thẳng hàng khi cuộn. */
 .date-header .pay {
-  color: var(--green);
-  font-weight: 700;
+  color: var(--pay-positive);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 
 /* Màn nhỏ 320–560px: tiêu đề ngày xuống 2 dòng cho khỏi bể.
@@ -2500,10 +2503,10 @@ input.t-out {
 }
 
 .shift-card {
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
+  background: var(--surface-raised);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--shift-card-padding);
   display: grid;
   grid-template-columns: 1.3fr 1.4fr auto auto;
   align-items: center;
@@ -2670,8 +2673,11 @@ input.t-out {
 .edit:hover {
   color: var(--accent);
 }
+/* Giờ vào–ra trên thẻ ca: đậm hơn phần còn lại (ở bảng Trung tính đây là cách
+   phân biệt chính, thay cho màu) và dùng chữ số tabular. */
 .shift-times {
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .next-day {
   color: var(--accent);
@@ -2683,13 +2689,18 @@ input.t-out {
 }
 .shift-breakdown .muted,
 .muted {
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 0.78rem;
 }
+/* Phần tách giờ ngày/đêm là SỐ → thẳng cột giữa các thẻ ca. */
+.shift-breakdown {
+  font-variant-numeric: var(--numeric);
+}
 .shift-pay {
-  color: var(--green);
-  font-weight: 700;
+  color: var(--pay-positive);
+  font-weight: var(--weight-bold);
   text-align: right;
+  font-variant-numeric: var(--numeric);
 }
 .delete {
   background: none;
@@ -2706,11 +2717,12 @@ input.t-out {
 .totals {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding: 1rem;
-  border-top: 2px solid var(--border);
-  font-weight: 700;
+  gap: var(--space-10);
+  margin-top: var(--space-10);
+  padding: var(--space-10);
+  border-top: var(--border-width-emphasis) solid var(--border);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 .totals span:first-child {
   margin-right: auto;
@@ -2932,11 +2944,13 @@ input.t-out {
 .tt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
+  /* Bảng công là bảng SỐ: mọi ô số phải thẳng cột. */
+  font-variant-numeric: var(--numeric);
 }
 .tt-table th,
 .tt-table td {
-  border: 1px solid var(--border);
+  border: var(--border-width-hairline) solid var(--border);
   padding: 0.18rem 0.3rem;
   text-align: center;
   white-space: nowrap; /* mỗi ô 1 dòng → hàng ngày không bị bể */
@@ -2944,29 +2958,30 @@ input.t-out {
 .tt-table thead th {
   position: sticky;
   top: 0;
-  background: var(--panel-2);
+  background: var(--surface-raised);
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 .tt-table tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.03);
 }
 .tt-table .tt-pay {
   text-align: right;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: var(--numeric);
+  color: var(--pay-positive);
 }
 .tt-table td.lost {
-  color: var(--danger);
+  color: var(--pay-negative);
 }
 .tt-table .tt-sched {
-  color: var(--muted);
+  color: var(--time-scheduled);
 }
 .tt-table tr.tt-planned td {
   font-style: italic;
 }
 .tt-table tfoot td {
-  background: var(--panel-2);
-  font-weight: 700;
+  background: var(--surface-raised);
+  font-weight: var(--weight-bold);
 }
 
 /* Nút mở popup Bảng công chi tiết trong popup kỳ lương */
