@@ -1,5 +1,11 @@
 import { useState, useRef } from 'react'
-import { periodStats, formatHours, formatMoney } from '../lib/shiftMath.js'
+import {
+  computeEffective,
+  formatHours,
+  formatMoney,
+  hhmm,
+  periodStats,
+} from '../lib/shiftMath.js'
 import {
   payPeriodKeyOf,
   payPeriodLabel,
@@ -330,6 +336,125 @@ function StatsCharts({ st, deductions = [], extraTotal = 0, hasNightShift = true
   return <div className="stats-donuts">{blocks}</div>
 }
 
+// Đường xu hướng giờ làm: mỗi điểm là tổng giờ hiệu lực của một ngày đã chấm
+// công. Chỉ dùng giờ thực tế để lịch dự kiến chưa check-in không làm sai biểu đồ.
+function WorkHoursTrendChart({ shifts }) {
+  const { t } = useI18n()
+
+  const byDate = new Map()
+  for (const shift of shifts) {
+    const result = computeEffective(
+      hhmm(shift.scheduled_start),
+      hhmm(shift.scheduled_end),
+      hhmm(shift.start_time),
+      hhmm(shift.end_time),
+      !!shift.is_holiday
+    )
+    if (result.decimalHours <= 0) continue
+    const current = byDate.get(shift.work_date) || {
+      date: shift.work_date,
+      hours: 0,
+    }
+    current.hours += result.decimalHours
+    byDate.set(shift.work_date, current)
+  }
+
+  const days = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
+  if (days.length === 0) return null
+
+  const width = 640
+  const height = 176
+  const pad = { top: 24, right: 24, bottom: 28, left: 32 }
+  const chartWidth = width - pad.left - pad.right
+  const chartHeight = height - pad.top - pad.bottom
+  const maxHours = Math.max(...days.map((day) => day.hours), 1)
+  const pointAt = (item, index) => {
+    const x =
+      days.length === 1
+        ? pad.left + chartWidth / 2
+        : pad.left + (index / (days.length - 1)) * chartWidth
+    return { ...item, x, y: pad.top + (1 - item.hours / maxHours) * chartHeight }
+  }
+  const points = days.map(pointAt)
+  const line = points.map((point) => `${point.x},${point.y}`).join(' ')
+  const area = `${pad.left},${pad.top + chartHeight} ${line} ${pad.left + chartWidth},${pad.top + chartHeight}`
+  const labelIndexes = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])]
+  const shortDate = (date) => {
+    const [, month, day] = date.split('-')
+    return `${day}/${month}`
+  }
+
+  return (
+    <section className="shift-trend" aria-labelledby="shift-trend-title">
+      <div className="shift-trend__head">
+        <div>
+          <h3 id="shift-trend-title">{t('pp.trend.title')}</h3>
+          <p>{t('pp.trend.subtitle')}</p>
+        </div>
+        <span className="shift-trend__count">
+          {t('pp.trend.workDays', { n: days.length })}
+        </span>
+      </div>
+      <div className="shift-trend__canvas">
+        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={t('pp.trend.aria')}>
+          <line
+            className="shift-trend__guide"
+            x1={pad.left}
+            x2={pad.left + chartWidth}
+            y1={pad.top}
+            y2={pad.top}
+          />
+          <line
+            className="shift-trend__guide"
+            x1={pad.left}
+            x2={pad.left + chartWidth}
+            y1={pad.top + chartHeight}
+            y2={pad.top + chartHeight}
+          />
+          <text className="shift-trend__axis" x="0" y={pad.top + 4}>
+            {formatHours(maxHours)} h
+          </text>
+          <text className="shift-trend__axis" x="0" y={pad.top + chartHeight}>
+            0 h
+          </text>
+          {points.length > 1 && <polygon className="shift-trend__area" points={area} />}
+          {points.length > 1 && <polyline className="shift-trend__line" points={line} />}
+          {points.map((point) => (
+            <circle
+              key={point.date}
+              className="shift-trend__point"
+              cx={point.x}
+              cy={point.y}
+              r="4"
+            >
+              <title>
+                {t('pp.trend.point', {
+                  date: shortDate(point.date),
+                  hours: formatHours(point.hours),
+                })}
+              </title>
+            </circle>
+          ))}
+          {labelIndexes.map((index) => {
+            const point = points[index]
+            return (
+              <text
+                key={point.date}
+                className="shift-trend__date"
+                x={point.x}
+                y={height - 7}
+                textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
+              >
+                {shortDate(point.date)}
+              </text>
+            )
+          })}
+        </svg>
+      </div>
+    </section>
+  )
+}
+
 // Popup chứa biểu đồ thống kê của một kỳ (hoặc tổng). Bảng công chi tiết là 1 NÚT
 // → bấm mở popup riêng (TimesheetModal).
 function StatsModal({
@@ -339,6 +464,7 @@ function StatsModal({
   deductions,
   extraTotal = 0,
   hasNightShift = true,
+  showWorkTrend = false,
   onClose,
 }) {
   const { t } = useI18n()
@@ -368,6 +494,7 @@ function StatsModal({
           extraTotal={extraTotal}
           hasNightShift={hasNightShift}
         />
+        {showWorkTrend && <WorkHoursTrendChart shifts={shifts} />}
         <button
           type="button"
           className="account-btn full detail-sheet-btn"
@@ -542,6 +669,7 @@ export default function PayPeriodPage({
       }
       extraTotal={extraTotalOf(openScope)}
       hasNightShift={hasNightShift}
+      showWorkTrend={openScope === 'all'}
       onClose={() => setOpenScope(null)}
     />
   )
