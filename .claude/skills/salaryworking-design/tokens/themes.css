@@ -39,32 +39,32 @@
   --bg: #15181b;
   --panel: #1c2023;
   --panel-2: #23272b;
-  --text: #c4c9cc;
-  --muted: #969fa8;
+  --text: #a7adb2;
+  --muted: #89939d;
   --accent: #60a4c1;
   --green: #53b989;
   --danger: #de8279;
   --border: #31353b;
   /* Time is neutral here: emphasis comes from weight, not from a second hue. */
-  --checkin: #c4c9cc;
-  --checkout: #969fa8;
+  --checkin: #a7adb2;
+  --checkout: #89939d;
   --skeleton-base: #23272b;
   --skeleton-sheen: rgba(255, 255, 255, 0.05);
 
   /* Never pure white: on a dark ground it halates, which is what makes long
      sessions hurt. The biggest number is the lightest value in the system and it
-     stops at #d2d6d9. */
-  --text-value: #d2d6d9;
+     stops at #b2b9bd. */
+  --text-value: #b2b9bd;
   --text-on-accent: #0d1113;
   --pay-positive: #53b989;
   --pay-negative: #de8279;
-  --time-in: #c4c9cc;
-  --time-out: #969fa8;
+  --time-in: #a7adb2;
+  --time-out: #89939d;
   --time-scheduled: #c59247;
   /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
-  --tone-orange: #969fa8;
+  --tone-orange: #89939d;
   --tone-green: #53b989;
-  --tone-blue: #969fa8;
+  --tone-blue: #89939d;
   --tone-red: #de8279;
   --status-planned: #c59247;
   --status-planned-fill: rgba(197, 146, 71, 0.07);
