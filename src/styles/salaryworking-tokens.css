@@ -157,6 +157,13 @@
   --text-value: var(--sw-paper-0); /* money & hour figures */
   --text-on-accent: #ffffff;
 
+  /* Accent / danger used as TEXT rather than as a fill. On the two dark themes
+     these are the same colour; Soft UI is a light room, where the pastel fill
+     colours drop to ~1.6:1 as text and have to be darkened. Use these for text
+     links and inline warnings; keep --accent / --danger for fills. */
+  --text-accent: var(--accent);
+  --text-danger: var(--danger);
+
   --border-hairline: var(--border);
   --border-strong: var(--accent); /* hover / focus */
 
@@ -577,6 +584,11 @@
   --ok: #27664a;
   --text-on-ok: #ffffff;
   --ok-fill: rgba(39, 102, 74, 0.12);
+  /* Text-usage variants: the pastel fills measure 1.75:1 (accent) and 1.55:1
+     (danger) as text on this theme's #e0e5ec ground. Darkened to 4.3:1 / 5.0:1
+     while --accent / --danger keep their pastel value for fills. */
+  --text-accent: #426b9e;
+  --text-danger: #9c4433;
 
   --page-bg-image: none; /* @kind other */
   --card-bg: transparent;

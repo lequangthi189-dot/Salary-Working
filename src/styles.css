@@ -66,6 +66,16 @@ input {
   font: inherit;
 }
 
+/* ===== TIÊU ĐIỂM BÀN PHÍM =====
+   Một vòng focus DUY NHẤT cho toàn app, lấy theo token --focus-ring (accent 35%).
+   Trước đây chỉ 4 phần tử có :focus-visible, mà theme dark lại còn đặt
+   `outline: none` khi focus ô nhập → người dùng bàn phím mất dấu hoàn toàn.
+   Dùng :focus-visible nên chuột bấm KHÔNG hiện vòng, chỉ bàn phím mới hiện. */
+:is(button, [role='button'], a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .center {
   min-height: 100vh;
   min-height: 100dvh;
@@ -152,15 +162,18 @@ button[type='submit']:disabled {
   opacity: 0.6;
 }
 
+/* Nút dạng chữ. Dùng --text-accent/--text-danger (không phải --accent/--danger):
+   ở theme neumorph nền sáng, hai màu pastel kia chỉ đạt ~1,6:1 khi làm CHỮ. */
 .link {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--text-accent);
   margin-top: 1rem;
   padding: 0;
+  font-size: var(--text-base);
 }
 .forgot-link {
-  color: var(--danger);
+  color: var(--text-danger);
   align-self: flex-start; /* canh TRÁI trong form (flex column) */
   text-align: left;
 }
@@ -2214,35 +2227,34 @@ button[type='submit']:disabled {
 .btn-addshift,
 .btn-received {
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.7rem;
-  font-weight: 600;
-  color: #fff;
+  font-weight: var(--weight-semibold);
   cursor: pointer;
 }
+/* Hành động chính của trang → tô ĐẶC màu nhấn, phẳng. Bảng màu Trung tính bỏ
+   gradient: gradient navy cũ (#4f9dff→#1f5fae) là màu cứng nên không đổi theo
+   theme, và "không gradient, không glow" là luật brand. */
 .btn-addshift {
-  background: linear-gradient(135deg, #4f9dff, #1f5fae);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  transition: var(--transition-surface);
 }
 .btn-addshift:hover {
-  background: linear-gradient(135deg, #62a9ff, #245fb0);
+  background: color-mix(in srgb, var(--accent) 88%, var(--text));
 }
-/* Nút "Đã nhận lương" — màu động xanh-đen (chỉ hiện khi tới ngày nhận) */
+/* Nút "Đã nhận lương" (chỉ hiện khi tới ngày nhận). Trước đây là gradient
+   xanh-đen chạy vô hạn + glow — vừa trái luật brand, vừa dùng màu cứng không
+   theo theme. Nay tô ĐẶC bằng --ok: cùng màu với badge "đã nhận" ở màn thu nhập
+   thêm, nên màu ở đây MANG NGHĨA "tiền đã về" thay vì chỉ để bắt mắt. Nó vẫn là
+   nút xanh lá duy nhất trong app nên không lẫn với hành động chính. */
 .btn-received {
-  background: linear-gradient(270deg, #38a0ff, #0a1d38, #1273e6, #0a1d38);
-  background-size: 300% 300%;
-  animation: blueBlackShift 5s ease infinite;
-  box-shadow: 0 0 10px rgba(56, 160, 255, 0.3);
+  background: var(--ok);
+  color: var(--text-on-ok);
+  transition: var(--transition-surface);
 }
-@keyframes blueBlackShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.btn-received:hover {
+  background: color-mix(in srgb, var(--ok) 88%, var(--text));
 }
 .btn-addshift:disabled,
 .btn-received:disabled {
@@ -2303,13 +2315,14 @@ input.t-out {
 }
 .shift-filter-btn {
   background: var(--panel-2);
-  border: 1px solid var(--border);
+  border: var(--border-width-hairline) solid var(--border);
   color: var(--text);
-  border-radius: 8px;
-  padding: 0.4rem 0.85rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: var(--space-4) 0.85rem;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
+  transition: var(--transition-surface);
 }
 .shift-filter-btn:hover {
   border-color: var(--accent);
