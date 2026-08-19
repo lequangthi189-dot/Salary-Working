@@ -325,9 +325,9 @@
   --shadow-none: none; /* @kind shadow */
   --shadow-popover: 0 6px 16px rgba(0, 0, 0, 0.25);
   --shadow-dock: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
-  --shadow-warning-missing: 0 0 0 1px rgba(255, 31, 31, 0.5),
-    0 0 12px rgba(255, 31, 31, 0.45);
-  --shadow-received-glow: 0 0 10px rgba(56, 160, 255, 0.3);
+  /* A missed clock-in is stated by a solid frame, not by a glow. */
+  --shadow-warning-missing: 0 0 0 1px var(--status-missing);
+  --shadow-received-glow: 0 0 0 1px var(--status-received);
 
   /* Focus ring — accent at 35%, never a browser blue outline */
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); /* @kind shadow */
@@ -411,48 +411,55 @@
    Measured against AA: money 16.5:1, body 14.2:1, muted 6.3:1, earned 6.9:1,
    lost 5.0:1, button 7.0:1 / label on button 7.2:1. */
 [data-theme='dark'] {
-  --bg: #15171a;
-  --panel: #1c1f23;
-  --panel-2: #23272c;
-  --text: #eceef0;
-  --muted: #9aa1a9;
-  --accent: #6aa9c9;
-  --green: #57b98a;
-  --danger: #e2665e;
-  --border: #2f343a;
+  --bg: #15181b;
+  --panel: #1c2023;
+  --panel-2: #23272b;
+  --text: #c4c9cc;
+  --muted: #969fa8;
+  --accent: #60a4c1;
+  --green: #53b989;
+  --danger: #de8279;
+  --border: #31353b;
   /* Time is neutral here: emphasis comes from weight, not from a second hue. */
-  --checkin: #eceef0;
-  --checkout: #9aa1a9;
-  --skeleton-base: #23272c;
+  --checkin: #c4c9cc;
+  --checkout: #969fa8;
+  --skeleton-base: #23272b;
   --skeleton-sheen: rgba(255, 255, 255, 0.05);
 
-  --text-value: #ffffff;
-  --text-on-accent: #0e1418;
-  --pay-positive: #57b98a;
-  --pay-negative: #e2665e;
-  --time-in: #eceef0;
-  --time-out: #9aa1a9;
-  --time-scheduled: #9aa1a9;
+  /* Never pure white: on a dark ground it halates, which is what makes long
+     sessions hurt. Measured on a real screen, the PAGE GROUND emits ~10x more
+     light than every figure and card combined, so glare is fought on the large
+     surfaces (page, cards) and never by dimming the small ones. Text contrast is
+     held fixed; the biggest number stops at #d2d6d9. */
+  --text-value: #d2d6d9;
+  --text-on-accent: #0d1113;
+  --pay-positive: #53b989;
+  --pay-negative: #de8279;
+  --time-in: #c4c9cc;
+  --time-out: #969fa8;
+  /* A planned shift KEEPS amber: it is a real "not worked yet" state, and grey
+     would be read as "disabled". This is the fourth and last hue in the theme. */
+  --time-scheduled: #c59247;
   /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
-  --tone-orange: #9aa1a9;
-  --tone-green: #57b98a;
-  --tone-blue: #9aa1a9;
-  --tone-red: #e2665e;
-  --status-planned: #9aa1a9;
-  --status-planned-fill: rgba(154, 161, 169, 0.08);
-  --status-planned-chip: rgba(154, 161, 169, 0.14);
-  --status-overdue: #e2665e;
-  --status-missing: #e2665e;
-  --status-missing-fill: rgba(226, 102, 94, 0.12);
-  --brand-check: #c9556e; /* 4,28:1 trên nền dark */
-  --status-received: #57b98a;
-  /* received green: 5.6:1 as text on the tinted badge, 7.7:1 for the ink on fill */
-  --ok: #57b98a;
-  --text-on-ok: #0e1418;
-  --ok-fill: rgba(87, 185, 138, 0.14);
-  --progress-fill: rgba(106, 169, 201, 0.18);
-  --progress-bar: #6aa9c9;
-  --loader-ball: #6aa9c9;
+  --tone-orange: #969fa8;
+  --tone-green: #53b989;
+  --tone-blue: #969fa8;
+  --tone-red: #de8279;
+  --status-planned: #c59247;
+  --status-planned-fill: rgba(197, 146, 71, 0.07);
+  --status-planned-chip: rgba(197, 146, 71, 0.14);
+  --status-overdue: #de8279;
+  --status-missing: #de8279;
+  --status-missing-fill: rgba(222, 130, 121, 0.1);
+  --brand-check: #c9556e; /* 4,25:1 trên nền dark mới — dấu check thương hiệu, không phải chữ */
+  --status-received: #53b989;
+  /* received green: 5.3:1 as text on the tinted badge, 7.8:1 for the ink on fill */
+  --ok: #53b989;
+  --text-on-ok: #0d1113;
+  --ok-fill: rgba(83, 185, 137, 0.14);
+  --progress-fill: rgba(96, 164, 193, 0.16);
+  --progress-bar: #60a4c1;
+  --loader-ball: #60a4c1;
 
   --page-bg-image: none; /* @kind other */
   --card-bg: var(--panel);
@@ -461,13 +468,13 @@
   --card-radius: 12px;
   --card-shadow: none;
   --card-shadow-hover: none;
-  --card-hover-border: #3c434b;
+  --card-hover-border: #3d4249;
   --card-hover-lift: none; /* @kind other */
   --card-blur: none; /* @kind other */
   --card-padding: 1.35rem;
   --shift-card-padding: 0.9rem 1.05rem;
   --shift-card-accent-edge: 0; /* @kind other */
-  --input-bg: #15171a;
+  --input-bg: #15181b;
   --input-border: 1px solid var(--border); /* @kind other */
   --input-shadow: none;
   --input-radius: 8px;
@@ -475,6 +482,7 @@
   --button-shadow: none;
   --button-press: scale(0.99); /* @kind other */
 }
+
 
 /* ---------- glass — Modern Glassmorphism ----------
    Aurora gradient page, frosted translucent surfaces, glowing gradient hairline,
@@ -484,37 +492,46 @@
   --panel: rgba(255, 255, 255, 0.1);
   --panel-2: rgba(255, 255, 255, 0.16);
   --text: var(--sw-glass-text);
-  --muted: var(--sw-glass-muted);
+  --muted: #b6c2da;
   --accent: var(--sw-glass-accent);
   --green: var(--sw-glass-green);
   --danger: var(--sw-glass-danger);
   --border: rgba(255, 255, 255, 0.28);
-  --checkin: var(--sw-glass-amber);
+  --checkin: #ddb776;
+  --time-scheduled: #ddb776;
   --checkout: #8fd0ff;
   --surface-blur: blur(18px) saturate(150%); /* @kind other */
   --skeleton-base: rgba(255, 255, 255, 0.16);
   --skeleton-sheen: rgba(255, 255, 255, 0.4);
-  --text-value: #ffffff;
+  --text-value: #f0f3fb;
   --text-on-accent: #0f1430;
-  /* received green: 8.8:1 as text on the tinted badge, 12.5:1 for the ink on fill */
-  --ok: var(--sw-glass-green);
+  /* Earned / lost, measured on the FROSTED PANEL — not inherited from dark. The
+     old #ff5c52 "missing" red reached 5.9:1 on the page but only 3.06:1 on the
+     panel, which is where the badge actually sits; #ecb3ae clears both (10.0 / 5.2). */
+  --pay-positive: #81cfa8;
+  --pay-negative: #ecb3ae;
+  --status-received: #81cfa8;
+  --status-missing: #ecb3ae;
+  --status-missing-fill: rgba(224, 132, 151, 0.16);
+  --status-planned: #ddb776;
+  --status-planned-fill: rgba(221, 183, 118, 0.1);
+  --status-planned-chip: rgba(221, 183, 118, 0.16);
+  /* Stat-tile labels: solved on this theme's own ground, not inherited from dark. */
+  --tone-orange: #b1bed7;
+  --tone-blue: #b1bed7;
+  --tone-green: #7acda6;
+  --tone-red: #ebafa9;
+  --ok: #81cfa8;
   --text-on-ok: #0f1430;
-  --ok-fill: rgba(95, 240, 168, 0.16);
-  /* The base "missing check-in" red (#ff1f1f) only reaches 4.06:1 on the aurora
-     ground. Lightened to clear AA (5.1:1) while staying the loudest red here. */
-  --status-missing: #ff5c52;
-  --status-missing-fill: rgba(255, 92, 82, 0.18);
+  --ok-fill: rgba(129, 207, 168, 0.16);
   --brand-check: #d9647c; /* 4,50:1 trên nền aurora */
-  /* Base --pay-positive (#2ea043) only reaches 3.32:1 on the frosted panel.
-     This theme already has a bright green; use it so "earned" stays readable. */
-  --pay-positive: var(--sw-glass-green);
 
   --page-bg-image:
-    radial-gradient(58% 62% at 12% 16%, rgba(168, 85, 247, 0.55), transparent 72%),
-    radial-gradient(60% 66% at 88% 12%, rgba(34, 211, 238, 0.5), transparent 72%),
-    radial-gradient(64% 64% at 80% 90%, rgba(20, 184, 166, 0.5), transparent 72%),
-    radial-gradient(60% 60% at 16% 92%, rgba(236, 72, 153, 0.5), transparent 72%),
-    radial-gradient(80% 90% at 50% 50%, rgba(99, 102, 241, 0.3), transparent 78%),
+    radial-gradient(58% 62% at 12% 16%, rgba(168, 85, 247, 0.4), transparent 72%),
+    radial-gradient(60% 66% at 88% 12%, rgba(34, 211, 238, 0.26), transparent 72%),
+    radial-gradient(64% 64% at 80% 90%, rgba(20, 184, 166, 0.26), transparent 72%),
+    radial-gradient(60% 60% at 16% 92%, rgba(236, 72, 153, 0.26), transparent 72%),
+    radial-gradient(80% 90% at 50% 50%, rgba(99, 102, 241, 0.18), transparent 78%),
     linear-gradient(135deg, #1a2050 0%, #1d2358 100%); /* @kind other */
   --card-bg: rgba(255, 255, 255, 0.06);
   --card-bg-image: linear-gradient(
@@ -530,7 +547,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
   --card-shadow-hover:
     0 16px 44px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 8px 28px rgba(124, 196, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 8px 28px rgba(143, 185, 221, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.28);
   --card-hover-border: rgba(255, 255, 255, 0.4);
   --card-hover-lift: translateY(-4px); /* @kind other */
   --card-blur: var(--surface-blur); /* @kind other */
@@ -539,26 +556,27 @@
   --shift-card-accent-edge: 0; /* @kind other */
   --glass-edge-gradient: linear-gradient(
     135deg,
-    rgba(168, 85, 247, 0.9),
-    rgba(34, 211, 238, 0.85) 50%,
-    rgba(236, 72, 153, 0.9)
+    rgba(168, 85, 247, 0.5),
+    rgba(34, 211, 238, 0.45) 50%,
+    rgba(236, 72, 153, 0.5)
   ); /* @kind other */
   --glass-hero-gradient: linear-gradient(
     135deg,
-    rgba(168, 85, 247, 0.9),
-    rgba(236, 72, 153, 0.9)
+    rgba(168, 85, 247, 0.46),
+    rgba(236, 72, 153, 0.46)
   ); /* @kind other */
-  --tone-orange-fill: linear-gradient(135deg, #a855f7, #ec4899); /* @kind other */
-  --tone-blue-fill: linear-gradient(135deg, #3b82f6, #22d3ee); /* @kind other */
-  --tone-green-fill: linear-gradient(135deg, #14b8a6, #22c55e); /* @kind other */
-  --tone-red-fill: linear-gradient(135deg, #f43f5e, #fb923c); /* @kind other */
+  /* Tone fills are a wash behind figures, not a poster: alpha, never solid ink. */
+  --tone-orange-fill: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(236, 72, 153, 0.4)); /* @kind other */
+  --tone-blue-fill: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(34, 211, 238, 0.4)); /* @kind other */
+  --tone-green-fill: linear-gradient(135deg, rgba(20, 184, 166, 0.4), rgba(34, 197, 94, 0.4)); /* @kind other */
+  --tone-red-fill: linear-gradient(135deg, rgba(244, 63, 94, 0.4), rgba(251, 146, 60, 0.4)); /* @kind other */
   --input-bg: rgba(255, 255, 255, 0.12);
   --input-border: 1px solid rgba(255, 255, 255, 0.25); /* @kind other */
   --input-shadow: none;
   --input-radius: 12px;
-  --input-focus-ring: 0 0 0 3px rgba(124, 196, 255, 0.25); /* @kind shadow */
+  --input-focus-ring: 0 0 0 3px rgba(143, 185, 221, 0.22); /* @kind shadow */
   --button-bg: var(--accent);
-  --button-shadow: 0 8px 22px rgba(124, 196, 255, 0.28);
+  --button-shadow: 0 8px 22px rgba(143, 185, 221, 0.16);
   --button-press: translateY(0); /* @kind other */
 }
 
@@ -575,7 +593,10 @@
   --green: var(--sw-nm-green);
   --danger: var(--sw-nm-danger);
   --border: transparent;
-  --checkin: var(--sw-nm-amber);
+  /* The pastel amber (#f3c19a) measured 1.29:1 on this light ground — invisible.
+     Same darkened amber as --status-planned below. */
+  --checkin: #7a501f;
+  --time-scheduled: #7a501f;
   --checkout: var(--sw-nm-accent);
   --nm-shadow: 6px 6px 14px #bcc3ce, -6px -6px 14px #ffffff;
   --nm-inset: inset 3px 3px 7px #bcc3ce, inset -3px -3px 7px #ffffff;
@@ -594,36 +615,43 @@
      so it is safe for every "ink on a coloured surface" pairing in Soft UI. */
   --text-on-accent: #2f3646;
   --time-in: #8a5a1e;
-  /* The system shipped #2f6d8f, which measures 4.48:1 on this theme's page —
-     just under AA. One step darker clears it (5.03:1). */
+  /* The system ships #2f6d8f, which measures 4.48:1 on this theme's page — just
+     under AA. Kept one step darker here; it clears (5.03:1). */
   --time-out: #2b6584;
   /* Soft UI is a light room, so the received green CANNOT be the theme's pastel
      mint: #7ed0b0 as text on the tinted badge measures 1.25:1 — invisible. Same
      failure mode as the peach check-in above. Darkened until all three usages
-     pass: 4.7:1 as text on the tinted badge, 5.4:1 on plain panel, and 6.8:1
+     pass: 4.7:1 as text on the tinted badge, 5.6:1 on the page, and 7.1:1
      for white on the solid fill. */
-  --ok: #215840;
+  --ok: #306249;
   --text-on-ok: #ffffff;
-  --ok-fill: rgba(33, 88, 64, 0.12);
+  --ok-fill: rgba(48, 98, 73, 0.12);
 
   /* Status colours must be re-stated for Soft UI. Inherited from the base they
      resolve to this theme's pastels (--checkin #f3c19a, --green #7ed0b0) which
      are light-on-light: measured 1.17:1 and 1.44:1 as badge text on the #e0e5ec
      ground — invisible. Darkened until each clears AA both on the panel and on
      its own 14% chip. Fills stay pastel; only the ink moved. */
-  --status-planned: #6f4715;
-  --status-planned-fill: rgba(111, 71, 21, 0.1);
-  --status-planned-chip: rgba(111, 71, 21, 0.14);
-  --status-received: #215840;
-  --status-missing: #9c241c;
-  --status-missing-fill: rgba(156, 36, 28, 0.12);
+  --status-planned: #7a501f;
+  --status-planned-fill: rgba(122, 80, 31, 0.08);
+  --status-planned-chip: rgba(122, 80, 31, 0.14);
+  --status-received: #306249;
+  --status-missing: #953e35;
+  --status-missing-fill: rgba(168, 74, 64, 0.1);
+  --status-overdue: #953e35;
+  /* Stat-tile labels: solved on the convex fill's DARK end (#cdd3dd), the binding
+     surface — 4.6:1 there and better on every other ground. */
+  --tone-orange: #4e5a6c;
+  --tone-blue: #4e5a6c;
+  --tone-green: #306249;
+  --tone-red: #953e35;
 
   /* Money meaning as TEXT. Inherited, --pay-positive/--pay-negative stay at the
      base #2ea043 / #f85149, which measure 2.87:1 and 2.85:1 on this theme's light
      panels. Re-stated at the same values used for received / missing above, so
      "earned" and "lost" read as one family across the whole theme. */
-  --pay-positive: #215840;
-  --pay-negative: #9c241c;
+  --pay-positive: #306249;
+  --pay-negative: #953e35;
   --brand-check: #b03a55; /* 4,63:1 trên nền sáng — giữ nguyên bản gốc */
 
   /* Secondary text. Upstream's #8b95a8 is a DARK-theme muted reused unchanged on
@@ -631,7 +659,7 @@
      AA everywhere it appears, and --muted is the app's main label colour. Darkened
      until it clears 4.5:1 on the page, both panels, the hero fill and all four
      stat-tile fills. */
-  --muted: #525a66;
+  --muted: #4e5a6c;
   /* Text-usage variants: the pastel fills measure 1.75:1 (accent) and 1.55:1
      (danger) as TEXT on this theme's grounds. Darkened until each clears AA on
      ALL FOUR Soft UI surfaces — page #e0e5ec, panel-2 #e8edf3, and both stops of

@@ -6,53 +6,65 @@
    Cách dán: trong src/styles/themes.css (repo lequangthi189-dot/Salary-Working, branch
    master), thay TOÀN BỘ block [data-theme='dark'] hiện tại bằng block dưới đây.
 
-   Nguyên tắc: một dải xám graphite cho mọi bề mặt, MỘT màu nhấn, tổng 3 họ màu
-   (nhấn / đã kiếm / mất tiền). Cam–xanh của giờ vào–giờ ra bị bỏ: phân biệt bằng độ đậm
-   và vị trí. Ca dự kiến = viền nét đứt xám. Ngày chưa chấm công = màu đỏ duy nhất.
+   Nguyên tắc: một dải xám graphite cho mọi bề mặt, MỘT màu nhấn, tổng 4 họ màu
+   (nhấn / đã kiếm / mất tiền / dự kiến). Cam–xanh của giờ vào–giờ ra bị bỏ: giờ vào/ra phân
+   biệt bằng độ đậm và vị trí. Nhưng ca dự kiến GIỮ hổ phách (#c59247) — đó là trạng
+   thái thật "chưa làm", xám sẽ bị đọc thành "bị vô hiệu hoá". Ngày chưa chấm công = màu đỏ duy nhất.
 
-   Tương phản (AA cần 4.5:1 cho chữ, 3:1 cho nút):
-     số tiền 16.54 · chữ thường 14.22 · nhãn phụ 6.34
-     đã kiếm 6.86 · mất tiền 4.96 · nút 6.95 · chữ trên nút 7.18
+   Đo trên máy thật: nền trang phát sáng gấp ~10 lần toàn bộ chữ và thẻ cộng lại (1,9 triệu px
+   so với vài nghìn px chữ). Nên chống loà bằng cách hạ sáng BỀ MẶT LỚN — nền trang #15181b,
+   nền thẻ #1c2023 / #23272b — chứ không làm mờ chữ. Tỉ lệ tương phản của chữ và số
+   giữ nguyên, không chỗ nào chạm #ffffff (số lớn nhất dừng ở #d2d6d9).
+
+   Tương phản (AA cần 4.5:1 cho chữ, 3:1 cho nút) — đo trên đúng bề mặt của từng phần tử:
+     số tiền trên thẻ lương 11.22 · chữ thường trên dòng ca 9.00 · nhãn phụ 5.60
+     đã kiếm 6.21 · mất tiền 5.42 · dự kiến 5.43 · nút 6.43
+
+   File này KHÔNG kèm palette.css, nên mọi var(--sw-*) đã được thay bằng giá trị thật;
+   giá trị gốc để trong comment cuối dòng.
 */
 
 [data-theme='dark'] {
-  --bg: #15171a;
-  --panel: #1c1f23;
-  --panel-2: #23272c;
-  --text: #eceef0;
-  --muted: #9aa1a9;
-  --accent: #6aa9c9;
-  --green: #57b98a;
-  --danger: #e2665e;
-  --border: #2f343a;
+  --bg: #15181b;
+  --panel: #1c2023;
+  --panel-2: #23272b;
+  --text: #c4c9cc;
+  --muted: #969fa8;
+  --accent: #60a4c1;
+  --green: #53b989;
+  --danger: #de8279;
+  --border: #31353b;
   /* Time is neutral here: emphasis comes from weight, not from a second hue. */
-  --checkin: #eceef0;
-  --checkout: #9aa1a9;
-  --skeleton-base: #23272c;
+  --checkin: #c4c9cc;
+  --checkout: #969fa8;
+  --skeleton-base: #23272b;
   --skeleton-sheen: rgba(255, 255, 255, 0.05);
 
-  --text-value: #ffffff;
-  --text-on-accent: #0e1418;
-  --pay-positive: #57b98a;
-  --pay-negative: #e2665e;
-  --time-in: #eceef0;
-  --time-out: #9aa1a9;
-  --time-scheduled: #9aa1a9;
+  /* Never pure white: on a dark ground it halates, which is what makes long
+     sessions hurt. The biggest number is the lightest value in the system and it
+     stops at #d2d6d9. */
+  --text-value: #d2d6d9;
+  --text-on-accent: #0d1113;
+  --pay-positive: #53b989;
+  --pay-negative: #de8279;
+  --time-in: #c4c9cc;
+  --time-out: #969fa8;
+  --time-scheduled: #c59247;
   /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
-  --tone-orange: #9aa1a9;
-  --tone-green: #57b98a;
-  --tone-blue: #9aa1a9;
-  --tone-red: #e2665e;
-  --status-planned: #9aa1a9;
-  --status-planned-fill: rgba(154, 161, 169, 0.08);
-  --status-planned-chip: rgba(154, 161, 169, 0.14);
-  --status-overdue: #e2665e;
-  --status-missing: #e2665e;
-  --status-missing-fill: rgba(226, 102, 94, 0.12);
-  --status-received: #57b98a;
-  --progress-fill: rgba(106, 169, 201, 0.18);
-  --progress-bar: #6aa9c9;
-  --loader-ball: #6aa9c9;
+  --tone-orange: #969fa8;
+  --tone-green: #53b989;
+  --tone-blue: #969fa8;
+  --tone-red: #de8279;
+  --status-planned: #c59247;
+  --status-planned-fill: rgba(197, 146, 71, 0.07);
+  --status-planned-chip: rgba(197, 146, 71, 0.14);
+  --status-overdue: #de8279;
+  --status-missing: #de8279;
+  --status-missing-fill: rgba(222, 130, 121, 0.1);
+  --status-received: #53b989;
+  --progress-fill: rgba(96, 164, 193, 0.16);
+  --progress-bar: #60a4c1;
+  --loader-ball: #60a4c1;
 
   --page-bg-image: none; /* @kind other */
   --card-bg: var(--panel);
@@ -61,13 +73,13 @@
   --card-radius: 12px;
   --card-shadow: none;
   --card-shadow-hover: none;
-  --card-hover-border: #3c434b;
+  --card-hover-border: #3d4249;
   --card-hover-lift: none; /* @kind other */
   --card-blur: none; /* @kind other */
   --card-padding: 1.35rem;
   --shift-card-padding: 0.9rem 1.05rem;
   --shift-card-accent-edge: 0; /* @kind other */
-  --input-bg: #15171a;
+  --input-bg: #15181b;
   --input-border: 1px solid var(--border); /* @kind other */
   --input-shadow: none;
   --input-radius: 8px;
@@ -76,12 +88,55 @@
   --button-press: scale(0.99); /* @kind other */
 }
 
-/* --- Hai alias cần thêm cho 2 theme còn lại ------------------------------------
-   Trước đây --text-value và --text-on-accent chỉ khai báo ở :root, nên theme nền sáng
-   bị chữ tiền và chữ trên nút màu trắng-trên-trắng. Thêm 2 dòng này vào đúng scope: */
+/* --- Bổ sung cho 2 theme còn lại -----------------------------------------------
+   Màu tiền trước đây chỉ khai báo trong scope 'dark', nên glass và neumorph mượn giá trị
+   được đo trên nền tối: trên nền sáng nó bạc màu, trên nền kính nó chìm. Thêm các dòng
+   này vào đúng scope của từng theme trong src/styles/themes.css.
 
-/*
-[data-theme='glass']    { --text-value: #ffffff; --text-on-accent: #0f1430; }
-[data-theme='neumorph'] { --text-value: #4a5468; --text-on-accent: #4a5468;
-                          --time-in: #8a5a1e; --time-out: #2f6d8f; } /* peach cũ chìm vào nền sáng */
-*/
+   Glass CỐ Ý không khai báo --time-in / --time-out / --status-overdue: giá trị của theme
+   dark đo được 5.0:1 trên dòng ca kính, nên kế thừa là đúng — đừng thêm chúng vào đây. */
+
+[data-theme='glass'] {
+  --muted: #b6c2da;
+  --text-value: #f0f3fb;
+  --text-on-accent: #0f1430;
+  --time-scheduled: #ddb776;
+  --checkin: #ddb776;
+  --checkout: #8fd0ff;
+  --pay-positive: #81cfa8;
+  --pay-negative: #ecb3ae;
+  --status-received: #81cfa8;
+  --status-missing: #ecb3ae;
+  --status-missing-fill: rgba(224, 132, 151, 0.16);
+  --status-planned: #ddb776;
+  --status-planned-fill: rgba(221, 183, 118, 0.1);
+  --status-planned-chip: rgba(221, 183, 118, 0.16);
+  --tone-orange: #b1bed7;
+  --tone-blue: #b1bed7;
+  --tone-green: #7acda6;
+  --tone-red: #ebafa9;
+}
+
+[data-theme='neumorph'] {
+  --muted: #4e5a6c;
+  --text-value: #4a5468; /* var(--sw-nm-text) */
+  --text-on-accent: #4a5468; /* var(--sw-nm-text) */
+  --time-in: #8a5a1e;
+  --time-out: #2f6d8f;
+  --time-scheduled: #7a501f;
+  --checkin: #7a501f;
+  --checkout: #8ab0e8; /* var(--sw-nm-accent) */
+  --pay-positive: #306249;
+  --pay-negative: #953e35;
+  --status-received: #306249;
+  --status-missing: #953e35;
+  --status-missing-fill: rgba(168, 74, 64, 0.1);
+  --status-planned: #7a501f;
+  --status-planned-fill: rgba(122, 80, 31, 0.08);
+  --status-planned-chip: rgba(122, 80, 31, 0.14);
+  --status-overdue: #953e35;
+  --tone-orange: #4e5a6c;
+  --tone-blue: #4e5a6c;
+  --tone-green: #306249;
+  --tone-red: #953e35;
+}

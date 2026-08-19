@@ -19,9 +19,9 @@
   --shadow-none: none; /* @kind shadow */
   --shadow-popover: 0 6px 16px rgba(0, 0, 0, 0.25);
   --shadow-dock: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
-  --shadow-warning-missing: 0 0 0 1px rgba(255, 31, 31, 0.5),
-    0 0 12px rgba(255, 31, 31, 0.45);
-  --shadow-received-glow: 0 0 10px rgba(56, 160, 255, 0.3);
+  /* A missed clock-in is stated by a solid frame, not by a glow. */
+  --shadow-warning-missing: 0 0 0 1px var(--status-missing);
+  --shadow-received-glow: 0 0 0 1px var(--status-received);
 
   /* Focus ring — accent at 35%, never a browser blue outline */
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); /* @kind shadow */

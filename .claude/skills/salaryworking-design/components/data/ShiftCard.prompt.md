@@ -6,3 +6,5 @@ One-line: the shift row — times, lost hours, pay, edit/delete.
 ```
 
 Never soften the lost-hours line — showing "late in 0.25h" plainly is the product's core value. Rows are dense on purpose (0.85–1.1rem padding): the user needs many shifts in one glance.
+
+Pass `plannedLabel` / `missingLabel` with translated copy — a planned row shows an amber badge and amber scheduled times, a missing row a red badge.
