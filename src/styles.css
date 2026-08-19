@@ -1051,11 +1051,15 @@ button[type='submit']:disabled {
   align-items: center;
   gap: 0.45rem;
 }
+/* Logo header. KHÔNG bo góc / không nền: bộ nhận diện mới là nét vẽ trần, và
+   guideline cấm đặt logo trong ô nền ("container tile") — logo cũ vốn là ô vuông
+   xanh bo góc nên rule này từng cần border-radius, giờ thì không.
+   Khung + dòng dữ liệu vẽ bằng currentColor nên logo tự đổi mực theo theme. */
 .app-logo {
   width: 26px;
   height: 26px;
-  border-radius: 7px;
   flex: 0 0 auto;
+  color: var(--text);
 }
 
 /* ---- Dropdown ở tiêu đề "Salary Working" ---- */
