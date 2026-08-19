@@ -31,7 +31,9 @@
   --weight-medium: 500; /* @kind other */
   --weight-semibold: 600; /* @kind other */ /* labels, buttons, filter chips */
   --weight-bold: 700; /* @kind other */ /* section titles, date labels, badges */
-  --weight-heavy: 800; /* @kind other */ /* money & hour figures */
+  /* 700, not 800: at 35px the extra stroke mass is a solid bright block that halates —
+     the figure stays the protagonist through SIZE, not through ink weight. */
+  --weight-heavy: 700; /* @kind other */ /* money & hour figures */
 
   --leading-tight: 1.1; /* @kind other */ /* all large numbers */
   --leading-normal: 1.45; /* @kind other */

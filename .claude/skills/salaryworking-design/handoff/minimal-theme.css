@@ -11,13 +11,16 @@
    biệt bằng độ đậm và vị trí. Nhưng ca dự kiến GIỮ hổ phách (#c59247) — đó là trạng
    thái thật "chưa làm", xám sẽ bị đọc thành "bị vô hiệu hoá". Ngày chưa chấm công = màu đỏ duy nhất.
 
-   Đo trên máy thật: nền trang phát sáng gấp ~10 lần toàn bộ chữ và thẻ cộng lại (1,9 triệu px
-   so với vài nghìn px chữ). Nên chống loà bằng cách hạ sáng BỀ MẶT LỚN — nền trang #15181b,
-   nền thẻ #1c2023 / #23272b — chứ không làm mờ chữ. Tỉ lệ tương phản của chữ và số
-   giữ nguyên, không chỗ nào chạm #ffffff (số lớn nhất dừng ở #d2d6d9).
+   Chống loà ở HAI tầng, không phải bằng cách làm mờ:
+   1. Bề mặt lớn — đo trên máy thật, nền trang phát sáng gấp ~10 lần toàn bộ chữ và thẻ cộng
+      lại (1,9 triệu px so với vài nghìn px chữ). Nền trang #15181b, thẻ #1c2023 / #23272b.
+   2. Chữ — đặt thấp trong khoảng an toàn một cách có chủ ý: trên nền tối, chữ sáng nhỏ vượt
+      ~7:1 bắt đầu loè viền (halation), cảm giác là "chói" chứ không phải "rõ hơn". Kèm theo
+      --weight-heavy hạ 800 → 700 trong typography.css: con số là nhân vật chính nhờ CỠ CHỮ,
+      không nhờ khối nét. Không chỗ nào chạm #ffffff (số lớn nhất #b2b9bd).
 
    Tương phản (AA cần 4.5:1 cho chữ, 3:1 cho nút) — đo trên đúng bề mặt của từng phần tử:
-     số tiền trên thẻ lương 11.22 · chữ thường trên dòng ca 9.00 · nhãn phụ 5.60
+     số tiền trên thẻ lương 8.25 · chữ thường trên dòng ca 6.63 · nhãn phụ 4.81
      đã kiếm 6.21 · mất tiền 5.42 · dự kiến 5.43 · nút 6.43
 
    File này KHÔNG kèm palette.css, nên mọi var(--sw-*) đã được thay bằng giá trị thật;
@@ -28,32 +31,32 @@
   --bg: #15181b;
   --panel: #1c2023;
   --panel-2: #23272b;
-  --text: #c4c9cc;
-  --muted: #969fa8;
+  --text: #a7adb2;
+  --muted: #89939d;
   --accent: #60a4c1;
   --green: #53b989;
   --danger: #de8279;
   --border: #31353b;
   /* Time is neutral here: emphasis comes from weight, not from a second hue. */
-  --checkin: #c4c9cc;
-  --checkout: #969fa8;
+  --checkin: #a7adb2;
+  --checkout: #89939d;
   --skeleton-base: #23272b;
   --skeleton-sheen: rgba(255, 255, 255, 0.05);
 
   /* Never pure white: on a dark ground it halates, which is what makes long
      sessions hurt. The biggest number is the lightest value in the system and it
-     stops at #d2d6d9. */
-  --text-value: #d2d6d9;
+     stops at #b2b9bd. */
+  --text-value: #b2b9bd;
   --text-on-accent: #0d1113;
   --pay-positive: #53b989;
   --pay-negative: #de8279;
-  --time-in: #c4c9cc;
-  --time-out: #969fa8;
+  --time-in: #a7adb2;
+  --time-out: #89939d;
   --time-scheduled: #c59247;
   /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
-  --tone-orange: #969fa8;
+  --tone-orange: #89939d;
   --tone-green: #53b989;
-  --tone-blue: #969fa8;
+  --tone-blue: #89939d;
   --tone-red: #de8279;
   --status-planned: #c59247;
   --status-planned-fill: rgba(197, 146, 71, 0.07);

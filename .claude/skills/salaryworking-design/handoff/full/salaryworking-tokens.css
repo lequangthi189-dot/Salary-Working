@@ -202,7 +202,9 @@
   --weight-medium: 500; /* @kind other */
   --weight-semibold: 600; /* @kind other */ /* labels, buttons, filter chips */
   --weight-bold: 700; /* @kind other */ /* section titles, date labels, badges */
-  --weight-heavy: 800; /* @kind other */ /* money & hour figures */
+  /* 700, not 800: at 35px the extra stroke mass is a solid bright block that halates —
+     the figure stays the protagonist through SIZE, not through ink weight. */
+  --weight-heavy: 700; /* @kind other */ /* money & hour figures */
 
   --leading-tight: 1.1; /* @kind other */ /* all large numbers */
   --leading-normal: 1.45; /* @kind other */
@@ -275,9 +277,9 @@
   --shadow-none: none; /* @kind shadow */
   --shadow-popover: 0 6px 16px rgba(0, 0, 0, 0.25);
   --shadow-dock: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.34);
-  --shadow-warning-missing: 0 0 0 1px rgba(255, 31, 31, 0.5),
-    0 0 12px rgba(255, 31, 31, 0.45);
-  --shadow-received-glow: 0 0 10px rgba(56, 160, 255, 0.3);
+  /* A missed clock-in is stated by a solid frame, not by a glow. */
+  --shadow-warning-missing: 0 0 0 1px var(--status-missing);
+  --shadow-received-glow: 0 0 0 1px var(--status-received);
 
   /* Focus ring — accent at 35%, never a browser blue outline */
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); /* @kind shadow */
@@ -361,43 +363,46 @@
    Measured against AA: money 16.5:1, body 14.2:1, muted 6.3:1, earned 6.9:1,
    lost 5.0:1, button 7.0:1 / label on button 7.2:1. */
 [data-theme='dark'] {
-  --bg: #15171a;
-  --panel: #1c1f23;
-  --panel-2: #23272c;
-  --text: #eceef0;
-  --muted: #9aa1a9;
-  --accent: #6aa9c9;
-  --green: #57b98a;
-  --danger: #e2665e;
-  --border: #2f343a;
+  --bg: #15181b;
+  --panel: #1c2023;
+  --panel-2: #23272b;
+  --text: #a7adb2;
+  --muted: #89939d;
+  --accent: #60a4c1;
+  --green: #53b989;
+  --danger: #de8279;
+  --border: #31353b;
   /* Time is neutral here: emphasis comes from weight, not from a second hue. */
-  --checkin: #eceef0;
-  --checkout: #9aa1a9;
-  --skeleton-base: #23272c;
+  --checkin: #a7adb2;
+  --checkout: #89939d;
+  --skeleton-base: #23272b;
   --skeleton-sheen: rgba(255, 255, 255, 0.05);
 
-  --text-value: #ffffff;
-  --text-on-accent: #0e1418;
-  --pay-positive: #57b98a;
-  --pay-negative: #e2665e;
-  --time-in: #eceef0;
-  --time-out: #9aa1a9;
-  --time-scheduled: #9aa1a9;
+  /* Never pure white: on a dark ground it halates, which is what makes long
+     sessions hurt. The biggest number is the lightest value in the system and it
+     stops at #b2b9bd. */
+  --text-value: #b2b9bd;
+  --text-on-accent: #0d1113;
+  --pay-positive: #53b989;
+  --pay-negative: #de8279;
+  --time-in: #a7adb2;
+  --time-out: #89939d;
+  --time-scheduled: #c59247;
   /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
-  --tone-orange: #9aa1a9;
-  --tone-green: #57b98a;
-  --tone-blue: #9aa1a9;
-  --tone-red: #e2665e;
-  --status-planned: #9aa1a9;
-  --status-planned-fill: rgba(154, 161, 169, 0.08);
-  --status-planned-chip: rgba(154, 161, 169, 0.14);
-  --status-overdue: #e2665e;
-  --status-missing: #e2665e;
-  --status-missing-fill: rgba(226, 102, 94, 0.12);
-  --status-received: #57b98a;
-  --progress-fill: rgba(106, 169, 201, 0.18);
-  --progress-bar: #6aa9c9;
-  --loader-ball: #6aa9c9;
+  --tone-orange: #89939d;
+  --tone-green: #53b989;
+  --tone-blue: #89939d;
+  --tone-red: #de8279;
+  --status-planned: #c59247;
+  --status-planned-fill: rgba(197, 146, 71, 0.07);
+  --status-planned-chip: rgba(197, 146, 71, 0.14);
+  --status-overdue: #de8279;
+  --status-missing: #de8279;
+  --status-missing-fill: rgba(222, 130, 121, 0.1);
+  --status-received: #53b989;
+  --progress-fill: rgba(96, 164, 193, 0.16);
+  --progress-bar: #60a4c1;
+  --loader-ball: #60a4c1;
 
   --page-bg-image: none; /* @kind other */
   --card-bg: var(--panel);
@@ -406,13 +411,13 @@
   --card-radius: 12px;
   --card-shadow: none;
   --card-shadow-hover: none;
-  --card-hover-border: #3c434b;
+  --card-hover-border: #3d4249;
   --card-hover-lift: none; /* @kind other */
   --card-blur: none; /* @kind other */
   --card-padding: 1.35rem;
   --shift-card-padding: 0.9rem 1.05rem;
   --shift-card-accent-edge: 0; /* @kind other */
-  --input-bg: #15171a;
+  --input-bg: #15181b;
   --input-border: 1px solid var(--border); /* @kind other */
   --input-shadow: none;
   --input-radius: 8px;
@@ -420,6 +425,7 @@
   --button-shadow: none;
   --button-press: scale(0.99); /* @kind other */
 }
+
 
 /* ---------- glass — Modern Glassmorphism ----------
    Aurora gradient page, frosted translucent surfaces, glowing gradient hairline,

@@ -252,7 +252,9 @@
   --weight-medium: 500; /* @kind other */
   --weight-semibold: 600; /* @kind other */ /* labels, buttons, filter chips */
   --weight-bold: 700; /* @kind other */ /* section titles, date labels, badges */
-  --weight-heavy: 800; /* @kind other */ /* money & hour figures */
+  /* 700, not 800: at large sizes the extra stroke mass becomes a solid bright
+     block that halates — the figure stays the protagonist through SIZE, not ink. */
+  --weight-heavy: 700; /* @kind other */ /* money & hour figures */
 
   --leading-tight: 1.1; /* @kind other */ /* all large numbers */
   --leading-normal: 1.45; /* @kind other */
@@ -414,36 +416,40 @@
   --bg: #15181b;
   --panel: #1c2023;
   --panel-2: #23272b;
-  --text: #c4c9cc;
-  --muted: #969fa8;
+  --text: #a7adb2;
+  --muted: #89939d;
   --accent: #60a4c1;
   --green: #53b989;
   --danger: #de8279;
   --border: #31353b;
   /* Time is neutral here: emphasis comes from weight, not from a second hue. */
-  --checkin: #c4c9cc;
-  --checkout: #969fa8;
+  --checkin: #a7adb2;
+  --checkout: #89939d;
   --skeleton-base: #23272b;
   --skeleton-sheen: rgba(255, 255, 255, 0.05);
 
-  /* Never pure white: on a dark ground it halates, which is what makes long
-     sessions hurt. Measured on a real screen, the PAGE GROUND emits ~10x more
-     light than every figure and card combined, so glare is fought on the large
-     surfaces (page, cards) and never by dimming the small ones. Text contrast is
-     held fixed; the biggest number stops at #d2d6d9. */
-  --text-value: #d2d6d9;
+  /* Glare is fought on TWO layers, neither of them by blurring anything:
+     1. Large surfaces — measured on a real screen the PAGE GROUND emits ~10x more
+        light than every figure and card combined (1.9M px against a few thousand),
+        so the page and cards carry the reduction.
+     2. Text — placed deliberately LOW inside the safe band. On a dark ground,
+        small light text above ~7:1 starts to halate: it reads as "glaring", not
+        as "clearer". Paired with --weight-heavy dropping 800 -> 700 below.
+     Nothing reaches #ffffff; the biggest number stops at #b2b9bd. Measured:
+     money 8.25 · body 6.63 · sub-labels 4.81 — all above the 4.5:1 AA floor. */
+  --text-value: #b2b9bd;
   --text-on-accent: #0d1113;
   --pay-positive: #53b989;
   --pay-negative: #de8279;
-  --time-in: #c4c9cc;
-  --time-out: #969fa8;
+  --time-in: #a7adb2;
+  --time-out: #89939d;
   /* A planned shift KEEPS amber: it is a real "not worked yet" state, and grey
      would be read as "disabled". This is the fourth and last hue in the theme. */
   --time-scheduled: #c59247;
   /* Stat tones collapse onto the three real hues — no decorative fourth colour. */
-  --tone-orange: #969fa8;
+  --tone-orange: #89939d;
   --tone-green: #53b989;
-  --tone-blue: #969fa8;
+  --tone-blue: #89939d;
   --tone-red: #de8279;
   --status-planned: #c59247;
   --status-planned-fill: rgba(197, 146, 71, 0.07);
