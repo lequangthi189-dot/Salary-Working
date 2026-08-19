@@ -7,8 +7,8 @@
   display: block;
   position: relative;
   overflow: hidden;
-  background-color: var(--skeleton-base, #222c38);
-  border-radius: 8px;
+  background-color: var(--skeleton-base);
+  border-radius: var(--radius-sm);
   /* Không cho lớp shimmer làm thay đổi kích thước dòng */
   line-height: 1;
 }
@@ -22,10 +22,10 @@
   background: linear-gradient(
     90deg,
     transparent,
-    var(--skeleton-sheen, rgba(255, 255, 255, 0.08)),
+    var(--skeleton-sheen),
     transparent
   );
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  animation: skeleton-shimmer var(--shimmer-duration) ease-in-out infinite;
 }
 
 @keyframes skeleton-shimmer {
@@ -39,7 +39,7 @@
 /* Dòng chữ giả — cao bằng một dòng text, bo mềm */
 .skeleton-text {
   height: 0.85em;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
 }
 
 /* Nhóm nhiều dòng chữ */

@@ -1,32 +1,22 @@
 /* =========================================================================
    THEMES — 3 phong cách giao diện, đổi qua data-theme trên <html>.
-   - dark (mặc định): dùng nguyên :root trong styles.css, không cần override.
+   - dark (mặc định): bảng màu Trung tính (một dải graphite, 3 họ màu).
    - glass: kính mờ trong suốt + backdrop blur, nền gradient.
    - neumorph: Soft UI, nền sáng, bóng mềm nổi/chìm, không viền.
    Danh sách bề mặt dùng chung cho cả glass & neumorph (giữ đồng bộ).
+
+   BIẾN MÀU KHÔNG CÒN Ở ĐÂY. Ba block khai báo biến (`[data-theme='dark']`,
+   `[data-theme='glass']`, `[data-theme='neumorph']`) đã chuyển sang
+   src/styles/salaryworking-tokens.css — import TRƯỚC styles.css ở main.jsx.
+   File này giờ CHỈ còn rule COMPONENT theo từng theme (aurora, bóng neumorph,
+   .theme-swatch, prefers-reduced-motion…). Thêm biến mới → sửa file token,
+   đừng thêm lại vào đây.
    ========================================================================= */
 
 /* ---------- Sleek Dark Mode & Minimalist ----------
-   Nền navy gần đen (#0a1929), phẳng tối giản, nhiều khoảng trắng, viền mảnh, chữ
-   trắng tương phản cao. Màu nhấn (xanh #3aa0d8 + mint) chỉ dùng cho điểm nhấn. */
-[data-theme='dark'] {
-  --bg: #0a1929;
-  --panel: #0f2334;
-  --panel-2: #14293c;
-  --text: #f3f8fd;
-  /* MINIMALIST: chữ phụ dịu hơn, màu nhấn bớt bão hòa → tông monochrome trầm. */
-  --muted: #8696aa;
-  --accent: #5b9ec6;
-  --green: #4fd6a0;
-  --danger: #f0676b;
-  /* MINIMALIST: viền hairline mảnh, dịu hơn cho ít nhiễu thị giác. */
-  --border: #1a2d40;
-  --checkin: #ff9f43;
-  --checkout: #5b9ec6;
-  /* Skeleton: khối xám sáng hơn nền navy một bậc để thấy rõ, sheen trắng dịu. */
-  --skeleton-base: #1b3145;
-  --skeleton-sheen: rgba(255, 255, 255, 0.06);
-}
+   Phẳng tối giản, mật độ cao, viền hairline. Màu chỉ dùng khi nó mang nghĩa về
+   tiền: nhấn / đã kiếm / mất tiền. Giờ vào–giờ ra phân biệt bằng ĐỘ ĐẬM và VỊ
+   TRÍ, không bằng màu thứ hai. */
 
 /* Phẳng tối giản: thẻ thống kê & ô lương dùng nền/viền mảnh theo palette (bỏ màu
    cứng + viền dày cũ). Điểm nhấn để dành cho biểu đồ / trạng thái active. */
@@ -58,31 +48,33 @@
   box-shadow: none;
 }
 
-/* MINIMALIST — Nhiều khoảng trắng: nới padding để thẻ thoáng, dễ thở hơn. */
+/* MẬT ĐỘ — đây là bảng công: người dùng cần thấy NHIỀU ca cùng lúc, nên padding
+   lấy theo token mật độ của bảng màu Trung tính (chặt hơn bản navy cũ) thay vì
+   số cứng. */
 [data-theme='dark'] .shift-card:not(.editing) {
-  padding: 1.1rem 1.25rem;
+  padding: var(--shift-card-padding);
 }
 [data-theme='dark'] .period-card {
-  padding: 1rem 1.15rem;
+  padding: var(--shift-card-padding);
 }
 [data-theme='dark'] :is(.auth-card, .emp-card, .stat-card, .deduction-card) {
-  padding: 1.5rem;
+  padding: var(--card-padding);
 }
 
 /* MINIMALIST — Hover/focus tinh tế: chỉ đổi màu viền nhẹ, transition mượt, không
    nhấc thẻ hay đổ bóng rực. */
 [data-theme='dark']
   :is(.stat-card, .period-card, .shift-card:not(.editing), .deduction-card) {
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: var(--transition-surface);
 }
 [data-theme='dark']
   :is(.stat-card, .shift-card:not(.editing), .deduction-card):hover {
-  border-color: rgba(91, 158, 198, 0.55);
+  border-color: var(--card-hover-border);
 }
 
 /* MINIMALIST — Focus ô nhập: viền accent dịu, không quầng sáng rực. */
 [data-theme='dark'] :is(input, select, textarea) {
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: var(--transition-surface);
 }
 [data-theme='dark'] :is(input, select, textarea):focus,
 [data-theme='dark'] :is(input, select, textarea):focus-visible {
@@ -94,41 +86,25 @@
    trang một bậc + viền accent mảnh để khối tách khỏi bố cục phẳng xung quanh. */
 [data-theme='dark'] .shift-form {
   background: var(--panel-2);
-  border-color: rgba(91, 158, 198, 0.45);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 /* Tiêu đề: tô accent + gạch chân mảnh để hút mắt vào khối nhập ca. */
 [data-theme='dark'] .shift-form .form-title {
   color: var(--accent);
   display: inline-block;
-  padding-bottom: 0.3rem;
-  border-bottom: 2px solid var(--accent);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--border-width-emphasis) solid var(--accent);
 }
-/* Thẻ ca (workshift cards): viền trái accent để mỗi ca tách bạch, nổi nhẹ trên
-   nền phẳng mà không cần đổ bóng (giữ tinh thần minimalist). */
-[data-theme='dark'] .shift-card:not(.editing) {
-  border-left: 3px solid rgba(91, 158, 198, 0.6);
-}
+/* Viền trái accent trên thẻ ca đã BỎ ở bảng màu Trung tính (token
+   --shift-card-accent-edge: 0). Lý do: bảng màu này giới hạn đúng 3 họ màu và
+   dành màu nhấn cho hành động chính + trạng thái đang chọn; một viền accent lặp
+   trên MỌI thẻ ca làm nhiễu và triệt tiêu chính chỗ cần nhấn. Thẻ ca tách nhau
+   bằng nền panel + viền hairline. */
 
 /* ---------- Modern Glassmorphism ----------
    Nền gradient nhiều màu mờ ảo (tím/hồng/xanh/cyan/teal), panel kính mờ trong
    suốt + viền phát sáng mỏng, bo góc lớn, thẻ thống kê gradient rực rỡ. */
-[data-theme='glass'] {
-  --bg: #0f1430;
-  --panel: rgba(255, 255, 255, 0.1);
-  --panel-2: rgba(255, 255, 255, 0.16);
-  --text: #f6f8ff;
-  --muted: #d3dcf2;
-  --accent: #7cc4ff;
-  --green: #5ff0a8;
-  --danger: #ff7d97;
-  --border: rgba(255, 255, 255, 0.28);
-  --checkin: #ffc36b;
-  --checkout: #8fd0ff;
-  --surface-blur: blur(18px) saturate(150%);
-  /* Skeleton kính: khối trắng BÁN TRONG SUỐT cho hợp nền gradient, sheen sáng hơn. */
-  --skeleton-base: rgba(255, 255, 255, 0.16);
-  --skeleton-sheen: rgba(255, 255, 255, 0.4);
-}
+/* (Biến màu glass nằm trong salaryworking-tokens.css.) */
 
 /* Nền: các "đốm" màu blur mềm trên nền xanh đậm → trong trẻo, nhiều màu, airy.
    MODERN: các đốm màu trôi/đảo nhẹ liên tục (aurora) cho cảm giác sống động. */
@@ -500,34 +476,8 @@
   }
 }
 
-/* ---------- Soft UI / Neumorphism ---------- */
-[data-theme='neumorph'] {
-  --bg: #e0e5ec;
-  --panel: #e0e5ec;
-  --panel-2: #e8edf3;
-  --text: #4a5468;
-  --muted: #8b95a8;
-  /* Accent pastel dịu: sky blue / mint / peach-coral. */
-  --accent: #8ab0e8;
-  --green: #7ed0b0;
-  --danger: #f0a79b;
-  --border: transparent;
-  --checkin: #f3c19a;
-  --checkout: #8ab0e8;
-  /* Bóng mềm: sáng trên-trái, tối dưới-phải → cảm giác nổi khỏi nền. */
-  --nm-shadow: 6px 6px 14px #bcc3ce, -6px -6px 14px #ffffff;
-  --nm-inset: inset 3px 3px 7px #bcc3ce, inset -3px -3px 7px #ffffff;
-  /* Bóng nổi CAO hơn (dùng khi hover) → khối nhô lên rõ rệt. */
-  --nm-shadow-hover: 9px 9px 20px #b2b9c4, -9px -9px 20px #ffffff;
-  /* Bóng NỔI BẬT (raised): elevation cao hơn mặc định, dưới mức hover → dùng cho
-     khối cần nổi lên so với các thẻ thường (Nhập ca, thẻ ca trong bảng công). */
-  --nm-shadow-raised: 8px 8px 18px #b6bdc8, -8px -8px 18px #ffffff;
-  /* Gradient bề mặt lồi (convex): sáng trên, tối nhẹ dưới. */
-  --nm-convex: linear-gradient(145deg, #f0f4fa, #cdd3dd);
-  /* Skeleton nền sáng: khối xám-xanh dịu (tối hơn nền một bậc) + sheen trắng. */
-  --skeleton-base: #cfd6e0;
-  --skeleton-sheen: rgba(255, 255, 255, 0.7);
-}
+/* ---------- Soft UI / Neumorphism ----------
+   (Biến màu + bóng neumorph nằm trong salaryworking-tokens.css.) */
 
 [data-theme='neumorph']
   :is(

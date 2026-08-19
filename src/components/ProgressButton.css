@@ -1,6 +1,6 @@
-/* Nút tiến độ. Nền + viền theo theme (--panel/--border); lớp fill accent #3aa0d8
-   mờ chạy đầy dần từ trái theo %, thanh đáy đậm theo %. Đăng ký --pbtn-p để chuyển
-   % mượt khi value đổi theo mốc thật. */
+/* Nút tiến độ. Nền + viền theo theme (--progress-track/--border); lớp fill
+   --progress-fill chạy đầy dần từ trái theo %, thanh đáy --progress-bar đậm theo
+   %. Đăng ký --pbtn-p để chuyển % mượt khi value đổi theo mốc thật. */
 @property --pbtn-p {
   syntax: "<number>";
   inherits: true;
@@ -15,13 +15,13 @@
   justify-content: center;
   min-width: 220px;
   padding: 0.7rem 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--panel);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--progress-track);
   /* Chữ theo theme (sáng ở dark/glass, đậm ở neumorph nền sáng) để đọc rõ ở cả 3. */
   color: var(--text);
   font-size: 0.92rem;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   cursor: default;
   /* disabled nhưng vẫn giữ tông sáng đầy đủ (đây là chỉ báo tiến độ, không phải nút bấm). */
   opacity: 1;
@@ -33,8 +33,8 @@
   inset: 0;
   transform-origin: left center;
   width: calc(var(--pbtn-p, 0) * 1%);
-  background: rgba(58, 160, 216, 0.22);
-  transition: width 0.4s ease;
+  background: var(--progress-fill);
+  transition: width var(--duration-progress) var(--ease-standard);
   pointer-events: none;
 }
 
@@ -55,7 +55,7 @@
   white-space: nowrap;
 }
 .pbtn-pct {
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: var(--numeric);
   opacity: 0.95;
 }
 
@@ -66,8 +66,8 @@
   bottom: 0;
   height: 3px;
   width: calc(var(--pbtn-p, 0) * 1%);
-  background: #3aa0d8;
-  transition: width 0.4s ease;
+  background: var(--progress-bar);
+  transition: width var(--duration-progress) var(--ease-standard);
   pointer-events: none;
 }
 

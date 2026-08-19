@@ -1,21 +1,8 @@
-:root {
-  --bg: #0d1117;
-  --panel: #1a212b;
-  --panel-2: #232c38;
-  --text: #e6edf3;
-  --muted: #8b98a9;
-  --accent: #4f9dff;
-  --green: #3fb950;
-  --danger: #f85149;
-  --border: #2b3542;
-  --checkin: #ff9f43;
-  --checkout: #58b3ff;
-  /* Skeleton (khung xám lúc chờ tải). Base = màu khối; sheen = vệt sáng chạy qua.
-     Theme khác (neumorph/glass) có thể override 2 biến này: glass nền gradient thì
-     đặt --skeleton-base sang màu bán trong suốt cho hợp nền. */
-  --skeleton-base: #222c38;
-  --skeleton-sheen: rgba(255, 255, 255, 0.09);
-}
+/* ===== TOKEN MÀU: đã chuyển sang src/styles/salaryworking-tokens.css =====
+   Bảng :root cũ (--bg, --panel, --accent, --checkin, --skeleton-*…) nằm trong
+   file token đó, import TRƯỚC file này ở main.jsx. ĐỪNG khai báo lại :root ở
+   đây: cùng độ ưu tiên nhưng file này load sau nên sẽ THẮNG token bundle và
+   kéo bảng màu về bản navy cũ. Muốn đổi màu → sửa file token. */
 
 /* ===== CỠ CHỮ (data-font trên <html>, đặt ở src/lib/appearance.js) =====
    Đổi font-size GỐC → mọi kích thước dùng rem co giãn theo (nhỏ / vừa / lớn). */
@@ -79,6 +66,16 @@ input {
   font: inherit;
 }
 
+/* ===== TIÊU ĐIỂM BÀN PHÍM =====
+   Một vòng focus DUY NHẤT cho toàn app, lấy theo token --focus-ring (accent 35%).
+   Trước đây chỉ 4 phần tử có :focus-visible, mà theme dark lại còn đặt
+   `outline: none` khi focus ô nhập → người dùng bàn phím mất dấu hoàn toàn.
+   Dùng :focus-visible nên chuột bấm KHÔNG hiện vòng, chỉ bàn phím mới hiện. */
+:is(button, [role='button'], a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .center {
   min-height: 100vh;
   min-height: 100dvh;
@@ -115,14 +112,20 @@ label {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--muted);
+  font-size: var(--text-base);
+  color: var(--text-muted);
 }
+/* Ô nhập dùng "công thức" theo theme (--input-*) chứ không phải màu cố định, nên
+   glass ra ô kính mờ và neumorph ra ô lõm mà không cần vá riêng.
+   min-height: --touch-min (44px) — app dùng bằng MỘT TAY, vừa tan ca, trong
+   xưởng tối; ô cao ~36px như trước là dưới ngưỡng bấm trúng. */
 label input {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--input-shadow);
   padding: 0.6rem;
+  min-height: var(--touch-min);
   color: var(--text);
 }
 
@@ -135,27 +138,30 @@ label input {
 .pw-wrap input {
   flex: 1;
   width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--input-shadow);
   padding: 0.6rem;
   padding-right: 3.5rem;
+  min-height: var(--touch-min);
   color: var(--text);
 }
 .pw-toggle {
   position: absolute;
-  right: 0.4rem;
+  right: var(--space-4);
   background: none;
   border: none;
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.25rem 0.4rem;
+  /* Nút chữ trên nền panel → dùng --text-accent (bản dùng cho CHỮ). */
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  padding: var(--space-2) var(--space-4);
 }
 
 button[type='submit'] {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 0.7rem;
@@ -165,28 +171,33 @@ button[type='submit']:disabled {
   opacity: 0.6;
 }
 
+/* Nút dạng chữ. Dùng --text-accent/--text-danger (không phải --accent/--danger):
+   ở theme neumorph nền sáng, hai màu pastel kia chỉ đạt ~1,6:1 khi làm CHỮ. */
 .link {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--text-accent);
   margin-top: 1rem;
   padding: 0;
+  font-size: var(--text-base);
 }
 .forgot-link {
-  color: var(--danger);
+  color: var(--text-danger);
   align-self: flex-start; /* canh TRÁI trong form (flex column) */
   text-align: left;
 }
 
+/* Thông báo dạng chữ (Message). Dùng bản --text-* vì đây là CHỮ trên nền panel:
+   --danger/--accent là màu nền pastel ở Soft UI nên đọc không ra. */
 .msg {
-  font-size: 0.85rem;
-  margin: 0.75rem 0 0;
+  font-size: var(--text-base);
+  margin: var(--space-8) 0 0;
 }
 .msg.error {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 .msg.info {
-  color: var(--accent);
+  color: var(--text-accent);
 }
 
 /* ---- App ---- */
@@ -271,7 +282,7 @@ button[type='submit']:disabled {
   font-size: 0.78rem;
 }
 .received-badge {
-  color: var(--green);
+  color: var(--status-received);
   font-weight: 600;
   font-size: 0.85rem;
   white-space: nowrap;
@@ -318,7 +329,7 @@ button[type='submit']:disabled {
   width: 25%;
 }
 .modal-card.wide {
-  max-width: 480px;
+  max-width: var(--modal-max-width-wide);
 }
 /* Popup Tiền bồi thường: bề rộng vừa phải cho cân đối khu nhập + danh sách */
 .modal-card.deduction-modal {
@@ -393,7 +404,7 @@ button[type='submit']:disabled {
 .chat-user {
   align-self: flex-end;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border-bottom-right-radius: 4px;
 }
 /* Message chứa bảng công: trải rộng hết khung chat */
@@ -584,7 +595,7 @@ button[type='submit']:disabled {
 .chat-input button {
   flex: 0 0 auto;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 0 0.95rem;
@@ -1246,7 +1257,7 @@ button[type='submit']:disabled {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--surface-overlay);
   display: grid;
   /* safe + cuộn: popup cao hơn màn hình vẫn xem/cuộn được, không bị cắt */
   place-items: safe center;
@@ -1255,12 +1266,12 @@ button[type='submit']:disabled {
   z-index: 50;
 }
 .modal-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: var(--surface-card);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-14);
   width: 100%;
-  max-width: 360px;
+  max-width: var(--modal-max-width);
   /* Nội dung cao (ảnh + bảng 7 ngày) không tràn ra ngoài màn hình → cho cuộn dọc.
      Dùng dvh để khớp vùng nhìn thấy thật trên mobile (trừ thanh URL), fallback vh. */
   max-height: calc(100vh - 2rem);
@@ -1316,15 +1327,15 @@ button[type='submit']:disabled {
 }
 /* Bảng đối chiếu công: tô màu từng ô (thực tế / dự kiến) theo trạng thái */
 .reconcile-table td.rec-match {
-  color: var(--green);
-  font-weight: 600;
+  color: var(--pay-positive);
+  font-weight: var(--weight-semibold);
 }
 .reconcile-table td.rec-diff {
-  color: var(--danger);
-  font-weight: 600;
+  color: var(--text-danger);
+  font-weight: var(--weight-semibold);
 }
 .reconcile-table td.rec-missing {
-  color: var(--checkin);
+  color: var(--status-planned);
 }
 .reconcile-table td.rec-extra {
   color: #c084fc;
@@ -1634,7 +1645,7 @@ button[type='submit']:disabled {
 }
 .seg-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 /* ---- Modal nhập lịch tuần từ ảnh ---- */
@@ -2165,34 +2176,41 @@ button[type='submit']:disabled {
   border-radius: 10px;
   padding: 0.7rem 0.85rem;
 }
+/* Ô thống kê (StatTile). Con số là nhân vật chính: nặng, to hơn nhãn, và dùng
+   chữ số TABULAR để các cột số thẳng hàng khi đọc lướt. */
 .stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--text-value);
+  font-variant-numeric: var(--numeric);
 }
 .stat-label {
-  font-size: 0.72rem;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--tracking-label);
 }
 .stat-total {
   border-color: var(--accent);
 }
 .stat-total .stat-value {
-  color: var(--accent);
+  color: var(--text-accent);
 }
+/* Tiền KIẾM ĐƯỢC → --pay-positive (bản an toàn khi làm chữ ở cả 3 theme),
+   không dùng --green vì --green là màu NỀN pastel ở Soft UI. */
 .stat-pay .stat-value {
-  color: var(--green);
+  color: var(--pay-positive);
 }
 .stat-grand {
   border-color: var(--green);
 }
 
+/* Giờ MẤT (vào trễ / ra sớm) → --pay-negative: tiền bị mất, cùng họ với phạt. */
 .lost {
-  color: var(--danger);
-  font-weight: 600;
-  font-size: 0.85rem;
+  color: var(--pay-negative);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-base);
   margin: 0;
 }
 .lost-detail {
@@ -2227,35 +2245,34 @@ button[type='submit']:disabled {
 .btn-addshift,
 .btn-received {
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.7rem;
-  font-weight: 600;
-  color: #fff;
+  font-weight: var(--weight-semibold);
   cursor: pointer;
 }
+/* Hành động chính của trang → tô ĐẶC màu nhấn, phẳng. Bảng màu Trung tính bỏ
+   gradient: gradient navy cũ (#4f9dff→#1f5fae) là màu cứng nên không đổi theo
+   theme, và "không gradient, không glow" là luật brand. */
 .btn-addshift {
-  background: linear-gradient(135deg, #4f9dff, #1f5fae);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  transition: var(--transition-surface);
 }
 .btn-addshift:hover {
-  background: linear-gradient(135deg, #62a9ff, #245fb0);
+  background: color-mix(in srgb, var(--accent) 88%, var(--text));
 }
-/* Nút "Đã nhận lương" — màu động xanh-đen (chỉ hiện khi tới ngày nhận) */
+/* Nút "Đã nhận lương" (chỉ hiện khi tới ngày nhận). Trước đây là gradient
+   xanh-đen chạy vô hạn + glow — vừa trái luật brand, vừa dùng màu cứng không
+   theo theme. Nay tô ĐẶC bằng --ok: cùng màu với badge "đã nhận" ở màn thu nhập
+   thêm, nên màu ở đây MANG NGHĨA "tiền đã về" thay vì chỉ để bắt mắt. Nó vẫn là
+   nút xanh lá duy nhất trong app nên không lẫn với hành động chính. */
 .btn-received {
-  background: linear-gradient(270deg, #38a0ff, #0a1d38, #1273e6, #0a1d38);
-  background-size: 300% 300%;
-  animation: blueBlackShift 5s ease infinite;
-  box-shadow: 0 0 10px rgba(56, 160, 255, 0.3);
+  background: var(--ok);
+  color: var(--text-on-ok);
+  transition: var(--transition-surface);
 }
-@keyframes blueBlackShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.btn-received:hover {
+  background: color-mix(in srgb, var(--ok) 88%, var(--text));
 }
 .btn-addshift:disabled,
 .btn-received:disabled {
@@ -2265,44 +2282,52 @@ button[type='submit']:disabled {
 
 /* ---- Màu check-in (cam) / check-out (xanh) ---- */
 .checkin {
-  color: var(--checkin);
+  color: var(--time-in);
 }
+/* Giờ VÀO / giờ RA dùng token NGHĨA (--time-in/--time-out), không dùng
+   --checkin/--checkout: hai biến kia là màu NỀN pastel ở Soft UI (#f3c19a) nên
+   làm chữ chỉ đạt ~1,6:1. Bảng Trung tính cố tình để giờ vào–ra TRUNG TÍNH,
+   phân biệt bằng độ đậm và vị trí chứ không bằng màu thứ hai. */
 .checkin input {
-  color: var(--checkin);
-  border-color: var(--checkin);
-  font-weight: 600;
+  color: var(--time-in);
+  border-color: var(--time-in);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .checkout {
-  color: var(--checkout);
+  color: var(--time-out);
 }
 .checkout input {
-  color: var(--checkout);
-  border-color: var(--checkout);
-  font-weight: 600;
+  color: var(--time-out);
+  border-color: var(--time-out);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .t-in {
-  color: var(--checkin);
-  font-weight: 700;
+  color: var(--time-in);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 .t-out {
-  color: var(--checkout);
-  font-weight: 700;
+  color: var(--time-out);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 .shift-times .dash {
   color: var(--muted);
 }
 input.t-in {
-  border-color: var(--checkin);
+  border-color: var(--time-in);
 }
 input.t-out {
-  border-color: var(--checkout);
+  border-color: var(--time-out);
 }
 
 /* ---- Timesheet ---- */
 .empty {
-  color: var(--muted);
+  color: var(--text-muted);
   text-align: center;
-  padding: 2rem;
+  padding: var(--space-16);
 }
 .timesheet {
   margin-top: 1.25rem; /* tách bảng công khỏi khối Nhập ca + Thống kê phía trên */
@@ -2316,13 +2341,14 @@ input.t-out {
 }
 .shift-filter-btn {
   background: var(--panel-2);
-  border: 1px solid var(--border);
+  border: var(--border-width-hairline) solid var(--border);
   color: var(--text);
-  border-radius: 8px;
-  padding: 0.4rem 0.85rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: var(--space-4) 0.85rem;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
+  transition: var(--transition-surface);
 }
 .shift-filter-btn:hover {
   border-color: var(--accent);
@@ -2330,7 +2356,7 @@ input.t-out {
 .shift-filter-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 /* Thanh công cụ bảng công: ô TÌM CA + các nút LỌC ngày/đêm nằm NGANG cùng một hàng
@@ -2417,29 +2443,32 @@ input.t-out {
 }
 /* Date grouping — mỗi ngày là 1 thẻ riêng để phân biệt rõ giữa các block. */
 .date-group {
-  margin-bottom: 1.25rem;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
+  margin-bottom: var(--space-12);
+  background: var(--surface-card);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) 0.85rem;
 }
 .date-header {
   display: flex;
   align-items: baseline;
-  gap: 1rem;
-  padding: 0.4rem 0.25rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.6rem;
+  gap: var(--space-10);
+  padding: var(--space-4) var(--space-2);
+  border-bottom: var(--border-width-hairline) solid var(--border);
+  margin-bottom: var(--space-6);
 }
 .date-label {
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 .date-header .muted {
   margin-left: auto;
 }
+/* Tiền của một ngày → --pay-positive (nghĩa "kiếm được"), chữ số tabular để
+   cột tiền của các ngày thẳng hàng khi cuộn. */
 .date-header .pay {
-  color: var(--green);
-  font-weight: 700;
+  color: var(--pay-positive);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 
 /* Màn nhỏ 320–560px: tiêu đề ngày xuống 2 dòng cho khỏi bể.
@@ -2477,10 +2506,10 @@ input.t-out {
 }
 
 .shift-card {
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
+  background: var(--surface-raised);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--shift-card-padding);
   display: grid;
   grid-template-columns: 1.3fr 1.4fr auto auto;
   align-items: center;
@@ -2524,40 +2553,43 @@ input.t-out {
 }
 /* Ngày chưa chấm công (chỉ có lịch dự kiến): khung đỏ SÁNG để nhắc nhập check-in. */
 .shift-card.not-checked-in {
-  border-color: #ff1f1f;
-  border-width: 2px;
-  background: rgba(255, 31, 31, 0.18);
-  box-shadow: 0 0 0 1px rgba(255, 31, 31, 0.5), 0 0 12px rgba(255, 31, 31, 0.45);
+  border-color: var(--status-missing);
+  border-width: var(--border-width-emphasis);
+  background: var(--status-missing-fill);
+  box-shadow: var(--shadow-warning-missing);
 }
 .shift-card.not-checked-in .next-day {
-  color: #ff3b3b;
-  font-weight: 700;
+  color: var(--status-missing);
+  font-weight: var(--weight-bold);
 }
-/* Ca dự kiến (tương lai, chưa chấm công) — amber, phân biệt với cảnh báo đỏ */
+/* Ca dự kiến (tương lai, chưa chấm công) — dùng token trạng thái nên ở theme
+   dark là XÁM trung tính (bảng Trung tính bỏ hue amber), còn glass/neumorph vẫn
+   amber như cũ. Trước đây nền là amber CỨNG nên ở dark thành chữ trắng trên nền
+   cam. */
 .shift-card.planned {
-  border-color: var(--checkin);
-  background: rgba(255, 159, 67, 0.12);
+  border-color: var(--status-planned);
+  background: var(--status-planned-fill);
 }
 .planned-badge {
-  margin-left: 0.4rem;
+  margin-left: var(--space-4);
   padding: 0.05rem 0.45rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--checkin);
-  background: rgba(255, 159, 67, 0.18);
-  border: 1px solid var(--checkin);
-  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--status-planned);
+  background: var(--status-planned-chip);
+  border: var(--border-width-hairline) solid var(--status-planned);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 /* Ca đã qua ngày mà chưa chấm công — cảnh báo đỏ rõ */
 .overdue-badge {
-  margin-left: 0.4rem;
+  margin-left: var(--space-4);
   padding: 0.05rem 0.45rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #fff;
-  background: var(--danger);
-  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-on-danger);
+  background: var(--status-overdue);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 .edit-fields {
@@ -2577,24 +2609,26 @@ input.t-out {
   width: 5rem;
   text-align: center;
 }
-/* Màu check-in (cam) / check-out (xanh) khi sửa ca — giống board.
-   Ghi đè màu mặc định của .edit-fields input. */
+/* Giờ vào / giờ ra khi sửa ca — giống board, dùng token nghĩa --time-in/out. */
 .edit-fields input.t-in {
-  color: var(--checkin);
-  border-color: var(--checkin);
-  font-weight: 600;
+  color: var(--time-in);
+  border-color: var(--time-in);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .edit-fields input.t-out {
-  color: var(--checkout);
-  border-color: var(--checkout);
-  font-weight: 600;
+  color: var(--time-out);
+  border-color: var(--time-out);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 /* Giờ lịch dự kiến (mốc tính trễ) — viền/màu trung tính để phân biệt với check-in/out */
 .edit-fields input.t-sched {
-  color: var(--muted);
+  color: var(--time-scheduled);
   border-color: var(--border);
   border-style: dashed;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 /* Nhãn nhỏ phía trên mỗi ô giờ trong chế độ sửa ca */
 .edit-time {
@@ -2642,8 +2676,11 @@ input.t-out {
 .edit:hover {
   color: var(--accent);
 }
+/* Giờ vào–ra trên thẻ ca: đậm hơn phần còn lại (ở bảng Trung tính đây là cách
+   phân biệt chính, thay cho màu) và dùng chữ số tabular. */
 .shift-times {
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .next-day {
   color: var(--accent);
@@ -2655,13 +2692,18 @@ input.t-out {
 }
 .shift-breakdown .muted,
 .muted {
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 0.78rem;
 }
+/* Phần tách giờ ngày/đêm là SỐ → thẳng cột giữa các thẻ ca. */
+.shift-breakdown {
+  font-variant-numeric: var(--numeric);
+}
 .shift-pay {
-  color: var(--green);
-  font-weight: 700;
+  color: var(--pay-positive);
+  font-weight: var(--weight-bold);
   text-align: right;
+  font-variant-numeric: var(--numeric);
 }
 .delete {
   background: none;
@@ -2678,11 +2720,12 @@ input.t-out {
 .totals {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding: 1rem;
-  border-top: 2px solid var(--border);
-  font-weight: 700;
+  gap: var(--space-10);
+  margin-top: var(--space-10);
+  padding: var(--space-10);
+  border-top: var(--border-width-emphasis) solid var(--border);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 .totals span:first-child {
   margin-right: auto;
@@ -2904,11 +2947,13 @@ input.t-out {
 .tt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
+  /* Bảng công là bảng SỐ: mọi ô số phải thẳng cột. */
+  font-variant-numeric: var(--numeric);
 }
 .tt-table th,
 .tt-table td {
-  border: 1px solid var(--border);
+  border: var(--border-width-hairline) solid var(--border);
   padding: 0.18rem 0.3rem;
   text-align: center;
   white-space: nowrap; /* mỗi ô 1 dòng → hàng ngày không bị bể */
@@ -2916,29 +2961,30 @@ input.t-out {
 .tt-table thead th {
   position: sticky;
   top: 0;
-  background: var(--panel-2);
+  background: var(--surface-raised);
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 .tt-table tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.03);
 }
 .tt-table .tt-pay {
   text-align: right;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: var(--numeric);
+  color: var(--pay-positive);
 }
 .tt-table td.lost {
-  color: var(--danger);
+  color: var(--pay-negative);
 }
 .tt-table .tt-sched {
-  color: var(--muted);
+  color: var(--time-scheduled);
 }
 .tt-table tr.tt-planned td {
   font-style: italic;
 }
 .tt-table tfoot td {
-  background: var(--panel-2);
-  font-weight: 700;
+  background: var(--surface-raised);
+  font-weight: var(--weight-bold);
 }
 
 /* Nút mở popup Bảng công chi tiết trong popup kỳ lương */
@@ -3040,7 +3086,7 @@ input.t-out {
 .extra-add-btn {
   flex: 0 0 auto;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
@@ -3129,41 +3175,41 @@ input.t-out {
 .extra-actions .edit:hover {
   color: var(--accent);
 }
-/* Khoản việc ngoài DỰ KIẾN (ngày tương lai) — amber, chưa tính thực nhận */
+/* Khoản việc ngoài DỰ KIẾN (ngày tương lai) — chưa tính thực nhận */
 .extra-item.planned {
-  border-color: var(--checkin);
-  background: rgba(255, 159, 67, 0.1);
+  border-color: var(--status-planned);
+  background: var(--status-planned-fill);
 }
 .extra-summary-row.planned-line strong {
-  color: var(--checkin);
+  color: var(--status-planned);
 }
-/* Khoản CHƯA NHẬN (treo) — amber, chưa cộng vào tổng kỳ */
+/* Khoản CHƯA NHẬN (treo) — chưa cộng vào tổng kỳ */
 .extra-item.pending {
-  border-color: var(--checkin);
-  background: rgba(255, 159, 67, 0.1);
+  border-color: var(--status-planned);
+  background: var(--status-planned-fill);
 }
 /* Badge trạng thái nhận */
 .recv-badge {
   padding: 0.05rem 0.45rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--checkin);
-  background: rgba(255, 159, 67, 0.18);
-  border: 1px solid var(--checkin);
-  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--status-planned);
+  background: var(--status-planned-chip);
+  border: var(--border-width-hairline) solid var(--status-planned);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 .recv-badge.received {
-  color: var(--ok, #16a34a);
-  background: rgba(22, 163, 74, 0.15);
-  border-color: var(--ok, #16a34a);
+  color: var(--ok);
+  background: var(--ok-fill);
+  border-color: var(--ok);
 }
 /* Nút đổi trạng thái nhận. Trạng thái CHƯA NHẬN = nút XANH ĐẶC nổi bật (gọi hành
    động "Đã nhận"); trạng thái ĐÃ NHẬN = nút viền mờ "Bỏ nhận". */
 .recv-toggle {
-  background: var(--ok, #16a34a);
-  border: 1px solid var(--ok, #16a34a);
-  color: #fff;
+  background: var(--ok);
+  border: 1px solid var(--ok);
+  color: var(--text-on-ok);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 700;
@@ -3201,7 +3247,7 @@ input.t-out {
 .recv-on {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--ok, #16a34a);
+  color: var(--ok);
   white-space: nowrap;
 }
 /* Thanh hành động hàng loạt */
@@ -3226,9 +3272,9 @@ input.t-out {
   gap: 0.4rem;
 }
 .extra-bulk-mark {
-  background: var(--ok, #16a34a);
+  background: var(--ok);
   border: none;
-  color: #fff;
+  color: var(--text-on-ok);
   font-weight: 700;
   font-size: 0.78rem;
   padding: 0.3rem 0.7rem;
@@ -3369,7 +3415,7 @@ input.t-out {
   transform: translateX(-50%);
   font-size: 0.7rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-on-accent);
   background: var(--accent);
   border-radius: 8px;
   padding: 1px 7px;
@@ -3412,7 +3458,7 @@ input.t-out {
 .row-btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .avatar-hint {
   font-size: 0.72rem;

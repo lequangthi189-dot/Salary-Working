@@ -13,41 +13,46 @@
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  background: #1c2128;
-  border: 2px solid #2ea043;
-  border-radius: 14px;
+  background: var(--panel);
+  border: var(--border-width-emphasis) solid var(--pay-positive);
+  border-radius: var(--radius-xl);
   padding: 1.15rem 1.3rem;
   text-align: center;
 }
 .stats-panel .salary-hero__label {
-  color: #2ea043;
-  font-weight: 700;
-  font-size: 0.8rem;
+  color: var(--pay-positive);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-hero);
 }
 .stats-panel .salary-hero__value {
-  color: #fff;
-  font-weight: 800;
-  font-size: 2.2rem;
-  line-height: 1.1;
+  color: var(--text-value);
+  font-weight: var(--weight-heavy);
+  font-size: var(--text-5xl);
+  line-height: var(--leading-tight);
+  /* Luật brand số 1: tiền và giờ dùng chữ số TABULAR để các cột số thẳng hàng
+     và so sánh được bằng mắt. */
+  font-variant-numeric: var(--numeric);
 }
 .stats-panel .salary-hero__sub {
   margin-top: 0.1rem;
-  color: #9da7b3;
-  font-size: 0.8rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: var(--numeric);
 }
 .stats-panel .salary-hero__sep {
   opacity: 0.5;
 }
 .stats-panel .salary-hero__fx {
   margin-top: 0.2rem;
-  color: #6e7681;
-  font-size: 0.68rem;
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-variant-numeric: var(--numeric);
 }
 /* Phần "Phạt" — màu đỏ */
 .stats-panel .salary-hero__penalty {
-  color: #f85149;
+  color: var(--pay-negative);
 }
 
 /* ---- Các hàng ô thống kê (CSS Grid) ---- */
@@ -78,37 +83,38 @@
   justify-content: center; /* căn giữa nội dung khi ô bị kéo cao */
   gap: 0.3rem;
   min-width: 0; /* cho phép ô co lại trong grid → không tràn/bể trên mobile */
-  background: #1c2128;
-  border: 1px solid #2d333b;
-  border-radius: 12px;
+  background: var(--panel);
+  border: var(--border-width-hairline) solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 0.85rem 0.5rem;
   text-align: center;
   transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
 }
 .stats-panel .info-card:hover {
-  border-color: #444c56;
-  background: #22272e;
+  border-color: var(--card-hover-border);
+  background: var(--panel-2);
 }
 .stats-panel .info-card__label {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   max-width: 100%;
   overflow-wrap: anywhere; /* nhãn dài tự xuống dòng, không tràn ô */
 }
 .stats-panel .info-card__value {
-  color: #fff;
-  font-weight: 800;
-  font-size: 1.4rem;
-  line-height: 1.1;
+  color: var(--text-value);
+  font-weight: var(--weight-heavy);
+  font-size: var(--text-4xl);
+  line-height: var(--leading-tight);
+  font-variant-numeric: var(--numeric);
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 
 /* ---- Skeleton lúc chờ tải: dùng lại khung thẻ, viền trung tính (bỏ xanh lá) ---- */
 .stats-panel .salary-hero--skeleton {
-  border-color: var(--border, #2d333b);
+  border-color: var(--border);
   gap: 0.5rem;
 }
 .stats-panel .info-card--skeleton {
@@ -117,16 +123,16 @@
 
 /* Màu nhãn theo tone */
 .stats-panel .tone-orange {
-  color: #f0883e;
+  color: var(--tone-orange);
 }
 .stats-panel .tone-green {
-  color: #2ea043;
+  color: var(--tone-green);
 }
 .stats-panel .tone-blue {
-  color: #539bf5;
+  color: var(--tone-blue);
 }
 .stats-panel .tone-red {
-  color: #f85149;
+  color: var(--tone-red);
 }
 
 /* ===== Responsive: thiết bị nhỏ 320–560px =====
