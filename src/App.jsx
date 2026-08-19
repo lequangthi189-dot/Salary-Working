@@ -3,6 +3,7 @@ import { useAuth } from './auth/AuthProvider.jsx'
 import LoginForm from './auth/LoginForm.jsx'
 import ResetPasswordForm from './auth/ResetPasswordForm.jsx'
 import ShiftForm from './components/ShiftForm.jsx'
+import BrandMark from './components/BrandMark.jsx'
 import MonthStats from './components/MonthStats.jsx'
 import Timesheet from './components/Timesheet.jsx'
 import FloatingChatButton from './components/FloatingChatButton.jsx'
@@ -437,7 +438,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <img className="app-logo" src="/logo.svg" alt="Salary Working logo" />
+          <BrandMark className="app-logo" />
           <h1 className="app-title">Salary Working</h1>
         </div>
         <div className="header-actions">

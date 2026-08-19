@@ -168,6 +168,12 @@
      clears it on all of them (5.59 / 7.66 / 9.50), so no per-theme override. */
   --text-on-danger: #1a1012;
 
+  /* Nét đối chiếu trong logo (BrandMark). Design system quy định màu maroon
+     "ledger" #B03A55 và CẤM đổi sang accent xanh. Giữ đúng họ maroon, chỉ chỉnh
+     độ sáng theo nền: bản gốc chỉ đạt 3,06:1 trên nền dark và 2,66:1 trên nền
+     glass — dưới ngưỡng 3:1 cho thành phần đồ hoạ. */
+  --brand-check: #b03a55;
+
   --border-hairline: var(--border);
   --border-strong: var(--accent); /* hover / focus */
 
@@ -438,6 +444,7 @@
   --status-overdue: #e2665e;
   --status-missing: #e2665e;
   --status-missing-fill: rgba(226, 102, 94, 0.12);
+  --brand-check: #c9556e; /* 4,28:1 trên nền dark */
   --status-received: #57b98a;
   /* received green: 5.6:1 as text on the tinted badge, 7.7:1 for the ink on fill */
   --ok: #57b98a;
@@ -497,6 +504,7 @@
      ground. Lightened to clear AA (5.1:1) while staying the loudest red here. */
   --status-missing: #ff5c52;
   --status-missing-fill: rgba(255, 92, 82, 0.18);
+  --brand-check: #d9647c; /* 4,50:1 trên nền aurora */
   /* Base --pay-positive (#2ea043) only reaches 3.32:1 on the frosted panel.
      This theme already has a bright green; use it so "earned" stays readable. */
   --pay-positive: var(--sw-glass-green);
@@ -616,6 +624,7 @@
      "earned" and "lost" read as one family across the whole theme. */
   --pay-positive: #215840;
   --pay-negative: #9c241c;
+  --brand-check: #b03a55; /* 4,63:1 trên nền sáng — giữ nguyên bản gốc */
 
   /* Secondary text. Upstream's #8b95a8 is a DARK-theme muted reused unchanged on
      a light room: 2.38:1 on the page, 1.97:1 on the lavender salary hero — below
