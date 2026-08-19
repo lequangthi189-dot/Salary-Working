@@ -163,6 +163,10 @@
      links and inline warnings; keep --accent / --danger for fills. */
   --text-accent: var(--accent);
   --text-danger: var(--danger);
+  /* Ink for text sitting ON a danger/overdue fill. White fails AA on every
+     theme's danger (3.34 dark / 2.43 glass / 1.96 Soft UI); this near-black red
+     clears it on all of them (5.59 / 7.66 / 9.50), so no per-theme override. */
+  --text-on-danger: #1a1012;
 
   --border-hairline: var(--border);
   --border-strong: var(--accent); /* hover / focus */
@@ -489,6 +493,10 @@
   --ok: var(--sw-glass-green);
   --text-on-ok: #0f1430;
   --ok-fill: rgba(95, 240, 168, 0.16);
+  /* The base "missing check-in" red (#ff1f1f) only reaches 4.06:1 on the aurora
+     ground. Lightened to clear AA (5.1:1) while staying the loudest red here. */
+  --status-missing: #ff5c52;
+  --status-missing-fill: rgba(255, 92, 82, 0.18);
 
   --page-bg-image:
     radial-gradient(58% 62% at 12% 16%, rgba(168, 85, 247, 0.55), transparent 72%),
@@ -581,9 +589,21 @@
      failure mode as the peach check-in above. Darkened until all three usages
      pass: 4.7:1 as text on the tinted badge, 5.4:1 on plain panel, and 6.8:1
      for white on the solid fill. */
-  --ok: #27664a;
+  --ok: #215840;
   --text-on-ok: #ffffff;
-  --ok-fill: rgba(39, 102, 74, 0.12);
+  --ok-fill: rgba(33, 88, 64, 0.12);
+
+  /* Status colours must be re-stated for Soft UI. Inherited from the base they
+     resolve to this theme's pastels (--checkin #f3c19a, --green #7ed0b0) which
+     are light-on-light: measured 1.17:1 and 1.44:1 as badge text on the #e0e5ec
+     ground — invisible. Darkened until each clears AA both on the panel and on
+     its own 14% chip. Fills stay pastel; only the ink moved. */
+  --status-planned: #6f4715;
+  --status-planned-fill: rgba(111, 71, 21, 0.1);
+  --status-planned-chip: rgba(111, 71, 21, 0.14);
+  --status-received: #215840;
+  --status-missing: #9c241c;
+  --status-missing-fill: rgba(156, 36, 28, 0.12);
   /* Text-usage variants: the pastel fills measure 1.75:1 (accent) and 1.55:1
      (danger) as text on this theme's #e0e5ec ground. Darkened to 4.3:1 / 5.0:1
      while --accent / --danger keep their pastel value for fills. */
