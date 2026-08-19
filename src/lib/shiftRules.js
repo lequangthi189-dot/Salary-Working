@@ -161,7 +161,8 @@ function normalizeSearch(str) {
 //   - GIỜ (vào & ra; ưu tiên giờ THỰC TẾ, thiếu thì lấy giờ LỊCH): 22:00, 6:00, 22, 6, 2200.
 //   - LOẠI CA: song ngữ 'ngay'/'day' hoặc 'dem'/'night'.
 // Ngăn cách bằng '\n' để query (không chứa '\n') không thể khớp vắt qua 2 biểu diễn.
-export function shiftSearchHaystack(shift, kind) {
+// Chi dung noi bo boi matchesShiftSearch ben duoi - khong export.
+function shiftSearchHaystack(shift, kind) {
   const parts = []
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(shift.work_date || ''))
   if (m) {
