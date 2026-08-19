@@ -112,14 +112,20 @@ label {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--muted);
+  font-size: var(--text-base);
+  color: var(--text-muted);
 }
+/* Ô nhập dùng "công thức" theo theme (--input-*) chứ không phải màu cố định, nên
+   glass ra ô kính mờ và neumorph ra ô lõm mà không cần vá riêng.
+   min-height: --touch-min (44px) — app dùng bằng MỘT TAY, vừa tan ca, trong
+   xưởng tối; ô cao ~36px như trước là dưới ngưỡng bấm trúng. */
 label input {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--input-shadow);
   padding: 0.6rem;
+  min-height: var(--touch-min);
   color: var(--text);
 }
 
@@ -132,11 +138,13 @@ label input {
 .pw-wrap input {
   flex: 1;
   width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--input-shadow);
   padding: 0.6rem;
   padding-right: 3.5rem;
+  min-height: var(--touch-min);
   color: var(--text);
 }
 .pw-toggle {
@@ -1316,15 +1324,15 @@ button[type='submit']:disabled {
 }
 /* Bảng đối chiếu công: tô màu từng ô (thực tế / dự kiến) theo trạng thái */
 .reconcile-table td.rec-match {
-  color: var(--green);
-  font-weight: 600;
+  color: var(--pay-positive);
+  font-weight: var(--weight-semibold);
 }
 .reconcile-table td.rec-diff {
-  color: var(--danger);
-  font-weight: 600;
+  color: var(--text-danger);
+  font-weight: var(--weight-semibold);
 }
 .reconcile-table td.rec-missing {
-  color: var(--checkin);
+  color: var(--status-planned);
 }
 .reconcile-table td.rec-extra {
   color: #c084fc;
@@ -2271,37 +2279,45 @@ button[type='submit']:disabled {
 
 /* ---- Màu check-in (cam) / check-out (xanh) ---- */
 .checkin {
-  color: var(--checkin);
+  color: var(--time-in);
 }
+/* Giờ VÀO / giờ RA dùng token NGHĨA (--time-in/--time-out), không dùng
+   --checkin/--checkout: hai biến kia là màu NỀN pastel ở Soft UI (#f3c19a) nên
+   làm chữ chỉ đạt ~1,6:1. Bảng Trung tính cố tình để giờ vào–ra TRUNG TÍNH,
+   phân biệt bằng độ đậm và vị trí chứ không bằng màu thứ hai. */
 .checkin input {
-  color: var(--checkin);
-  border-color: var(--checkin);
-  font-weight: 600;
+  color: var(--time-in);
+  border-color: var(--time-in);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .checkout {
-  color: var(--checkout);
+  color: var(--time-out);
 }
 .checkout input {
-  color: var(--checkout);
-  border-color: var(--checkout);
-  font-weight: 600;
+  color: var(--time-out);
+  border-color: var(--time-out);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .t-in {
-  color: var(--checkin);
-  font-weight: 700;
+  color: var(--time-in);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 .t-out {
-  color: var(--checkout);
-  font-weight: 700;
+  color: var(--time-out);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: var(--numeric);
 }
 .shift-times .dash {
   color: var(--muted);
 }
 input.t-in {
-  border-color: var(--checkin);
+  border-color: var(--time-in);
 }
 input.t-out {
-  border-color: var(--checkout);
+  border-color: var(--time-out);
 }
 
 /* ---- Timesheet ---- */
@@ -2587,24 +2603,26 @@ input.t-out {
   width: 5rem;
   text-align: center;
 }
-/* Màu check-in (cam) / check-out (xanh) khi sửa ca — giống board.
-   Ghi đè màu mặc định của .edit-fields input. */
+/* Giờ vào / giờ ra khi sửa ca — giống board, dùng token nghĩa --time-in/out. */
 .edit-fields input.t-in {
-  color: var(--checkin);
-  border-color: var(--checkin);
-  font-weight: 600;
+  color: var(--time-in);
+  border-color: var(--time-in);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 .edit-fields input.t-out {
-  color: var(--checkout);
-  border-color: var(--checkout);
-  font-weight: 600;
+  color: var(--time-out);
+  border-color: var(--time-out);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 /* Giờ lịch dự kiến (mốc tính trễ) — viền/màu trung tính để phân biệt với check-in/out */
 .edit-fields input.t-sched {
-  color: var(--muted);
+  color: var(--time-scheduled);
   border-color: var(--border);
   border-style: dashed;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: var(--numeric);
 }
 /* Nhãn nhỏ phía trên mỗi ô giờ trong chế độ sửa ca */
 .edit-time {

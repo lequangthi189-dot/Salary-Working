@@ -586,7 +586,9 @@
      so it is safe for every "ink on a coloured surface" pairing in Soft UI. */
   --text-on-accent: #2f3646;
   --time-in: #8a5a1e;
-  --time-out: #2f6d8f;
+  /* The system shipped #2f6d8f, which measures 4.48:1 on this theme's page —
+     just under AA. One step darker clears it (5.03:1). */
+  --time-out: #2b6584;
   /* Soft UI is a light room, so the received green CANNOT be the theme's pastel
      mint: #7ed0b0 as text on the tinted badge measures 1.25:1 — invisible. Same
      failure mode as the peach check-in above. Darkened until all three usages
