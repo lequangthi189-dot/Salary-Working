@@ -29,7 +29,7 @@ describe('nextIn', () => {
   })
 })
 
-// Nút LangCycle và phím tắt Alt+L dùng chung danh sách này; khoá thứ tự lại để đổi
+// Nút LangCycle và phím tắt L dùng chung danh sách này; khoá thứ tự lại để đổi
 // vòng xoay là phải sửa test có ý thức.
 // (THEMES không kiểm ở đây được: theme.js chạm `document` ngay lúc import nên vỡ
 //  trong môi trường test `node`. Vòng xoay theme được kiểm bằng app thật.)

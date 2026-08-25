@@ -28,7 +28,7 @@ export default function LangCycle({ onChange, className = '' }) {
       type="button"
       className={`theme-cycle ${className}`.trim()}
       onClick={cycle}
-      title={`${t('nav.language')}: ${name} · Alt+L`}
+      title={`${t('nav.language')}: ${name} · L`}
       aria-label={`${t('nav.language')}: ${name}`}
     >
       <Flag />

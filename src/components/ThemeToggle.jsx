@@ -19,7 +19,7 @@ export default function ThemeToggle({ theme, onChange, className = '' }) {
       type="button"
       className={`theme-cycle ${className}`.trim()}
       onClick={cycle}
-      title={`Theme: ${name} · Ctrl+M`}
+      title={`Theme: ${name} · T`}
       aria-label={`Theme: ${name}`}
     >
       <span className={`theme-swatch theme-swatch-${theme}`} />
