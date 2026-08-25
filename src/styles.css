@@ -2206,27 +2206,90 @@ input.t-out {
   margin-bottom: 0;
 }
 
-/* Ô tìm ca: bọc input + icon kính lúp (trái) + nút X (phải). flex:1 để giãn hết chỗ
-   trống; khi wrap thì chiếm nguyên 1 dòng phía trên nút lọc. */
+/* Ô tìm ca có HAI trạng thái:
+   - thu gọn: một nút kính lúp vuông, để nó + 3 nút lọc nằm gọn cùng một hàng trên
+     điện thoại (bảng công ưu tiên mật độ, không phải khoảng trắng);
+   - bung ra: input + icon (trái) + nút X (phải), giãn hết chỗ trống như trước.
+   Giãn bằng flex-basis nên nút lọc bên cạnh tự dịch theo. overflow:hidden để input
+   không tràn ra ngoài trong lúc khung đang giãn. */
 .shift-search {
+  /* Nút thu gọn và ô nhập PHẢI cao bằng nhau, nếu không hàng công cụ nhảy chiều cao
+     mỗi lần đóng/mở. Giá trị này là chiều cao TỰ NHIÊN của .shift-filter-btn đứng ngay
+     bên cạnh (đo trên app thật) — để cả hàng thẳng một đường. Đơn vị rem nên vẫn khớp
+     khi người dùng đổi cỡ chữ (data-font). */
+  --search-h: 2.05rem;
   position: relative;
-  flex: 1 1 15rem;
-  min-width: 11rem;
+  flex: 0 0 var(--search-h);
+  min-width: 0;
   display: flex;
   align-items: center;
+  overflow: hidden;
+  transition: flex-basis var(--duration-base) var(--ease-standard);
 }
+.shift-search.is-open {
+  flex: 1 1 15rem;
+  min-width: 11rem;
+}
+/* Nút THU GỌN: vuông, mượn đúng công thức nền/viền/bo của .shift-filter-btn ngay bên
+   cạnh — nút lọc đã có rule riêng cho glass/neumorph nên dùng lại thì 3 theme tự đúng. */
+.shift-search-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--search-h);
+  height: var(--search-h);
+  padding: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  cursor: pointer;
+  transition: var(--transition-surface);
+}
+.shift-search-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.shift-search-toggle svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+/* Đóng thanh KHÔNG xoá chữ → danh sách vẫn đang bị lọc. Đây là dấu hiệu DUY NHẤT báo
+   điều đó, nên phải thấy rõ. Nét vẽ dùng --text-accent (bản an toàn để đọc) chứ không
+   phải --accent: nền nhấn của cả 3 theme đều sáng. */
+.shift-search-toggle.has-query {
+  color: var(--text-accent);
+  border-color: var(--accent);
+}
+/* Kính lúp trong thanh ĐÃ BUNG: cũng là nút (bấm để đóng lại), nhưng phẳng và chìm
+   trong ô nhập — không nền, không viền. */
 .shift-search-icon {
   position: absolute;
-  left: 0.72rem;
+  left: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+}
+.shift-search-icon:hover {
+  color: var(--text);
+}
+.shift-search-icon svg {
   width: 1rem;
   height: 1rem;
-  color: var(--muted);
-  pointer-events: none;
 }
 .shift-search-input {
   width: 100%;
+  height: var(--search-h);
   /* chừa chỗ 2 mép: icon kính lúp bên trái, nút X bên phải */
-  padding: 0.5rem 2.1rem 0.5rem 2.25rem;
+  padding: 0 2.1rem 0 2.25rem;
   border-radius: 8px;
   font-size: 0.9rem;
   /* Nền/viền/chữ tông DARK (mặc định), khớp .shift-filter-btn. Glass & Neumorph có
@@ -2262,11 +2325,21 @@ input.t-out {
 /* Glass: nút X không "nhấc"/không glow theo hiệu ứng nút chung của theme — giữ gọn
    trong ô nhập, chỉ đổi màu chữ khi hover. */
 [data-theme='glass'] .shift-search-clear,
-[data-theme='glass'] .shift-search-clear:hover {
+[data-theme='glass'] .shift-search-clear:hover,
+[data-theme='glass'] .shift-search-icon,
+[data-theme='glass'] .shift-search-icon:hover {
   transform: none;
   box-shadow: none;
   filter: none;
   background: transparent;
+}
+
+/* Khung giãn/thu là chuyển động GIẢI THÍCH trạng thái, nhưng vẫn tắt khi người dùng
+   yêu cầu giảm chuyển động. */
+@media (prefers-reduced-motion: reduce) {
+  .shift-search {
+    transition: none;
+  }
 }
 
 .shift-list {

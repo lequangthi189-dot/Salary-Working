@@ -79,6 +79,8 @@ export default function Timesheet({
   const timesheetRef = useRef(null)
   const [filter, setFilter] = useState('all') // 'all' | 'day' | 'night'
   const [search, setSearch] = useState('') // ô tìm ca (ngày / giờ / loại ca)
+  const [searchOpen, setSearchOpen] = useState(false) // thanh tìm ca đang bung ra?
+  const searchInputRef = useRef(null)
 
   // Nhóm theo ngày, memoize theo [shifts, filter, search] để không lọc/nhóm lại khi
   // render vì lý do khác. Là hook nên phải đứng TRƯỚC các return sớm bên dưới.
@@ -118,6 +120,12 @@ export default function Timesheet({
     return groups
     // hasNightShift trong deps vì shiftKind phân loại theo cửa sổ đêm (foldNight).
   }, [shifts, filter, search, hasNightShift])
+
+  // Bung thanh tìm ca ra thì focus luôn vào ô nhập — mở xong gõ được ngay, không
+  // bắt bấm thêm một nhát nữa.
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus()
+  }, [searchOpen])
 
   // Smooth-scroll focus: card gần tâm viewport nổi rõ hơn, card ở xa thu/mờ nhẹ.
   // Dùng requestAnimationFrame để mỗi frame chỉ đo layout một lần dù sự kiện scroll bắn dày.
@@ -162,41 +170,83 @@ export default function Timesheet({
 
   const searching = search.trim() !== ''
 
+  // Kính lúp dùng chung cho nút thu gọn và nút trong thanh đã bung.
+  const magnifier = (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  )
+
   // Thanh công cụ NGANG trên đầu danh sách: ô SEARCH + các nút LỌC ngày/đêm cạnh nhau
-  // (cùng mục đích thu hẹp danh sách). Ô search luôn hiện; nút lọc chỉ hiện khi có ca đêm.
+  // (cùng mục đích thu hẹp danh sách). Nút lọc chỉ hiện khi có ca đêm.
+  //
+  // Ô search THU GỌN thành một nút kính lúp, bấm mới bung ra — để trên điện thoại nút
+  // kính lúp và 3 nút lọc nằm gọn CÙNG MỘT HÀNG (bảng công ưu tiên mật độ).
+  // Đóng lại KHÔNG xoá chữ: danh sách vẫn đang lọc, nên nút thu gọn phải đổi màu
+  // accent — đó là dấu hiệu duy nhất cho biết danh sách chưa đầy đủ.
+  // Vì đóng mà giữ chữ nên nút × vẫn mang nghĩa cũ là XOÁ CHỮ (không phải đóng);
+  // đóng bằng cách bấm lại kính lúp hoặc bấm Esc.
   const toolbar = (
     <div className="shift-toolbar">
-      <div className="shift-search">
-        <svg
-          className="shift-search-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input
-          type="text"
-          className="shift-search-input"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={tr('search.placeholder')}
-          aria-label={tr('search.aria')}
-        />
-        {searching && (
+      <div className={`shift-search${searchOpen ? ' is-open' : ''}`}>
+        {searchOpen ? (
+          <>
+            <button
+              type="button"
+              className="shift-search-icon"
+              onClick={() => setSearchOpen(false)}
+              aria-expanded="true"
+              aria-label={tr('search.toggle')}
+              title={tr('search.toggle')}
+            >
+              {magnifier}
+            </button>
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="shift-search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              // Esc bắt TẠI ĐÂY chứ không phải ở document: nhiều modal trong app đã
+              // nghe Esc ở document, thêm listener toàn cục sẽ đóng thanh search oan
+              // khi người dùng bấm Esc để đóng modal.
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setSearchOpen(false)
+              }}
+              placeholder={tr('search.placeholder')}
+              aria-label={tr('search.aria')}
+            />
+            {searching && (
+              <button
+                type="button"
+                className="shift-search-clear"
+                onClick={() => setSearch('')}
+                aria-label={tr('search.clear')}
+                title={tr('search.clear')}
+              >
+                ×
+              </button>
+            )}
+          </>
+        ) : (
           <button
             type="button"
-            className="shift-search-clear"
-            onClick={() => setSearch('')}
-            aria-label={tr('search.clear')}
-            title={tr('search.clear')}
+            className={`shift-search-toggle${searching ? ' has-query' : ''}`}
+            onClick={() => setSearchOpen(true)}
+            aria-expanded="false"
+            aria-label={tr('search.toggle')}
+            title={tr('search.toggle')}
           >
-            ×
+            {magnifier}
           </button>
         )}
       </div>
