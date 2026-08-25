@@ -30,7 +30,8 @@ const SalaryChat = lazy(() => import('./components/SalaryChat.jsx'))
 const ScheduleImportModal = lazy(() => import('./components/ScheduleImportModal.jsx'))
 const ReconcileModal = lazy(() => import('./components/ReconcileModal.jsx'))
 import { APP_VERSION, entriesSince } from './lib/changelog.js'
-import { useI18n } from './lib/i18n.jsx'
+import { useI18n, LANGS } from './lib/i18n.jsx'
+import { nextIn } from './lib/cycle.js'
 import { firstNameOf } from './lib/name.js'
 import { useCurrency } from './lib/currency.jsx'
 import { useShifts } from './controllers/useShifts.js'
@@ -185,7 +186,7 @@ export default function App() {
   // vậy đăng nhập lại (kể cả máy khác) giữ đúng ngôn ngữ người dùng đã chọn.
   useEffect(() => {
     const saved = profile?.lang
-    if (saved && ['vi', 'en', 'us', 'au'].includes(saved) && saved !== lang) {
+    if (saved && LANGS.includes(saved) && saved !== lang) {
       setLang(saved)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,6 +214,38 @@ export default function App() {
     setThemeSt(key)
     if (profile) saveProfileFields({ theme: key })
   }
+
+  // PHÍM TẮT: Alt+T xoay phong cách, Alt+L xoay ngôn ngữ — cùng vòng với 2 nút ở
+  // header, và đi qua changeTheme/changeLang nên vẫn lưu vào hồ sơ.
+  //
+  // Ctrl+T / Ctrl+L bind kèm nhưng CHỈ có tác dụng ở cửa sổ PWA standalone: trong
+  // tab thường, trình duyệt nuốt chúng (mở tab mới / nhảy vào thanh địa chỉ) TRƯỚC
+  // khi trang nhận sự kiện, preventDefault không cứu được. Alt mới là đường thật sự
+  // chạy, nên tooltip 2 nút chỉ ghi Alt.
+  //
+  // Dùng e.code chứ KHÔNG dùng e.key: trên macOS Option+T cho ký tự '†', bàn phím
+  // không phải QWERTY cũng lệch. Loại Shift để Ctrl+Shift+T (mở lại tab vừa đóng)
+  // không đổi theme oan.
+  useEffect(() => {
+    function onKey(e) {
+      if (e.shiftKey) return
+      const alt = e.altKey && !e.ctrlKey && !e.metaKey
+      const ctrl = (e.ctrlKey || e.metaKey) && !e.altKey
+      if (!alt && !ctrl) return
+      if (e.code === 'KeyT') {
+        e.preventDefault()
+        changeTheme(nextIn(THEMES, theme))
+      } else if (e.code === 'KeyL') {
+        e.preventDefault()
+        changeLang(nextIn(LANGS, lang))
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+    // changeTheme/changeLang đóng gói `profile` → đăng ký lại khi nó đổi để không
+    // lưu nhầm vào hồ sơ cũ. Gắn/gỡ 1 listener là rẻ.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme, lang, profile])
 
   // Khi hồ sơ nạp xong, áp cỡ chữ đã lưu theo tài khoản (giữ qua các máy).
   useEffect(() => {
