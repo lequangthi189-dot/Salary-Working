@@ -215,26 +215,48 @@ export default function App() {
     if (profile) saveProfileFields({ theme: key })
   }
 
-  // PHÍM TẮT: Alt+T xoay phong cách, Alt+L xoay ngôn ngữ — cùng vòng với 2 nút ở
-  // header, và đi qua changeTheme/changeLang nên vẫn lưu vào hồ sơ.
+  // PHÍM TẮT
+  //   Ctrl+M — xoay phong cách (cùng vòng với nút ở header)
+  //   Ctrl+C — mở/đóng bảng Công cụ
+  //   Alt+L  — xoay ngôn ngữ (Ctrl+L bind kèm, xem ghi chú bên dưới)
   //
-  // Ctrl+T / Ctrl+L bind kèm nhưng CHỈ có tác dụng ở cửa sổ PWA standalone: trong
-  // tab thường, trình duyệt nuốt chúng (mở tab mới / nhảy vào thanh địa chỉ) TRƯỚC
-  // khi trang nhận sự kiện, preventDefault không cứu được. Alt mới là đường thật sự
-  // chạy, nên tooltip 2 nút chỉ ghi Alt.
+  // Phong cách/ngôn ngữ đi qua changeTheme/changeLang nên vẫn LƯU VÀO HỒ SƠ y như
+  // bấm nút, không phải setter trần.
   //
-  // Dùng e.code chứ KHÔNG dùng e.key: trên macOS Option+T cho ký tự '†', bàn phím
-  // không phải QWERTY cũng lệch. Loại Shift để Ctrl+Shift+T (mở lại tab vừa đóng)
-  // không đổi theme oan.
+  // Vì sao ngôn ngữ vẫn là Alt: Ctrl+L (nhảy vào thanh địa chỉ) là phím DÀNH RIÊNG
+  // của trình duyệt — Chrome/Edge/Firefox nuốt trước khi trang nhận sự kiện,
+  // preventDefault không cứu được. Ctrl+L chỉ chạy ở cửa sổ PWA standalone, nên
+  // Alt+L mới là đường thật và tooltip nút ngôn ngữ chỉ ghi Alt+L.
+  // Ctrl+M và Ctrl+C thì KHÔNG bị trình duyệt giữ nên bind thẳng Ctrl là đủ.
+  //
+  // Dùng e.code chứ KHÔNG dùng e.key: trên macOS Option+ký tự cho ký hiệu lạ
+  // (Option+L → '¬'), bàn phím không phải QWERTY cũng lệch. Loại Shift để
+  // Ctrl+Shift+C (mở DevTools) không mở Công cụ oan.
   useEffect(() => {
+    // Ctrl+C phải NHƯỜNG cho thao tác copy thật: đang bôi đen chữ, hoặc con trỏ
+    // đang ở ô nhập/vùng soạn thảo → để trình duyệt copy như bình thường.
+    function copyInProgress() {
+      const el = document.activeElement
+      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) {
+        return true
+      }
+      const sel = window.getSelection()
+      return !!sel && !sel.isCollapsed && sel.toString().trim() !== ''
+    }
+
     function onKey(e) {
       if (e.shiftKey) return
       const alt = e.altKey && !e.ctrlKey && !e.metaKey
       const ctrl = (e.ctrlKey || e.metaKey) && !e.altKey
       if (!alt && !ctrl) return
-      if (e.code === 'KeyT') {
+
+      if (ctrl && e.code === 'KeyM') {
         e.preventDefault()
         changeTheme(nextIn(THEMES, theme))
+      } else if (ctrl && e.code === 'KeyC') {
+        if (copyInProgress()) return
+        e.preventDefault()
+        setShowToolsSheet((v) => !v)
       } else if (e.code === 'KeyL') {
         e.preventDefault()
         changeLang(nextIn(LANGS, lang))
@@ -446,7 +468,8 @@ export default function App() {
   // Tài khoản mở bằng avatar ở header (không còn mục trong dock).
   const navItems = [
     { key: 'payPeriod', icon: 'payPeriod', label: t('nav.payPeriod') },
-    { key: 'tools', icon: 'tools', label: t('nav.tools') },
+    // `title` chỉ đổi tooltip; nhãn dưới icon giữ nguyên để dock không bị dài ra.
+    { key: 'tools', icon: 'tools', label: t('nav.tools'), title: `${t('nav.tools')} · Ctrl+C` },
     { key: 'guide', icon: 'guide', label: t('nav.guide') },
   ]
   // App không dùng router → "route" = panel/modal đang mở. Suy ra mục active theo

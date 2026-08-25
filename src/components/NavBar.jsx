@@ -294,7 +294,7 @@ export default function NavBar({ items, active = 0, onSelect }) {
               type="button"
               onClick={() => onItemClick(i)}
               aria-current={sel === i ? "page" : undefined}
-              title={item.label}
+              title={item.title || item.label}
             >
               <span className="dock-icon">
                 {item.avatarUrl ? (
