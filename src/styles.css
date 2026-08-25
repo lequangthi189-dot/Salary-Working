@@ -1389,6 +1389,11 @@ button[type='submit']:disabled {
   grid-template-columns: 1fr 1fr auto;
   align-items: end; /* ô tick Ngày lễ thẳng hàng đáy với giờ vào/ra */
 }
+/* Ngày đã có giờ ra dự kiến → ô "Giờ ra" bị ẩn, hàng chỉ còn Giờ vào + Ngày lễ.
+   Không để 1fr 1fr auto nữa, nếu không ô Giờ vào chỉ chiếm nửa hàng rồi bỏ trống. */
+.shift-form .fields.check-row.no-checkout {
+  grid-template-columns: 1fr auto;
+}
 .shift-form .fields.check-row .holiday-check {
   padding-bottom: 0.6rem;
 }
@@ -1980,6 +1985,19 @@ button[type='submit']:disabled {
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
   color: var(--text);
+  font-variant-numeric: var(--numeric);
+}
+
+/* Ghi chú thay cho ô "Giờ ra" đã ẩn: nói rõ ca lấy giờ ra nào, giờ dùng chữ số
+   tabular + đậm hơn phần chữ để vẫn là con số dễ liếc. Nhãn lùi về màu muted. */
+.sched-note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.sched-note strong {
+  color: var(--text);
+  font-weight: var(--weight-semibold);
   font-variant-numeric: var(--numeric);
 }
 

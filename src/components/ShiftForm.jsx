@@ -55,9 +55,6 @@ export default function ShiftForm({
     return () => clearInterval(id)
   }, [startTouched, endTouched])
 
-  // Form còn "nguyên": cả hai ô vẫn đang chạy theo giờ thực (chưa ai sửa).
-  const pristine = !startTouched && !endTouched
-
   // Ngày đang chọn đã có lịch dự kiến (nhập từ "Nhập lịch tuần") → dùng làm mốc
   // tính trễ. Không nhập giờ lịch tay ở form ngày nữa; ngày không có lịch dự kiến
   // thì scheduled_* = null (không có mốc trễ).
@@ -65,16 +62,29 @@ export default function ShiftForm({
   const effSchedStart = daySched ? daySched.start : ''
   const effSchedEnd = daySched ? daySched.end : ''
 
+  // Ngày CÓ giờ ra dự kiến → ẩn hẳn ô "Giờ ra", ca lấy luôn giờ ra của lịch.
+  // Người dùng thường thêm ca ngay lúc VÀO ca (chưa biết giờ ra thật), nên mặc
+  // định "làm đủ tới hết ca" là giả định đúng hơn là bắt họ gõ giờ hiện tại.
+  // Ra sớm/về muộn thật thì sửa lại trong thẻ ca ở bảng công.
+  // Guard `effSchedEnd`: lịch có thể chỉ có giờ vào (scheduled_end null) → khi đó
+  // vẫn phải hiện ô nhập, nếu không ca sẽ mất giờ ra.
+  const schedEndLocked = !!effSchedEnd
+  const effEndTime = schedEndLocked ? effSchedEnd : endTime
+
+  // Form còn "nguyên": các ô giờ ĐANG NHẬP vẫn chạy theo giờ thực (chưa ai sửa).
+  // Khi giờ ra bị khoá theo lịch thì chỉ còn ô giờ vào để xét.
+  const pristine = !startTouched && (schedEndLocked || !endTouched)
+
   // --- TÍNH TOÁN xem trước (preview) cho dòng trạng thái/cảnh báo ---
   const preview = computeEffective(
     effSchedStart,
     effSchedEnd,
     startTime,
-    endTime,
+    effEndTime,
     isHoliday
   )
   const lostText = formatLost(preview)
-  const equalTimes = startTime === endTime
+  const equalTimes = startTime === effEndTime
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -88,7 +98,7 @@ export default function ShiftForm({
     const err = await onAdd({
       work_date: workDate,
       start_time: startTime,
-      end_time: endTime,
+      end_time: effEndTime,
       scheduled_start: effSchedStart || null,
       scheduled_end: effSchedEnd || null,
       is_holiday: isHoliday,
@@ -122,8 +132,9 @@ export default function ShiftForm({
         </label>
       </div>
 
-      {/* Giờ check-in / check-out + Ngày lễ (cùng hàng) */}
-      <div className="fields check-row">
+      {/* Giờ check-in / check-out + Ngày lễ (cùng hàng).
+          Ngày có giờ ra dự kiến → ô "Giờ ra" biến mất, hàng còn 2 cột. */}
+      <div className={`fields check-row${schedEndLocked ? ' no-checkout' : ''}`}>
         <label className="checkin">
           {t('shiftForm.checkin')}
           <TimeInput
@@ -135,17 +146,19 @@ export default function ShiftForm({
             required
           />
         </label>
-        <label className="checkout">
-          {t('shiftForm.checkout')}
-          <TimeInput
-            value={endTime}
-            onChange={(v) => {
-              setEndTouched(true)
-              setEndTime(v)
-            }}
-            required
-          />
-        </label>
+        {!schedEndLocked && (
+          <label className="checkout">
+            {t('shiftForm.checkout')}
+            <TimeInput
+              value={endTime}
+              onChange={(v) => {
+                setEndTouched(true)
+                setEndTime(v)
+              }}
+              required
+            />
+          </label>
+        )}
         <Checkbox
           className="holiday-check"
           checked={isHoliday}
@@ -153,6 +166,14 @@ export default function ShiftForm({
           label={t('shiftForm.holiday')}
         />
       </div>
+
+      {/* Ô giờ ra bị ẩn thì phải NÓI RÕ ca sẽ lấy giờ nào — người dùng không
+          phải đoán vì sao thiếu một ô. */}
+      {schedEndLocked && (
+        <p className="sched-note">
+          {t('shiftForm.checkoutFromSched')} <strong>{effSchedEnd}</strong>
+        </p>
+      )}
 
       {/* Dòng trạng thái tính toán ca + cảnh báo (đỏ/cam) ngay dưới các ô nhập.
           Khi form còn NGUYÊN (ô giờ đang chạy theo giờ thực) thì KHÔNG hiện gì —
