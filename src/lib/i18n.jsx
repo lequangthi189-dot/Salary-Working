@@ -10,8 +10,8 @@ export function getLang() {
 
 const STORAGE_KEY = 'app-lang'
 
-// Các mã ngôn ngữ hợp lệ, THEO ĐÚNG thứ tự xoay vòng của nút LangCycle và phím tắt
-// Alt+L. Chỉ có 2 bộ từ điển (vi + en); us/au khác en ở đơn vị tiền và định dạng số.
+// Các mã ngôn ngữ hợp lệ, THEO ĐÚNG thứ tự xoay vòng của nút LangCycle và phím
+// tắt L. Chỉ có 2 bộ từ điển (vi + en); us/au khác en ở đơn vị tiền và định dạng số.
 export const LANGS = ['vi', 'en', 'us', 'au']
 
 function initialLang() {

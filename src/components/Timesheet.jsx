@@ -11,6 +11,7 @@ import {
 } from '../lib/shiftMath.js'
 import { matchesShiftSearch } from '../lib/shiftRules.js'
 import { useI18n } from '../lib/i18n.jsx'
+import { modalOpen } from '../lib/hotkeys.js'
 
 // Phân loại ca là 'day' hay 'night': ưu tiên giờ thực tế, nếu chưa check-in thì
 // theo lịch dự kiến. Ca đêm = giờ đêm > giờ ngày.
@@ -127,6 +128,27 @@ export default function Timesheet({
     if (searchOpen) searchInputRef.current?.focus()
   }, [searchOpen])
 
+  // Ctrl/Cmd+K bung thanh tìm ca và focus vào ô nhập — quy ước "mở ô tìm kiếm"
+  // quen thuộc nhất trên web, và là tổ hợp duy nhất trong app (t/l/"/" là phím đơn).
+  // Listener nằm NGAY TẠI ĐÂY vì searchOpen là state của Timesheet, không cần
+  // kéo lên App. Đang mở sẵn thì bấm lại chỉ focus lại, không đóng — Ctrl+K ở
+  // mọi app khác cũng chỉ có nghĩa MỞ.
+  //
+  // Firefox/Chrome dùng Ctrl+K cho ô tìm kiếm trên thanh địa chỉ nhưng KHÔNG giữ
+  // riêng như Ctrl+L, nên preventDefault chặn được.
+  useEffect(() => {
+    function onKey(e) {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return
+      if (e.key.toLowerCase() !== 'k') return
+      if (modalOpen()) return
+      e.preventDefault()
+      setSearchOpen(true)
+      searchInputRef.current?.focus()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
   // Smooth-scroll focus: card gần tâm viewport nổi rõ hơn, card ở xa thu/mờ nhẹ.
   // Dùng requestAnimationFrame để mỗi frame chỉ đo layout một lần dù sự kiện scroll bắn dày.
   useEffect(() => {
@@ -206,7 +228,7 @@ export default function Timesheet({
               onClick={() => setSearchOpen(false)}
               aria-expanded="true"
               aria-label={tr('search.toggle')}
-              title={tr('search.toggle')}
+              title={`${tr('search.toggle')} · Ctrl+K`}
             >
               {magnifier}
             </button>

@@ -32,6 +32,7 @@ const ReconcileModal = lazy(() => import('./components/ReconcileModal.jsx'))
 import { APP_VERSION, entriesSince } from './lib/changelog.js'
 import { useI18n, LANGS } from './lib/i18n.jsx'
 import { nextIn } from './lib/cycle.js'
+import { isPlainKey, hotkeyBlocked } from './lib/hotkeys.js'
 import { firstNameOf } from './lib/name.js'
 import { useCurrency } from './lib/currency.jsx'
 import { useShifts } from './controllers/useShifts.js'
@@ -215,51 +216,29 @@ export default function App() {
     if (profile) saveProfileFields({ theme: key })
   }
 
-  // PHÍM TẮT
-  //   Ctrl+M — xoay phong cách (cùng vòng với nút ở header)
-  //   Ctrl+C — mở/đóng bảng Công cụ
-  //   Alt+L  — xoay ngôn ngữ (Ctrl+L bind kèm, xem ghi chú bên dưới)
+  // PHÍM TẮT (phím đơn, không modifier — xem lý do ở lib/hotkeys.js)
+  //   t — xoay phong cách
+  //   l — xoay ngôn ngữ
+  //   / — mở/đóng bảng Công cụ
   //
   // Phong cách/ngôn ngữ đi qua changeTheme/changeLang nên vẫn LƯU VÀO HỒ SƠ y như
   // bấm nút, không phải setter trần.
   //
-  // Vì sao ngôn ngữ vẫn là Alt: Ctrl+L (nhảy vào thanh địa chỉ) là phím DÀNH RIÊNG
-  // của trình duyệt — Chrome/Edge/Firefox nuốt trước khi trang nhận sự kiện,
-  // preventDefault không cứu được. Ctrl+L chỉ chạy ở cửa sổ PWA standalone, nên
-  // Alt+L mới là đường thật và tooltip nút ngôn ngữ chỉ ghi Alt+L.
-  // Ctrl+M và Ctrl+C thì KHÔNG bị trình duyệt giữ nên bind thẳng Ctrl là đủ.
-  //
-  // Dùng e.code chứ KHÔNG dùng e.key: trên macOS Option+ký tự cho ký hiệu lạ
-  // (Option+L → '¬'), bàn phím không phải QWERTY cũng lệch. Loại Shift để
-  // Ctrl+Shift+C (mở DevTools) không mở Công cụ oan.
+  // Dùng e.key chứ không phải e.code: không có Alt nên e.key trả đúng ký tự, và
+  // "/" nằm ở vị trí khác nhau tuỳ layout bàn phím.
   useEffect(() => {
-    // Ctrl+C phải NHƯỜNG cho thao tác copy thật: đang bôi đen chữ, hoặc con trỏ
-    // đang ở ô nhập/vùng soạn thảo → để trình duyệt copy như bình thường.
-    function copyInProgress() {
-      const el = document.activeElement
-      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) {
-        return true
-      }
-      const sel = window.getSelection()
-      return !!sel && !sel.isCollapsed && sel.toString().trim() !== ''
-    }
-
     function onKey(e) {
-      if (e.shiftKey) return
-      const alt = e.altKey && !e.ctrlKey && !e.metaKey
-      const ctrl = (e.ctrlKey || e.metaKey) && !e.altKey
-      if (!alt && !ctrl) return
-
-      if (ctrl && e.code === 'KeyM') {
+      if (!isPlainKey(e) || hotkeyBlocked(e)) return
+      const k = e.key.toLowerCase()
+      if (k === 't') {
         e.preventDefault()
         changeTheme(nextIn(THEMES, theme))
-      } else if (ctrl && e.code === 'KeyC') {
-        if (copyInProgress()) return
-        e.preventDefault()
-        setShowToolsSheet((v) => !v)
-      } else if (e.code === 'KeyL') {
+      } else if (k === 'l') {
         e.preventDefault()
         changeLang(nextIn(LANGS, lang))
+      } else if (e.key === '/') {
+        e.preventDefault()
+        setShowToolsSheet((v) => !v)
       }
     }
     document.addEventListener('keydown', onKey)
@@ -469,7 +448,7 @@ export default function App() {
   const navItems = [
     { key: 'payPeriod', icon: 'payPeriod', label: t('nav.payPeriod') },
     // `title` chỉ đổi tooltip; nhãn dưới icon giữ nguyên để dock không bị dài ra.
-    { key: 'tools', icon: 'tools', label: t('nav.tools'), title: `${t('nav.tools')} · Ctrl+C` },
+    { key: 'tools', icon: 'tools', label: t('nav.tools'), title: `${t('nav.tools')} · /` },
     { key: 'guide', icon: 'guide', label: t('nav.guide') },
   ]
   // App không dùng router → "route" = panel/modal đang mở. Suy ra mục active theo
