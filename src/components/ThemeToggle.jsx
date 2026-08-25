@@ -1,4 +1,5 @@
 import { THEMES } from '../lib/theme.js'
+import { nextIn } from '../lib/cycle.js'
 import './ThemeToggle.css'
 
 // Tên phong cách LUÔN hiển thị tiếng Anh (không đổi theo ngôn ngữ app).
@@ -9,8 +10,7 @@ const THEME_NAMES = { dark: 'Sleek Dark', glass: 'Glassmorphism', neumorph: 'Sof
 // tài khoản), nút chỉ hiển thị ô màu preview + tên rồi gọi onChange(theme kế tiếp).
 export default function ThemeToggle({ theme, onChange, className = '' }) {
   function cycle() {
-    const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]
-    onChange(next)
+    onChange(nextIn(THEMES, theme))
   }
 
   const name = THEME_NAMES[theme] || theme
@@ -19,7 +19,7 @@ export default function ThemeToggle({ theme, onChange, className = '' }) {
       type="button"
       className={`theme-cycle ${className}`.trim()}
       onClick={cycle}
-      title="Theme"
+      title={`Theme: ${name} · Alt+T`}
       aria-label={`Theme: ${name}`}
     >
       <span className={`theme-swatch theme-swatch-${theme}`} />

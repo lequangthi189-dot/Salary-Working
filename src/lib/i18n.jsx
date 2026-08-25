@@ -10,10 +10,14 @@ export function getLang() {
 
 const STORAGE_KEY = 'app-lang'
 
+// Các mã ngôn ngữ hợp lệ, THEO ĐÚNG thứ tự xoay vòng của nút LangCycle và phím tắt
+// Alt+L. Chỉ có 2 bộ từ điển (vi + en); us/au khác en ở đơn vị tiền và định dạng số.
+export const LANGS = ['vi', 'en', 'us', 'au']
+
 function initialLang() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (['vi', 'en', 'us', 'au'].includes(saved)) return saved
+    if (LANGS.includes(saved)) return saved
   } catch {
     /* ignore */
   }
