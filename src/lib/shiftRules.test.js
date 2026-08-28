@@ -3,6 +3,9 @@ import {
   overlapError,
   partitionImportShifts,
   matchesShiftSearch,
+  buildSchedByDate,
+  pickPlannedShift,
+  shiftTimeKey,
 } from './shiftRules.js'
 
 // Helper tạo ca với giờ thực tế.
@@ -203,5 +206,144 @@ describe('matchesShiftSearch (tìm ca)', () => {
   it('KẾT HỢP: gõ chuỗi vừa-ngày-vừa-loại không khớp cả hai → false', () => {
     // "10/6 đêm" là một chuỗi liền → không có biểu diễn nào chứa nguyên cụm này.
     expect(matchesShiftSearch(night, 'night', '10/6 đêm')).toBe(false)
+  })
+})
+
+// ── pickPlannedShift / buildSchedByDate ─────────────────────────────────────
+// Một ngày có thể có NHIỀU ca dự kiến rời giờ (vd 06–10, 12–16, 18–22). Ca dự kiến
+// có id để chấm công ghi được vào ĐÚNG dòng.
+const sched = (id, work_date, start, end) => ({
+  id,
+  work_date,
+  start_time: null,
+  end_time: null,
+  scheduled_start: start,
+  scheduled_end: end,
+})
+// Ca dự kiến ĐÃ chấm công (có giờ thực) — không còn là ứng viên.
+const schedDone = (id, work_date, start, end, aStart, aEnd) => ({
+  ...sched(id, work_date, start, end),
+  start_time: aStart,
+  end_time: aEnd,
+})
+const cand = (work_date, start_time, end_time) => ({
+  work_date,
+  start_time,
+  end_time,
+})
+
+describe('pickPlannedShift', () => {
+  it('ngày không có ca dự kiến nào → null', () => {
+    const shifts = [shift(1, D, '08:00', '12:00')]
+    expect(pickPlannedShift(shifts, cand(D, '13:00', '17:00'))).toBeNull()
+  })
+
+  it('ĐÚNG MỘT ca dự kiến → trả ca đó DÙ KHÔNG giao giờ (giữ hành vi cũ)', () => {
+    // Đây là điều kiện không-hồi-quy cho mọi dữ liệu một-lịch-một-ngày: lịch 08–16
+    // mà chấm công 18–22 thì vẫn gắn vào chính ca đó như trước.
+    const shifts = [sched(1, D, '08:00', '16:00')]
+    expect(pickPlannedShift(shifts, cand(D, '18:00', '22:00')).id).toBe(1)
+  })
+
+  it('nhiều ca rời giờ → chọn ca GIAO NHIỀU PHÚT NHẤT', () => {
+    const shifts = [
+      sched(1, D, '06:00', '10:00'),
+      sched(2, D, '12:00', '16:00'),
+      sched(3, D, '18:00', '22:00'),
+    ]
+    expect(pickPlannedShift(shifts, cand(D, '12:05', '16:00')).id).toBe(2)
+    expect(pickPlannedShift(shifts, cand(D, '06:05', '10:00')).id).toBe(1)
+    expect(pickPlannedShift(shifts, cand(D, '18:10', '22:00')).id).toBe(3)
+  })
+
+  it('KHÔNG phụ thuộc thứ tự mảng nguồn (shifts sắp theo created_at)', () => {
+    const rows = [
+      sched(1, D, '06:00', '10:00'),
+      sched(2, D, '12:00', '16:00'),
+      sched(3, D, '18:00', '22:00'),
+    ]
+    const c = cand(D, '06:05', '10:00')
+    expect(pickPlannedShift(rows, c).id).toBe(1)
+    expect(pickPlannedShift([...rows].reverse(), c).id).toBe(1)
+  })
+
+  it('không ca nào giao giờ → chọn ca có giờ BẮT ĐẦU gần nhất', () => {
+    const shifts = [sched(1, D, '06:00', '10:00'), sched(2, D, '18:00', '22:00')]
+    // 13:00 cách 06:00 là 7h, cách 18:00 là 5h → ca chiều gần hơn.
+    expect(pickPlannedShift(shifts, cand(D, '13:00', '15:00')).id).toBe(2)
+  })
+
+  it('ca dự kiến QUA NỬA ĐÊM khớp đúng giờ chấm công qua nửa đêm', () => {
+    const shifts = [sched(1, D, '08:00', '12:00'), sched(2, D, '22:00', '06:00')]
+    expect(pickPlannedShift(shifts, cand(D, '22:05', '06:00')).id).toBe(2)
+  })
+
+  it('ca ĐÃ chấm công không phải ứng viên', () => {
+    const shifts = [
+      schedDone(1, D, '06:00', '10:00', '06:05', '10:00'),
+      sched(2, D, '12:00', '16:00'),
+    ]
+    expect(pickPlannedShift(shifts, cand(D, '12:00', '16:00')).id).toBe(2)
+  })
+
+  it('ca dự kiến của NGÀY KHÁC không lẫn vào', () => {
+    const shifts = [sched(1, D1, '06:00', '10:00'), sched(2, D2, '06:00', '10:00')]
+    expect(pickPlannedShift(shifts, cand(D2, '06:05', '10:00')).id).toBe(2)
+  })
+})
+
+describe('buildSchedByDate', () => {
+  it('ngày nhiều lịch → trả ĐỦ, sắp theo giờ bắt đầu tăng dần', () => {
+    // Mảng nguồn theo created_at (ca tạo sau đứng trước) — kết quả vẫn theo giờ.
+    const map = buildSchedByDate([
+      sched(3, D, '18:00', '22:00'),
+      sched(1, D, '06:00', '10:00'),
+      sched(2, D, '12:00', '16:00'),
+    ])
+    expect(map.get(D).map((x) => x.id)).toEqual([1, 2, 3])
+    expect(map.get(D).map((x) => x.start)).toEqual(['06:00', '12:00', '18:00'])
+    expect(map.get(D)[0].end).toBe('10:00')
+  })
+
+  it('checkedIn đánh dấu đúng ca đã có giờ thực', () => {
+    const map = buildSchedByDate([
+      schedDone(1, D, '06:00', '10:00', '06:05', '10:00'),
+      sched(2, D, '12:00', '16:00'),
+    ])
+    expect(map.get(D).map((x) => x.checkedIn)).toEqual([true, false])
+  })
+
+  it('ca KHÔNG có lịch dự kiến → không tạo entry', () => {
+    const map = buildSchedByDate([shift(1, D, '08:00', '12:00')])
+    expect(map.has(D)).toBe(false)
+  })
+
+  it('gom theo từng ngày, không trộn lẫn', () => {
+    const map = buildSchedByDate([sched(1, D1, '06:00', '10:00'), sched(2, D2, '12:00', '16:00')])
+    expect(map.get(D1).map((x) => x.id)).toEqual([1])
+    expect(map.get(D2).map((x) => x.id)).toEqual([2])
+  })
+})
+
+describe('shiftTimeKey', () => {
+  it('ưu tiên giờ THỰC TẾ, chưa chấm công thì lấy giờ LỊCH', () => {
+    expect(shiftTimeKey(shift(1, D, '06:05', '10:00'))).toBe('06:05')
+    expect(shiftTimeKey(sched(2, D, '12:00', '16:00'))).toBe('12:00')
+    // Ca có cả hai → giờ thực thắng (đó mới là lúc thật sự vào ca).
+    expect(shiftTimeKey(schedDone(3, D, '18:00', '22:00', '18:10', '22:00'))).toBe('18:10')
+  })
+
+  it('thiếu cả hai mốc → chuỗi rỗng (xếp lên đầu, không văng lỗi)', () => {
+    expect(shiftTimeKey({ work_date: D })).toBe('')
+  })
+
+  it('so sánh từ điển ra ĐÚNG thứ tự thời gian (khoá sắp xếp hợp lệ)', () => {
+    const rows = [
+      sched(3, D, '18:00', '22:00'),
+      shift(1, D, '06:05', '10:00'),
+      sched(2, D, '12:00', '16:00'),
+    ]
+    const sorted = [...rows].sort((a, b) => shiftTimeKey(a).localeCompare(shiftTimeKey(b)))
+    expect(sorted.map((s) => s.id)).toEqual([1, 2, 3])
   })
 })

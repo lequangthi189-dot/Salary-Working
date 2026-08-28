@@ -4,6 +4,7 @@ import {
   periodClosedError,
   overlapError,
   partitionImportShifts,
+  pickPlannedShift,
 } from '../lib/shiftRules.js'
 
 // CONTROLLER: state + thao tác cho ca làm việc. View gọi các hàm này, không đụng
@@ -42,7 +43,10 @@ export function useShifts(session) {
     reload()
   }, [session, reload])
 
-  async function addShift(shift) {
+  // `plannedId` = ca dự kiến người dùng CHỌN ở ShiftForm (ngày có nhiều lịch). Là
+  // tham số RIÊNG chứ không nằm trong `shift`: object đó được trải thẳng vào payload
+  // Supabase ở insertShift, thêm field lạ sẽ hỏng insert.
+  async function addShift(shift, plannedId = null) {
     const closedErr = periodClosedError(shift.work_date)
     if (closedErr) return closedErr
     // Ngày đã có ca LỊCH DỰ KIẾN (chưa check-in: thiếu giờ thực) → "hiện thực hoá"
@@ -51,9 +55,14 @@ export function useShifts(session) {
     // (2) nhân đôi dòng (ca lịch + ca thực) cho cùng một ngày.
     // Ghi THẲNG qua model — KHÔNG gọi updateShift (nút "Lưu" của thẻ ca) để hai
     // chức năng "Thêm ca" và "Lưu thẻ ca" tách bạch, không phụ thuộc nhau.
-    const planned = shifts.find(
-      (s) => s.work_date === shift.work_date && !s.start_time && !s.end_time
-    )
+    //
+    // Ngày có NHIỀU ca dự kiến thì phải chọn ĐÚNG ca vừa làm: ưu tiên ca người dùng
+    // chỉ định, hết thì để pickPlannedShift dò theo độ giao giờ. Không được lấy ca
+    // đầu mảng — `shifts` sắp theo created_at nên đó là ca TẠO GẦN NHẤT, không liên
+    // quan tới giờ làm. Lối gọi không truyền plannedId (vd trợ lý lương) tự đi nhánh dò.
+    const planned =
+      (plannedId != null && shifts.find((s) => s.id === plannedId)) ||
+      pickPlannedShift(shifts, shift)
     if (planned) {
       const overlapErr = overlapError(shift, shifts, planned.id)
       if (overlapErr) return overlapErr

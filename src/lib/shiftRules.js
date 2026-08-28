@@ -34,6 +34,22 @@ function shiftInterval(shift) {
   return { start, end }
 }
 
+// Ba mốc dịch ±24h dùng khi so hai ca CÙNG work_date: một mốc giờ (vd 02:00) có
+// thể là "sáng sớm cùng đêm" của ca 22:00–06:00, nên phải xét cả bản dịch ±1 ngày.
+const DAY_OFFSETS = [-MINUTES_PER_DAY, 0, MINUTES_PER_DAY]
+
+// Số phút GIAO nhau LỚN NHẤT giữa hai khoảng ca cùng ngày (đã xét ±24h).
+// 0 = hai ca rời nhau hoàn toàn.
+function overlapMinutes(a, b) {
+  let best = 0
+  for (const off of DAY_OFFSETS) {
+    const lo = Math.max(a.start, b.start + off)
+    const hi = Math.min(a.end, b.end + off)
+    if (hi - lo > best) best = hi - lo
+  }
+  return best
+}
+
 function dmLabel(workDate) {
   const [, m, d] = String(workDate).split('-')
   return d && m ? `${d}/${m}` : workDate
@@ -58,15 +74,10 @@ export function overlapError(candidate, existing, excludeId = null) {
     if (s.work_date !== candidate.work_date) continue
     const other = shiftInterval(s)
     if (!other) continue
-    // Cả hai ca cùng work_date đều có thể vắt qua nửa đêm, nên một mốc giờ (vd
-    // 02:00) có thể là "sáng sớm cùng đêm" với ca 22:00–06:00. So overlap ở cả 3
-    // mốc dịch ±24h để bắt đúng phần đuôi qua đêm, tránh sót như 22:00–06:00 vs
+    // Cả hai ca cùng work_date đều có thể vắt qua nửa đêm — overlapMinutes đã xét
+    // cả 3 mốc ±24h nên bắt đúng phần đuôi qua đêm, tránh sót như 22:00–06:00 vs
     // 02:00–08:00 (chồng ở 02:00–06:00).
-    const hit = [-MINUTES_PER_DAY, 0, MINUTES_PER_DAY].some(
-      (off) =>
-        cand.start < other.end + off && other.start + off < cand.end
-    )
-    if (hit) {
+    if (overlapMinutes(cand, other) > 0) {
       return `Ca ${rangeLabel(candidate)} trùng/chồng giờ với ca ${rangeLabel(
         s
       )} đã có trong ngày ${dmLabel(candidate.work_date)}.`
@@ -126,19 +137,85 @@ export function visibleBoardShifts(shifts, payrolls) {
   )
 }
 
-// Map ngày -> lịch dự kiến (vd nhập từ ảnh tuần). Dùng để: (1) form Add shift ẩn ô
-// Sched, (2) ca thêm tay trong ngày đó VẪN gắn lịch dự kiến làm mốc tính trễ.
+// Map ngày -> DANH SÁCH lịch dự kiến của ngày đó, sắp theo giờ BẮT ĐẦU tăng dần.
+// Một ngày có thể có NHIỀU ca rời giờ (vd 06–10, 12–16, 18–22) nên đây là MẢNG chứ
+// không phải một mốc duy nhất. Dùng để: (1) form Add shift khoá ô Giờ ra theo ca
+// đang chọn, (2) ca thêm tay trong ngày đó VẪN gắn lịch dự kiến làm mốc tính trễ.
+// checkedIn = ca đã có giờ thực → view lọc khỏi danh sách đề xuất (lịch đã dùng).
 export function buildSchedByDate(shifts) {
   const map = new Map()
   for (const s of shifts) {
-    if (s.scheduled_start && !map.has(s.work_date)) {
-      map.set(s.work_date, {
-        start: hhmm(s.scheduled_start),
-        end: hhmm(s.scheduled_end),
-      })
-    }
+    if (!s.scheduled_start) continue
+    const list = map.get(s.work_date) || []
+    list.push({
+      id: s.id,
+      start: hhmm(s.scheduled_start),
+      end: hhmm(s.scheduled_end),
+      checkedIn: !!s.start_time,
+    })
+    map.set(s.work_date, list)
+  }
+  // Sắp theo giờ bắt đầu (KHÔNG theo created_at) để thứ tự hiện ra ổn định, không
+  // phụ thuộc lúc nào dòng nào được tạo.
+  for (const list of map.values()) {
+    list.sort((a, b) => parseTime(a.start) - parseTime(b.start))
   }
   return map
+}
+
+// Mốc GIỜ VÀO của một ca dạng "HH:MM": ưu tiên giờ thực tế, chưa chấm công thì lấy
+// giờ lịch dự kiến, không có gì thì chuỗi rỗng (xếp lên đầu). Chuỗi "HH:MM" so sánh
+// từ điển ra đúng thứ tự thời gian nên dùng thẳng làm khoá sắp xếp — cả bảng công
+// chính lẫn bảng công chi tiết đều sắp ca trong ngày bằng hàm NÀY để hai nơi không
+// bao giờ lệch thứ tự.
+export function shiftTimeKey(shift) {
+  return hhmm(shift.start_time) || hhmm(shift.scheduled_start) || ''
+}
+
+// Ca DỰ KIẾN (chưa chấm công) KHỚP NHẤT với khung giờ đang thêm, hoặc null nếu ngày
+// đó không có ca dự kiến nào. Dùng khi "hiện thực hoá" ca: ghi giờ thực vào ĐÚNG
+// dòng lịch mà người dùng vừa đi làm, thay vì dòng nào tình cờ đứng đầu mảng nguồn
+// (mảng shifts sắp theo created_at nên "đầu tiên" = ca TẠO GẦN NHẤT, không liên
+// quan gì tới giờ làm).
+//
+// Ngày chỉ có ĐÚNG MỘT ca dự kiến → trả luôn ca đó dù không giao phút nào, giữ
+// nguyên hành vi cũ cho dữ liệu một-lịch-một-ngày (vd lịch 08–16 mà chấm công
+// 18–22 thì vẫn gắn vào chính ca đó).
+export function pickPlannedShift(shifts, candidate) {
+  const planned = (shifts || []).filter(
+    (s) => s.work_date === candidate.work_date && !s.start_time && !s.end_time
+  )
+  if (planned.length === 0) return null
+  if (planned.length === 1) return planned[0]
+
+  // Sắp theo giờ bắt đầu trước khi so: khi mọi tiêu chí hoà nhau, ca SỚM HƠN thắng
+  // (deterministic, không phụ thuộc thứ tự mảng nguồn).
+  const rows = planned
+    .map((s) => ({ shift: s, iv: shiftInterval(s) }))
+    .filter((r) => r.iv)
+    .sort((a, b) => a.iv.start - b.iv.start)
+  if (rows.length === 0) return planned[0]
+
+  const cand = shiftInterval(candidate)
+  if (!cand) return rows[0].shift
+
+  // Tiêu chí 1: giao nhiều phút nhất. Tiêu chí 2 (khi không ca nào giao, hoặc giao
+  // bằng nhau): giờ bắt đầu gần giờ vào thực tế nhất.
+  let best = rows[0]
+  let bestOverlap = -1
+  let bestGap = Infinity
+  for (const r of rows) {
+    const ov = overlapMinutes(cand, r.iv)
+    const gap = Math.min(
+      ...DAY_OFFSETS.map((off) => Math.abs(r.iv.start + off - cand.start))
+    )
+    if (ov > bestOverlap || (ov === bestOverlap && gap < bestGap)) {
+      best = r
+      bestOverlap = ov
+      bestGap = gap
+    }
+  }
+  return best.shift
 }
 
 // ── TÌM CA (search bảng công) ────────────────────────────────────────────────
