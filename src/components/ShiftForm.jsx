@@ -39,6 +39,10 @@ export default function ShiftForm({
   const [startTouched, setStartTouched] = useState(false)
   const [endTouched, setEndTouched] = useState(false)
   const [isHoliday, setIsHoliday] = useState(false)
+  // Ca dự kiến người dùng chọn khi ngày có NHIỀU lịch. null = chưa chọn → lấy ca
+  // đầu tiên. KHÔNG cần reset khi đổi ngày: id của ngày cũ không có trong danh
+  // sách ngày mới nên `sel` tự rơi về ca đầu, mà quay lại ngày cũ vẫn nhớ lựa chọn.
+  const [pickedId, setPickedId] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -55,12 +59,16 @@ export default function ShiftForm({
     return () => clearInterval(id)
   }, [startTouched, endTouched])
 
-  // Ngày đang chọn đã có lịch dự kiến (nhập từ "Nhập lịch tuần") → dùng làm mốc
-  // tính trễ. Không nhập giờ lịch tay ở form ngày nữa; ngày không có lịch dự kiến
-  // thì scheduled_* = null (không có mốc trễ).
-  const daySched = schedByDate.get(workDate)
-  const effSchedStart = daySched ? daySched.start : ''
-  const effSchedEnd = daySched ? daySched.end : ''
+  // Lịch dự kiến của ngày đang chọn (nhập từ "Nhập lịch tuần" / nhập tay) → dùng
+  // làm mốc tính trễ. Không nhập giờ lịch tay ở form ngày nữa; ngày không có lịch
+  // dự kiến thì scheduled_* = null (không có mốc trễ).
+  //
+  // BỎ các ca đã chấm công: lịch đã dùng rồi thì không đề xuất lại. Hết ca chưa
+  // chấm → coi như ngày không lịch, không khoá giờ ra (mọi ca theo lịch đã xong).
+  const daySched = (schedByDate.get(workDate) || []).filter((x) => !x.checkedIn)
+  const sel = daySched.find((x) => x.id === pickedId) || daySched[0] || null
+  const effSchedStart = sel ? sel.start : ''
+  const effSchedEnd = sel ? sel.end : ''
 
   // Ngày CÓ giờ ra dự kiến → ẩn hẳn ô "Giờ ra", ca lấy luôn giờ ra của lịch.
   // Người dùng thường thêm ca ngay lúc VÀO ca (chưa biết giờ ra thật), nên mặc
@@ -94,15 +102,19 @@ export default function ShiftForm({
       return
     }
     setBusy(true)
-    // Truyền dữ liệu ca lên CHA (App) qua callback.
-    const err = await onAdd({
-      work_date: workDate,
-      start_time: startTime,
-      end_time: effEndTime,
-      scheduled_start: effSchedStart || null,
-      scheduled_end: effSchedEnd || null,
-      is_holiday: isHoliday,
-    })
+    // Truyền dữ liệu ca lên CHA (App) qua callback. Tham số 2 = id ca dự kiến đang
+    // chọn, để controller ghi giờ thực vào ĐÚNG dòng lịch thay vì phải tự dò.
+    const err = await onAdd(
+      {
+        work_date: workDate,
+        start_time: startTime,
+        end_time: effEndTime,
+        scheduled_start: effSchedStart || null,
+        scheduled_end: effSchedEnd || null,
+        is_holiday: isHoliday,
+      },
+      sel ? sel.id : null
+    )
     setBusy(false)
     if (err) setError(err)
     else {
@@ -131,6 +143,29 @@ export default function ShiftForm({
           />
         </label>
       </div>
+
+      {/* Ngày có NHIỀU ca dự kiến → chọn ca đang chấm công. Ngày một lịch (hoặc
+          không lịch nào) thì KHÔNG hiện gì, form giữ nguyên hình như trước. */}
+      {daySched.length > 1 && (
+        <div
+          className="sched-pick"
+          role="group"
+          aria-label={t('shiftForm.pickSched')}
+        >
+          <span className="sched-pick-label">{t('shiftForm.pickSched')}</span>
+          {daySched.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              className={`sched-pick-btn${sel && x.id === sel.id ? ' active' : ''}`}
+              onClick={() => setPickedId(x.id)}
+              aria-pressed={!!sel && x.id === sel.id}
+            >
+              {x.start}–{x.end || '—'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Giờ check-in / check-out + Ngày lễ (cùng hàng).
           Ngày có giờ ra dự kiến → ô "Giờ ra" biến mất, hàng còn 2 cột. */}

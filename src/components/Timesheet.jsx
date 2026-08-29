@@ -9,7 +9,7 @@ import {
   computeShift,
   hhmm,
 } from '../lib/shiftMath.js'
-import { matchesShiftSearch } from '../lib/shiftRules.js'
+import { matchesShiftSearch, shiftTimeKey } from '../lib/shiftRules.js'
 import { useI18n } from '../lib/i18n.jsx'
 import { modalOpen } from '../lib/hotkeys.js'
 
@@ -86,11 +86,10 @@ export default function Timesheet({
   // Nhóm theo ngày, memoize theo [shifts, filter, search] để không lọc/nhóm lại khi
   // render vì lý do khác. Là hook nên phải đứng TRƯỚC các return sớm bên dưới.
   const groups = useMemo(() => {
-    // Ngày đã có chấm công thật (có check-in). Với những ngày đó, ẩn thẻ ca chỉ-là-
-    // lịch-dự-kiến (có Sched nhưng chưa check-in) — đã chấm công thì không cần hiện nữa.
-    const actualDates = new Set(
-      shifts.filter((s) => s.start_time).map((s) => s.work_date)
-    )
+    // MỌI ca đều hiện, kể cả ca chỉ-là-lịch-dự-kiến trong ngày đã có ca chấm công
+    // khác: một ngày có thể có nhiều ca rời giờ (vd 06–10, 12–16, 18–22), chấm công
+    // xong ca sáng thì ca chiều/tối VẪN đang chờ được chấm. Trước đây chúng bị ẩn,
+    // khiến người dùng không còn đường nào chấm công cho chúng.
     const query = search.trim()
     const searching = query !== ''
     // Nút LỌC (ngày/đêm) + Ô SEARCH chạy CÙNG NHAU: một ca phải QUA CẢ HAI mới hiện
@@ -98,8 +97,6 @@ export default function Timesheet({
     // CẦN (đang lọc ngày/đêm hoặc đang search) để không tính thừa lúc xem tất cả.
     const needKind = filter !== 'all' || searching
     const visibleShifts = shifts.filter((s) => {
-      if (s.scheduled_start && !s.start_time && actualDates.has(s.work_date))
-        return false
       if (!needKind) return true
       const kind = shiftKind(s)
       if (filter !== 'all' && kind !== filter) return false // nút lọc ngày/đêm
@@ -107,7 +104,7 @@ export default function Timesheet({
       return true
     })
 
-    // Group by work_date, preserving the incoming (date-desc) order.
+    // Gom theo work_date, GIỮ thứ tự ngày đi vào (mới nhất trước).
     const groups = []
     const byDate = new Map()
     for (const s of visibleShifts) {
@@ -117,6 +114,12 @@ export default function Timesheet({
         groups.push(g)
       }
       byDate.get(s.work_date).items.push(s)
+    }
+    // Trong MỘT ngày thì sắp theo GIỜ VÀO tăng dần, không theo created_at: ngày có
+    // nhiều ca (06–10, 12–16, 18–22) phải đọc được theo đúng trình tự trong ngày.
+    // Dùng chung shiftTimeKey với bảng công chi tiết để hai bảng không lệch nhau.
+    for (const g of groups) {
+      g.items.sort((a, b) => shiftTimeKey(a).localeCompare(shiftTimeKey(b)))
     }
     return groups
     // hasNightShift trong deps vì shiftKind phân loại theo cửa sổ đêm (foldNight).

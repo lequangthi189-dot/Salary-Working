@@ -1988,6 +1988,24 @@ button[type='submit']:disabled {
   font-variant-numeric: var(--numeric);
 }
 
+/* Hàng chọn ca dự kiến — chỉ hiện khi ngày có nhiều hơn một lịch. Cột Nhập ca chỉ
+   rộng ~40% board nên PHẢI wrap được, không đẩy tràn hàng. */
+.sched-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.sched-pick-label {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+/* Giờ trong chip là con số → chữ số tabular cho các chip thẳng hàng nhau. */
+.sched-pick-btn {
+  font-variant-numeric: var(--numeric);
+}
+
 /* Ghi chú thay cho ô "Giờ ra" đã ẩn: nói rõ ca lấy giờ ra nào, giờ dùng chữ số
    tabular + đậm hơn phần chữ để vẫn là con số dễ liếc. Nhãn lùi về màu muted. */
 .sched-note {
@@ -2172,7 +2190,8 @@ input.t-out {
   gap: 0.4rem;
   margin-bottom: 0.85rem;
 }
-.shift-filter-btn {
+.shift-filter-btn,
+.sched-pick-btn {
   background: var(--panel-2);
   border: var(--border-width-hairline) solid var(--border);
   color: var(--text);
@@ -2183,10 +2202,12 @@ input.t-out {
   cursor: pointer;
   transition: var(--transition-surface);
 }
-.shift-filter-btn:hover {
+.shift-filter-btn:hover,
+.sched-pick-btn:hover {
   border-color: var(--accent);
 }
-.shift-filter-btn.active {
+.shift-filter-btn.active,
+.sched-pick-btn.active {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--text-on-accent);
@@ -2972,6 +2993,12 @@ input.t-out {
 }
 .tt-table td.lost {
   color: var(--pay-negative);
+}
+/* Dòng ca CHƯA CHẤM CÔNG: cả dòng lùi về màu muted để phân biệt với công đã có
+   thật — số 0 ở cột lương không được trông như một khoản tiền đã kiếm. */
+.tt-table tr.tt-planned td,
+.tt-table tr.tt-planned .tt-pay {
+  color: var(--muted);
 }
 .tt-table tfoot td {
   background: var(--surface-raised);
