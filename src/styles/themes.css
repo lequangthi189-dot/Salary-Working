@@ -706,8 +706,11 @@
   border: 1px solid rgba(127, 127, 127, 0.3);
   flex: none;
 }
+/* Ô màu phải là bảng ĐANG DÙNG, không phải bảng navy đời cũ: theme `dark` giờ là
+   Trung tính graphite (#15181b / #1c2023 / #23272b + accent #60a4c1). Hai nửa =
+   nền panel + màu nhấn, đúng cách specimen card của design system vẽ. */
 .theme-swatch-dark {
-  background: linear-gradient(135deg, #14293c, #0a1929);
+  background: linear-gradient(135deg, #23272b 55%, #60a4c1 55%);
 }
 .theme-swatch-glass {
   background: linear-gradient(135deg, #a855f7, #22d3ee 55%, #ec4899);

@@ -634,6 +634,13 @@
   --ok: #306249;
   --text-on-ok: #ffffff;
   --ok-fill: rgba(48, 98, 73, 0.12);
+  /* Cùng một cái bẫy, phía "mất tiền": --text-on-danger ở :root là #1a1012, giải
+     đúng cho dark (6.72:1 trên #de8279) và glass (7.66:1 trên #ff7d97) vì hai theme
+     đó dùng nền danger HỒNG NHẠT. Soft UI lại đặt lại --status-overdue thành đỏ ĐẬM
+     #953e35 để dùng như CHỮ trên nền sáng; đặt mực gần-đen lên đó chỉ còn 2.68:1.
+     Badge "Quá hạn"/"Chưa chấm công" là chữ nhỏ in đậm nên phải đạt 4.5:1 — lật
+     sang trắng cho 6.96:1. */
+  --text-on-danger: #ffffff;
 
   /* Status colours must be re-stated for Soft UI. Inherited from the base they
      resolve to this theme's pastels (--checkin #f3c19a, --green #7ed0b0) which
