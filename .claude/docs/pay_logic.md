@@ -59,23 +59,34 @@ Thuật toán:
 5. Giờ mất: `lateIn = splitRange(sStart, effStart)`, `earlyOut = splitRange(effEnd, sEnd)`; mỗi cái đã tách sẵn ngày/đêm.
 6. Trả về: `{ decimalHours, dayHours, nightHours, pay }` (đã kẹp) + `{ lateIn, earlyOut, lostDayHours, lostNightHours, lostHours, lostPay }`.
 
-`formatLost(result)` trả chuỗi tiếng Việt mô tả vào trễ/ra sớm hoặc `null`. Tất cả tính lại ở client từ thời gian thô, không lưu DB (xem `data_model.md`). Test trong `shiftMath.test.js` (describe `computeEffective`).
+`formatLost(result)` trả chuỗi (theo ngôn ngữ hiện tại, qua `translate`) mô tả vào trễ/ra sớm hoặc `null`. Tất cả tính lại ở client từ thời gian thô, không lưu DB (xem `data_model.md`). Test trong `shiftMath.test.js` (describe `computeEffective`).
 
 ## Chu kỳ lương (`src/lib/payPeriod.js`)
 
-Lương chốt ngày 25 hằng tháng. Công của "tháng M" = **26 của tháng (M‑1) → hết 25 của tháng M**; lương trả **ngày 1–10 của tháng (M+1)**. VD: kỳ tháng 5 = 26/04–25/05, trả 01–10/06.
+Kỳ lương cấu hình **theo từng người** (`profiles.period_start_day` / `period_end_day`, nạp qua `setPayPeriod()` trong `useProfile`). Giá trị ngoài 1–28 → mặc định **26 → 25**. Ví dụ dưới đây dùng mặc định.
 
-- `period key` = `"YYYY-MM"` của **tháng kết thúc** (tháng chứa ngày 25).
-- `payPeriodKeyOf(dateStr)`: `d >= 26` → kỳ tháng sau; `d <= 25` → kỳ tháng hiện tại (xử lý tràn năm).
-- `payPeriodRange(key)` / `paymentWindow(key)` / `payPeriodLabel(key)` / `isPeriodEnded(key, today)`.
+Công của "tháng M" = **`startDay` của tháng (M‑1) → hết `endDay` của tháng M** (khi `startDay > endDay`; nếu `startDay <= endDay` thì kỳ nằm gọn trong tháng M). Cửa sổ trả lương `paymentWindow` luôn là **ngày 01–10 của tháng (M+1)** (cố định, không cấu hình). VD mặc định: kỳ tháng 5 = 26/04–25/05, trả 01–10/06.
+
+- `period key` = `"YYYY-MM"` của **tháng kết thúc** (tháng chứa `endDay`).
+- `payPeriodKeyOf(dateStr)`: `d > endDay` → kỳ tháng sau; còn lại → kỳ tháng hiện tại (xử lý tràn năm). **Gom ca vào kỳ chỉ phụ thuộc `endDay`**; `startDay` chỉ dùng để hiển thị khoảng ngày.
+- `payPeriodRange(key)` / `paymentWindow(key)` / `payPeriodLabel(key)` / `isPeriodEnded(key, today)` / `dmShort(dateStr)`.
 - Toán theo chuỗi `YYYY-MM-DD` (so sánh từ điển) để tránh lệch múi giờ; `localTodayStr()` lấy hôm nay theo giờ địa phương.
+- Kỳ đã kết thúc (`isPeriodEnded`) thì **không nhập công được nữa** (`periodClosedError` trong `shiftRules.js`); ngày nhập sớm nhất trên form = `payPeriodRange(currentKey).start`.
 
-`periodStats(shifts)` (trong `shiftMath.js`) = `shiftTotals` + `dayPay`/`nightPay` (theo `getDayRate()`/`getNightRate()`) + `idealPay`/`lostPay` + `dayShiftCount`/`nightShiftCount`/`shiftCount`/`workDays`/`avgHoursPerDay`. Đánh dấu đã nhận lương lưu ở bảng `payrolls` (xem `data_model.md`); tiền vẫn tính lại từ `shifts`, không lưu DB.
+`periodStats(shifts)` (trong `shiftMath.js`) = `shiftTotals` + `dayPay`/`nightPay` (theo `getDayRate()`/`getNightRate()`) + `idealHours`/`idealPay`/`lostPay` + `dayShiftCount`/`nightShiftCount`/`shiftCount`/`workDays`/`avgHoursPerDay`. Ca đếm vào `nightShiftCount` khi **có bất kỳ** giờ đêm nào; ca chưa chấm công không được đếm. Đánh dấu đã nhận lương lưu ở bảng `payrolls` (xem `data_model.md`); tiền vẫn tính lại từ `shifts`, không lưu DB.
+
+### Tổng kỳ trên màn hình
+
+`thực nhận lương ca = periodStats.pay − sumDeductions(khoản trừ của kỳ)`; `tổng thu nhập = thực nhận lương ca + sumReceivedExtraIncome(...)` — chỉ khoản việc ngoài **đã nhận** và rơi vào kỳ theo `received_at` (xem `src/lib/extraIncome.js`, `data_model.md`).
 
 ## Định dạng
 
-- `formatMoney(n)` → làm tròn rồi format theo locale `vi-VN` (vd `285.600`).
+- `formatMoney(n)` → theo ngôn ngữ đang chọn và **quy đổi tỉ giá** (`getRate` từ `currency.jsx`, Edge `fx-rate`):
+  - `vi` → làm tròn, locale `vi-VN` + `" VND"` (vd `285.600 VND`).
+  - `en` → `£` (en-GB), `us` → `$` (en-US), `au` → `A$` (en-AU), 2 chữ số thập phân.
+  - Mọi phép tính vẫn bằng VND số nguyên; quy đổi chỉ ở bước hiển thị.
 - `formatHours(h)` → tối đa 2 chữ số thập phân, bỏ số 0 thừa.
+- `formatHours2(h)` → số nguyên thì không thập phân, còn lại đúng 2 chữ số (`8.5` → `8.50`).
 
 ## Quy tắc nâng cao trong SPEC
 
@@ -92,5 +103,5 @@ Lương chốt ngày 25 hằng tháng. Công của "tháng M" = **26 của thán
   - Cờ ngày lễ lưu ở cột `shifts.is_holiday` (boolean). UI bật/tắt ở `ShiftForm.jsx`/`ShiftCard.jsx`; % lễ cấu hình ở `EmployeeInfoForm.jsx`/`ProfileModal.jsx` (cột `profiles.holiday_day_pct`/`holiday_night_pct`).
   - `computeShift`/`computeEffective` nhận tham số `isHoliday`; `shiftTotals`/`periodStats` đọc `!!s.is_holiday`. Test trong `shiftMath.test.js` (describe `lương lễ (holiday pay)`).
   - **Lưu ý quirk**: trong `periodStats`, `dayPay`/`nightPay` luôn tách theo đơn giá THƯỜNG (`getDayRate()`/`getNightRate()`), nên với ca lễ thì `dayPay + nightPay ≠ pay` (`pay` tổng dùng giá lễ). Đây là chủ ý: hai trường đó chỉ để hiển thị cơ cấu giờ ngày/đêm.
-  - Mặc định khi hồ sơ CHƯA cấu hình: `holidayDayPct = holidayNightPct = 100` (×1 = như ngày thường), tránh trả 0.
+  - Mặc định khi hồ sơ CHƯA cấu hình: `holidayDayPct = holidayNightPct = 100` (×1 = như ngày thường), tránh trả 0. **Nhưng** mặc định chỉ áp khi giá trị là `undefined`: cột `null` trong DB bị `toNum` đọc thành `0` (`Number(null) === 0`) → đơn giá lễ = 0. Xem `data_model.md` (bảng `profiles`).
 - **Khái niệm Ca 1 / Ca 2 / Ca đêm cố định** (06–14 / 14–22 / 22–06): code không phân loại theo ca đặt tên, chỉ tách phút ngày/đêm theo cửa sổ. Mọi giờ tuỳ ý đều hợp lệ.

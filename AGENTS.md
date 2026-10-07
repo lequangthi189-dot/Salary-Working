@@ -50,15 +50,38 @@ Tuyệt đối KHÔNG được thay đổi hoặc tự ý giả định những 
 - **Đơn giá**: theo TỪNG NGƯỜI DÙNG, nạp từ hồ sơ qua `setRates()` trong `rates.js` (lương 1 giờ + phụ cấp % đêm/lễ). `DAY_RATE = 25500`, `NIGHT_RATE = 33150` chỉ còn là MẶC ĐỊNH/fallback. Không hard-code số khác; luôn lấy qua `getDayRate()/getNightRate()/getHolidayDayRate()/getHolidayNightRate()`.
 - **Cửa sổ đêm**: `22:00–06:00` (`NIGHT_START_HOUR = 22`, `NIGHT_END_HOUR = 6`). Biên `22:00–06:00` tính 100% là đêm.
 - **Quy ước qua nửa đêm**: `end <= start` nghĩa là ca kết thúc hôm sau. Đừng đổi sang yêu cầu ngày kết thúc riêng.
-- **Đơn vị tiền**: số nguyên VND, không dùng số thập phân tiền tệ; định dạng qua `formatMoney` (locale `vi-VN`).
+- **Đơn vị tiền**: mọi phép tính bằng số nguyên VND, không dùng số thập phân tiền tệ; hiển thị qua `formatMoney` (`vi` → `vi-VN` + "VND"; `en`/`us`/`au` → quy đổi tỉ giá sang £/$/A$ chỉ ở bước hiển thị).
 - **Bảo mật dữ liệu**: mọi truy vấn dựa vào Row Level Security của Supabase (`auth.uid() = user_id`). Không tự thêm filter `user_id` ở client để thay thế RLS, và không tắt RLS.
 - **Lương lễ ĐÃ được implement** (cột `shifts.is_holiday`; đơn giá lễ `getHolidayDayRate()/getHolidayNightRate()` theo `holiday_day_pct`/`holiday_night_pct` trong hồ sơ). **Giới hạn 8 giờ/ngày hiện CHƯA được implement** — đừng giả định đã có; nếu cần thêm, đọc `.claude/docs/pay_logic.md` và xác nhận với chủ dự án trước.
 - Khi đổi logic tính toán, phải cập nhật và chạy `src/lib/shiftMath.test.js`.
 - **Branch Management**: Trước khi thêm bất kỳ tính năng nào hoặc sửa lỗi, luôn luôn làm việc trên một nhánh (branch) git mới. Không bao giờ commit trực tiếp trên nhánh master. Các nhánh sửa lỗi phải tuân theo quy ước đặt tên bug/[des], các nhánh tính năng phải tuân theo quy ước đặt tên feature/[desc].
 
+## Design System
+
+Trước khi dựng bất kỳ UI mới nào, đọc `.claude/skills/salaryworking-design/readme.md`.
+
+- **Con số là nhân vật chính** — tiền và giờ dùng chữ số tabular, weight 700–800, là thứ lớn nhất trên màn hình.
+- Không gradient, không glow, không emoji, không nhãn AI. Đọc ảnh lịch chỉ gọi là "nhập từ ảnh"; chatbot chỉ là "trợ lý lương".
+- **Mật độ cao**, không thoáng: đây là bảng công, thấy nhiều ca cùng lúc quan trọng hơn khoảng trắng.
+- Thẻ phẳng, viền hairline, theme `dark` KHÔNG đổ bóng. Đúng một màu nhấn.
+- Số do máy đọc từ ảnh phải trông KHÁC số do người nhập, và luôn cần xác nhận.
+- Mọi thứ mới phải đúng trong cả 3 theme (`dark` / `glass` / `neumorph`) và cả 2 bản dịch (vi / en).
+
+**Token màu/chữ/khoảng cách nằm ở `src/styles/salaryworking-tokens.css`** — import
+đầu tiên trong `main.jsx`. Đừng khai báo lại `:root` trong `styles.css` (sẽ thắng
+token bundle). Đổi tông → sửa `--accent` / `--green` / `--danger`; phần còn lại là xám.
+
+Khi thêm màu chữ trên nền có màu, dùng `--text-on-accent` / `--text-on-ok` chứ
+đừng hardcode `#fff`: nền nhấn của cả 3 theme đều sáng nên chữ trắng FAIL WCAG AA.
+
+24 component trong skill là **bản dựng lại phần hình** (inline style, không có
+className) — dùng làm ĐẶC TẢ để sửa CSS của app, đừng thay thẳng vào app: chúng
+sẽ mất 119 rule theme trong `styles/themes.css` và kéo lại bảng navy cũ.
+Chi tiết: `.claude/skills/salaryworking-design/handoff/full/README.md`.
+
 ## Additional Documentation
 
 - `.claude/docs/architecture.md` — cấu trúc thư mục, luồng dữ liệu, vai trò từng module/component.
 - `.claude/docs/pay_logic.md` — thuật toán tách giờ ngày/đêm, lương theo lịch (`computeEffective`), lương lễ (đã code), và giới hạn 8 giờ/ngày (chưa code).
-- `.claude/docs/data_model.md` — bảng `shifts`, kiểu dữ liệu, và chính sách Row Level Security.
+- `.claude/docs/data_model.md` — mọi bảng (`shifts`, `profiles`, `payrolls`, `deductions`, `extra_income`, `chat_messages`), bucket `avatars`, và chính sách Row Level Security.
 - `.claude/docs/state_management.md` — quản lý state React, auth flow, và vòng đời CRUD ca làm việc.

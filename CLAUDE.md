@@ -50,7 +50,7 @@ Tuyệt đối KHÔNG được thay đổi hoặc tự ý giả định những 
 - **Đơn giá**: theo TỪNG NGƯỜI DÙNG, nạp từ hồ sơ qua `setRates()` trong `rates.js` (lương 1 giờ + phụ cấp % đêm/lễ). `DAY_RATE = 25500`, `NIGHT_RATE = 33150` chỉ còn là MẶC ĐỊNH/fallback. Không hard-code số khác; luôn lấy qua `getDayRate()/getNightRate()/getHolidayDayRate()/getHolidayNightRate()`.
 - **Cửa sổ đêm**: `22:00–06:00` (`NIGHT_START_HOUR = 22`, `NIGHT_END_HOUR = 6`). Biên `22:00–06:00` tính 100% là đêm.
 - **Quy ước qua nửa đêm**: `end <= start` nghĩa là ca kết thúc hôm sau. Đừng đổi sang yêu cầu ngày kết thúc riêng.
-- **Đơn vị tiền**: số nguyên VND, không dùng số thập phân tiền tệ; định dạng qua `formatMoney` (locale `vi-VN`).
+- **Đơn vị tiền**: mọi phép tính bằng số nguyên VND, không dùng số thập phân tiền tệ; hiển thị qua `formatMoney` (`vi` → `vi-VN` + "VND"; `en`/`us`/`au` → quy đổi tỉ giá sang £/$/A$ chỉ ở bước hiển thị).
 - **Bảo mật dữ liệu**: mọi truy vấn dựa vào Row Level Security của Supabase (`auth.uid() = user_id`). Không tự thêm filter `user_id` ở client để thay thế RLS, và không tắt RLS.
 - **Lương lễ ĐÃ được implement** (cột `shifts.is_holiday`; đơn giá lễ `getHolidayDayRate()/getHolidayNightRate()` theo `holiday_day_pct`/`holiday_night_pct` trong hồ sơ). **Giới hạn 8 giờ/ngày hiện CHƯA được implement** — đừng giả định đã có; nếu cần thêm, đọc `.claude/docs/pay_logic.md` và xác nhận với chủ dự án trước.
 - Khi đổi logic tính toán, phải cập nhật và chạy `src/lib/shiftMath.test.js`.
@@ -83,5 +83,5 @@ Chi tiết: `.claude/skills/salaryworking-design/handoff/full/README.md`.
 
 - `.claude/docs/architecture.md` — cấu trúc thư mục, luồng dữ liệu, vai trò từng module/component.
 - `.claude/docs/pay_logic.md` — thuật toán tách giờ ngày/đêm, lương theo lịch (`computeEffective`), lương lễ (đã code), và giới hạn 8 giờ/ngày (chưa code).
-- `.claude/docs/data_model.md` — bảng `shifts`, kiểu dữ liệu, và chính sách Row Level Security.
+- `.claude/docs/data_model.md` — mọi bảng (`shifts`, `profiles`, `payrolls`, `deductions`, `extra_income`, `chat_messages`), bucket `avatars`, và chính sách Row Level Security.
 - `.claude/docs/state_management.md` — quản lý state React, auth flow, và vòng đời CRUD ca làm việc.
